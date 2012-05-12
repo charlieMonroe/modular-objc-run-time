@@ -1,0 +1,236 @@
+
+\documentclass[a4paper, 11pt, fleqn]{book}
+
+% Set equal margins on book style
+\setlength{\oddsidemargin}{53pt}
+\setlength{\evensidemargin}{53pt}
+\setlength{\marginparwidth}{57pt}
+\setlength{\footskip}{30pt}
+
+\begin{document}
+
+\title{Objective-C Run-time}
+\author{Bc. Kry\u{s}tof V\'{a}\u{s}a}
+\date{}
+\maketitle
+
+\chapter{Objective-C}
+\section{Foreword}
+
+There are slight differences between the iOS and OS X versions of the run-time (e.g. iOS doesn't support garbage collection and only the new 2.0 run-time is available). Within this thesis, when talking about Apple's implementation of the run-time, the OS X version will be the one talked about.
+
+Even though I will mention a few words about the garbage collection and ARC\footnote{ARC - automatic reference counting, a feature introduced in Xcode 4.2 (Xcode is Apple's IDE) that uses compiler's static analysis combined with compiler annotations.}, not much attention will be paid to it as garbage collection is being deprecated in OS X 10.8 (and has severe dependencies on Mac OS X itself) and ARC is relatively new and uses a lot of compiler-dependent features as well as auto-zeroing weak links, etc.; which is beyond the scope of this work. Instead, the focus will be put on general functionality of the run-time, analysis of the current implementations and designing the modular run-time itself.
+
+\section{What is Objective-C?}
+
+  Objective-C is an object-oriented programming language that is a strict superset of C. Any C code can be used within Objective-C source code. Its run-time is written in C as well, some parts in assembly language or more recently in C++ (more about that later on).
+  
+\section{Brief history of Objective-C}
+
+In the early 1980s, Brad Cox and Tom Love, at their company Stepstone, inspired by the dynamic nature of Smalltalk decided to bring object-oriented concept to the world of C while maintaining full backward compatibility.
+
+In 1988, NeXT has licensed Objective-C from Stepstone, added Objective-C support to the GCC compiler and decided to use it in its OpenStep and NeXTStep operating systems.
+
+After Apple had acquired NeXT in 1996, Objective-C stayed alive in Rhapsody and later on Mac OS X, where it's the main programming language to the date.
+
+For this whole time, the Objective-C language stayed almost the same without any big changes. In 2006, Apple announced Objective-C 2.0 (which was release in Mac OS X 10.5 in 2007), which introduced garbage collection (which is deprecated in 10.8, however, in favor to more efficient ARC - automatic reference counting - see below \footnote{http://cocoaheads.tumblr.com/post/17719985728/10-8-objective-c-enhancements}), properties (object variables with automatically generated getters and/or setters with specified memory management), fast enumeration (enumeration over collections in a foreach-style), and some other minor improvements.
+
+Lately, more improvements have been made to Objective-C, most importantly ARC (automatic reference counting). Apple's run-time assumes some method names to be special. In particular, -retain, -autorelease, -release methods are used for memory management, which (unless garbage collection is turned on) handle the reference count for the particular object. ARC requires compiler support, though - all it does is that it automatically inserts -retain/-release/-autorelease (together called ARR) calls into the code (can be modified using \verb=__attribute__= construct) and automatically generates a -dealloc method (which is called when the object is being deallocated).
+
+This, however, represents a problem - none of the ARR calls must be called directly in the code - hence you need to convert all of your code to ARC. One disadvantage which results in a big advantage - compatibility with all libraries (Apple calls Objective-C libraries frameworks) - this was a big disadvantage of garbage collection: 
+
+You could keep the code as it was as the run-time itself redirected the ARR methods to a no-op function on the fly, however, all linked libraries/frameworks/plugins needed to be recompiled with garbage collection support turned on. This caused two things: mess in the code as if you migrated your code to garbage-collection-enabled environment, it was riddled with ARR calls, however, newly written code typically omitted those calls, making the code inconsistent; and some libraries never got GC support anyway.
+
+In the forthcoming (TODO: at the time this will be done, it will be already released) release of OS X 10.8, several new features will be included - default synthesis of getters (in prior versions, you had to declare \verb=@property= in the header file and use \verb=@sythesize= of \verb=@dynamic= in the implementation file - see Syntax of Objective-C), type-safe enums, literals for NSArray, NSDictionary and NSNumber (classes declared in Apple's Foundation framework), etc.
+
+\section{Syntax of Objective-C}
+
+As Objective-C is a strict superset of C, as mentioned above, all C code is a valid Objective-C code. A few more syntax is introduced, however. Basic method called on an object is placed between [ and ] brackets:
+
+\begin{verbatim}
+  [cat eatMice];
+\end{verbatim}
+
+If you desire to pass an argument, it is passed after a semi-colon:
+
+\begin{verbatim}
+  [cat eat:mouse];
+\end{verbatim}
+
+If more arguments are desired, the method's name splits into parts:
+
+\begin{verbatim}
+  [cat eat:mouse andDrink:milk];
+\end{verbatim}
+
+To declare a class, use the \verb=@interface= construct:
+
+\begin{verbatim}
+@interface SomeClass {
+
+}
+
++(void)doSomethingStatic;
+-(void)secondMethod:(void*)firstArgument withTwoArguments:(int)secondArgument;
+-(void)someMethod:(void*)firstArgument;
+@end
+
+\end{verbatim}
+
+Between the { } brackets, you may place variables, like into a C struct. This class is a root class, i.e. doesn't inherit from any other class. In Objective-C code, your classes will usually inherit from \verb=NSObject= class if Apple's frameworks are used. This can be declared as \verb=@interface SomeClass : NSObject=.
+
+If you need to declare protocols implemented (protocols are similar to Java's interfaces - a list of methods declared between \verb=@protocol ProtocolName= and \verb=@end=), add a list of protocols between \verb=<= and \verb=>= brackets:
+
+\begin{verbatim}
+  @interface SomeClass : NSObject <ProtocolName, OtherProtocol>
+\end{verbatim}
+
+In Objective-C 2.0, you can take advantage of properties. To declare a property, use the \verb=@property= construct:
+
+\begin{verbatim}
+  @property (readwrite, assign, getter=isHealthy) BOOL healthy;
+\end{verbatim}
+
+The first argument can be either \verb=readwrite= or \verb=readonly=, second can be either \verb=assign= (default for non-object values), \verb=retain= (default for objects) or \verb=copy= which copies the object. Note that this doesn't mean any automatic object copying - the object must then implement the \verb=NSCopying= protocol, which defines -copy and -copyWithZone: methods. The last \verb=getter= argument can be used for modifying the getter name - without the third argument, this declaration would yield in -healthy and -setHealthy: method declarations. With the third argument, -isHealthy is generated (note that the convention is not to prefix getters with 'get'). 
+
+These methods may be completely omitted if the so-called dot-syntax is used. It may feel familiar to Java or C# developers, accessing fields using the '.' - \verb=BOOL h = obj.healthy;= and \verb=obj.healthy = h;=, however, my personal stance is against the dot-syntax - as Objective-C is a strict superset of C, the dot-syntax should (in my opinion) be used only for structs, not objects which are allocated on the heap (unless some special workarounds are used\footnote{http://www.mikeash.com/pyblog/friday-qa-2010-01-15-stack-and-heap-objects-in-objective-c.html}). The dot-syntax gets translated into regular Objective-C calls during compilation anyway.
+
+Method declarations begin with either \verb=-= or \verb=+= - the \verb=-= is used for instance methods, \verb=+= is used for class (static) methods.
+
+
+\begin{verbatim}
+
+@implementation SomeClass
++(void)doSomethingStatic{
+  // Nothing to do
+}
+-(void)secondMethod:(void*)firstArgument withTwoArguments:(int)secondArgument{
+    // Do something meaningful, at last!
+}
+-(void)someMethod:(void*)firstArgument{
+    [self secondMethod:firstArgument withTwoArguments:1];
+}
+@end
+
+\end{verbatim}
+
+The method implementations are written between \verb=@implementation SomeClass= and \verb=@end=. The rest is just like in regular C with functions - the declaration of the method is followed by the code itself which is enclosed in { and } brackets.
+
+If you have declared \verb=@property='s in the class' interface (typically placed in the header file), you need to (unless you are using OS X 10.8 or later), use either \verb=@synthesize= or \verb=@dynamic=. \verb=@synthesize= is followed by a list of properties to synthesize. Optionally you can specify onto which object variable is the property mapped. For example,
+
+\begin{verbatim}
+  @synthesize healthy = _myVariable;
+\end{verbatim}
+
+will take \verb=someProperty= and map it to \verb=_myVariable=, i.e. calling \verb=[obj setHealthy:YES]= will result in \verb=_myVariable= being \verb=YES= (as C doesn't have native boolean type, the run-time defines \verb=BOOL= as \verb=unsigned char= and two values \verb=YES (1)= and \verb=NO (0)=).
+
+Using \verb=@dynamic= tells the compiler not to generate any methods, but you implement them on your own (for that particular property).
+
+
+\section{Run-time of Objective-C}
+
+As has been mentioned above, Objective-C is a strict superset of C language, where all objects are pointers to allocated structs with a specific structure (e.g. the first field of the struct is so-called isa - a pointer to the class of that particular object).
+  
+All of the Objective-C code can be actually rewritten in plain C - there's a LLVM Clang compiler option -rewrite-objc which will convert all the Objective-C syntax into calls of pure C methods - the run-time methods. If I run \begin{verbatim}clang -rewrite-objc test.m\end{verbatim}, where test.m contains the code that has been presented in the Syntax of Objective-C section, a new test.cpp (yes, it's actually a C++ file, though no C++ features are used) is created, containing the following code \footnote{I have taken the liberty of formatting the code and shortening it a little - it contains external run-time method and struct declarations, so that you can actually compile the file with a C compiler - provided you're linking against the Objective-C run-time library. Also, at the end, there were some linker-specific declarations.}:
+
+\begin{verbatim}
+typedef struct objc_object SomeClass;
+
+static void _C_SomeClass_doSomethingStatic(Class self, SEL _cmd) {
+  // Nothing to do
+}
+
+static void _I_SomeClass_secondMethod_withTwoArguments_
+  (SomeClass * self, SEL _cmd, void *firstArgument, 
+  int secondArgument) {
+  // Do something meaningful, at last!
+}
+
+static void _I_SomeClass_someMethod_(SomeClass * self, SEL _cmd, 
+  void *firstArgument) {
+  ((void (*)(id, SEL, void *, int))(void *)objc_msgSend)((id)self,
+     sel_registerName("secondMethod:withTwoArguments:"), 
+     (void *)firstArgument, 1);
+}
+
+static struct {
+   struct _objc_method_list *next_method;
+   int method_count;
+   struct _objc_method method_list[2];
+} _OBJC_INSTANCE_METHODS_SomeClass 
+  __attribute__((used, section ("__OBJC, __inst_meth")))= {
+  0, 
+  2,
+  {
+    {
+      (SEL)"secondMethod:withTwoArguments:",
+      "v28@0:8^v16i24",
+      (void *)_I_SomeClass_secondMethod_withTwoArguments_
+    }
+    {
+      (SEL)"someMethod:",
+      "v24@0:8^v16",
+      (void *)_I_SomeClass_someMethod_
+    }
+  }
+};
+
+static struct {
+	struct _objc_method_list *next_method;
+	int method_count;
+	struct _objc_method method_list[1];
+} _OBJC_CLASS_METHODS_SomeClass 
+  __attribute__((used, section ("__OBJC, __cls_meth")))= {
+  0, 1,
+  {
+    {
+      (SEL)"doSomethingStatic",
+      "v16@0:8",
+      (void *)_C_SomeClass_doSomethingStatic
+    }
+  }	
+};
+
+static struct _objc_class _OBJC_METACLASS_SomeClass 
+  __attribute__((used, section ("__OBJC, __meta_class")))= {
+  (struct _objc_class *)"SomeClass",
+  0,
+  "SomeClass",
+  0,
+  2,
+  sizeof(struct _objc_class),
+  0, 
+  (struct _objc_method_list *)&_OBJC_CLASS_METHODS_SomeClass,
+  0,0,0,0
+};
+
+static struct _objc_class _OBJC_CLASS_SomeClass 
+  __attribute__((used, section ("__OBJC, __class")))= {
+  &_OBJC_METACLASS_SomeClass,
+  0,
+  "SomeClass",
+  0, 1, 0, 0,
+  (struct _objc_method_list *)&_OBJC_INSTANCE_METHODS_SomeClass, 
+  0, 0, 0, 0
+};
+
+\end{verbatim}
+
+There might be a lot of ``black magic`` going on. Note that this is not a real feature of clang compiler that is meant to be used in real life. It's more of a debugging tool. If you ever decide to programmatically create Objective-C classes, you definitely won't be creating structures like in the code above, but would call appropriate run-time methods for class allocations. As you can see here in the \verb=__attribute__= annotation, these structures will be stored in the \verb=__OBJC, *= sections of the resulting Mach-O binary image. This is quite system-specific, as I will mention later on when analyzing Apple's implementation of the run-time, there are many dyld\footnote{Apple's dynamic linker, open-source as a part of Darwin - http://www.opensource.apple.com/source/dyld/)}-specific functions that get called by the linker.
+
+This saves time when loading binary images - the classes are already constructed and allocated, but is subject to change with each run-time version change.
+
+Back to the generated code, though. As you can see, there are two generated functions that correspond to the methods declared by the class \verb=SomeClass=. Their names get slightly obfuscated - \verb=_X_ClassName_method_name_= - where X is either I for instance methods or C for class methods.
+
+First two arguments are always the same - \verb=self= and \verb=_cmd=: \verb=self= points to the object the message is being sent and \verb=_cmd= is the selector (\verb=SEL=). Selector is a structure that consists of just the method's name, so theoretically, it's possible to simply retype \verb=char*= to \verb=SEL= as is being done later on in the method lists. Selectors have generally nothing to do with the actual method implementation.
+
+The first two methods do nothing, hence are uninteresting, but the second one calls (sends a message) its own method \verb=secondMethod:withTwoArguments:=. There's a lot of retyping going on within the call, but generally a function called \verb=objc_msgSend= is called, which lies at the core of all message calls\footnote{There are actually specific functions for methods that return floating point numbers or structures, as these may require special ABI treatment on some architectures.}. The first argument of the function is just passing the \verb=self= variable, for the \verb=_cmd= argument, it uses result of \verb=sel_registerName= - the result is a \verb=SEL= and this method makes sure that for selectors with the same name, the same pointer is returned - i.e. two objects with a method with the same name get the same \verb=SEL= pointer. The third argument is quite self-explanatory.
+
+
+\chapter{Apple's Implementation}
+\section{Limitations}
+// TODO
+- Bridging, 16B objects minimum.
+
+\end{document}
+      
