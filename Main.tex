@@ -41,11 +41,82 @@ This, however, represents a problem - none of the ARR calls must be called direc
 
 You could keep the code as it was as the run-time itself redirected the ARR methods to a no-op function on the fly, however, all linked libraries/frameworks/plugins needed to be recompiled with garbage collection support turned on. This caused two things: mess in the code as if you migrated your code to garbage-collection-enabled environment, it was riddled with ARR calls, however, newly written code typically omitted those calls, making the code inconsistent; and some libraries never got GC support anyway.
 
-In the forthcoming (TODO: at the time this will be done, it will be already released) release of OS X 10.8, several new features will be included - default synthesis of getters (in prior versions, you had to declare \verb=@property= in the header file and use \verb=@sythesize= of \verb=@dynamic= in the implementation file - see Syntax of Objective-C), type-safe enums, literals for NSArray, NSDictionary and NSNumber (classes declared in Apple's Foundation framework), etc.
+In the forthcoming (TODO: at the time this will be done, it will be already released) release of OS X 10.8, several new features will be included - default synthesis of getters (in prior versions, you had to declare \verb=@property= in the header file and use \verb=@sythesize= or \verb=@dynamic= in the implementation file - see Syntax of Objective-C), type-safe enums, literals for NSArray, NSDictionary and NSNumber (classes declared in Apple's Foundation framework), etc.
 
-\section{Syntax of Objective-C}
+\section{Compilation of Objective-C}
 
-As Objective-C is a strict superset of C, as mentioned above, all C code is a valid Objective-C code. A few more syntax is introduced, however. Basic method called on an object is placed between [ and ] brackets:
+As Objective-C is a strict superset of C, as mentioned above, all C code is a valid Objective-C code. This thesis assumes that you have some brief knowledge of this language, at least syntax-wise.
+
+This section will cover compilation of Objective-C and run-time's involvement in this process.
+
+\subsection{Creating classes in code}
+
+It is possible to dynamically create classes while the application is running, add methods, properties, implemented protocols, etc. to them. Actually all of Objective-C code could be translated to plain C\footnote{There's a LLVM Clang compiler option -rewrite-objc which will convert all the Objective-C syntax into calls of pure C methods - the run-time methods. If I run clang -rewrite-objc test.m, where test.m contains the Objective-C code, a new test.cpp (yes, it's actually a C++ file, though no C++ features are used) is created, containing the translated code.}. Here's an example:
+
+
+This is a sample code that calls two methods - each on a different object, though\footnote{As will be explained later on, each class actually consists of two classes - the meta class, which has the +alloc method and the regular class, which has the -init method.}:
+\begin{verbatim}SomeClass *myObj = [[SomeClass alloc] init];\end{verbatim}
+
+- will be translated to:
+
+\begin{verbatim}SomeClass *myObj = ((id (*)(id, SEL, ...))(void *)objc_msgSend)
+((id)((id (*)(id, SEL, ...))(void *)objc_msgSend)
+(objc_getClass("SomeClass"), sel_registerName("alloc")), 
+sel_registerName("init"));\end{verbatim}
+
+- which after removing the casting and adding a little formatting is:
+
+\begin{verbatim}SomeClass *myObj = 
+  objc_msgSend(
+    objc_msgSend(
+      objc_getClass("SomeClass"),  
+      sel_registerName("alloc")), 
+    sel_registerName("init"));
+\end{verbatim}
+
+So it's two nested \verb=objc_msgSend= calls. \verb=objc_msgSend= is a method that can be said to be the core of Objective-C run-time. It's the most used function of the run-time. Every method call in Objective-C gets translated into this variadic function call, which takes \verb=self= as the first argument (i.e. the object that the method is called on, or the message is sent to\footnote{Here can be seen the Smalltalk influence.}), the second argument is a selector (generally the method's name) and can be followed by arguments.
+
+The run-time then looks up the object's class, finds a function that implements this method (so called \verb=IMP=) and calls it. There's several things to point out:
+
+• method \emph{names} are used. \verb=sel_registerName= is a function that makes sure that for that particular method name only one selector pointer is kept.
+• each of the calls goes to a different object. The first call gets to something returned by \verb=objc_getClass= which is a returns an instance of a meta class
+• every class consists of two classes - one regular of which you create objects and one meta - which typically (unless you manually craft another one) has only one instance: a receiver for class methods (static methods).
+
+If you care to investigate this hierarchy, here's a small example:
+
+\verb=NSObject= class is part of the Foundation framework Apple supplies. Even though its often assumed to be the one and only root class in Objective-C. This is quite incorrect: there can be as many root classes in Objective-C as you wish - \verb=NSProxy= is an example and you can easily create your own.
+
+\begin{verbatim}@interface ClassWithoutSuperclass
+@end\end{verbatim}
+
+This will declare a new root class. It has absolutely no functionality - no memory management \verb=retain= and \verb=release=, no \verb=+alloc= method is declared either - you wouldn't be able to even create a new instance of this class without the run-time function \verb=class_createInstance=\footnote{This is basically why it is recommended to inherit everything from NSObject (or any other basic object class) which implements some basic communication with the run-time as well as some basic memory management, etc.}.
+
+Let's use this simplified class structure for representing an object (it's obviously more complex in real life):
+
+\begin{verbatim}
+typedef struct class_t {  struct class_t *isa;  struct class_t *superclass;
+} objc_class_t;
+\end{verbatim}
+
+Every object is a pointer to a structure like this one. The first field, so-called \verb=isa=, is a pointer to the class structure (to the meta class instance). Second field points to the superclass. It might be confusing at first that it's a class structure, but remember that even the object's class is actually an object - an instance of the meta class\footnote{The root meta class's isa pointer points to the structure itself - i.e. there's a pointer cycle.}.
+
+In case of ClassWithoutSuperclass:
+
+\begin{verbatim}
+objc_class_t *cl_str = objc_getClass("ClassWithoutSuperclass");
+
+=============
+cl_str                    0x1000054d8
+cl_str->isa               0x100005500
+cl_str->superclass        0x0
+
+cl_str->isa->isa          0x100005500
+cl_str->isa->superclass   0x1000054d8
+\end{verbatim}
+
+As you can see, there becomes a cycle.
+
+A few more syntax is introduced, however. Basic method called on an object is placed between [ and ] brackets:
 
 \begin{verbatim}
   [cat eatMice];
