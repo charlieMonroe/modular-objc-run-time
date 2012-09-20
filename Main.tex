@@ -46,14 +46,11 @@ In the newest release of OS X 10.8, several new features have been included - de
 
 Objective-C is an object-oriented programming language that is a strict superset of C. Any C code can be used within Objective-C source code. Its run-time is written in C as well, some parts in assembly language (mostly performance optimizations) or more recently in C++ (more about that later on). This thesis assumes that you have some brief knowledge of both C and Objective-C, at least syntax-wise.
 
-
 All Objective-C code can be translated to calls of C run-time functions\footnote{There's a LLVM Clang compiler option -rewrite-objc which will convert all the Objective-C syntax into calls of pure C methods - the run-time methods. When run `clang -rewrite-objc test.m', where test.m contains the Objective-C code, a new test.cpp is created, containing the translated code.} - for example, sending a message to an object isn't anything else than calling a run-time function \verb=objc_msgSend=.
 
 This section will cover compilation of Objective-C code and how it's translated into calling run-time functions.
 
-\subsection{Creating classes in code}
-
-It is possible to dynamically create classes while the application is running, add methods, properties, implemented protocols, etc.\ to them. Actually all of Objective-C code could be translated to plain C.
+\subsection{Calling methods}
 
 This is a sample code that sends two messages - each to a different object, though\footnote{As will be explained later on, each class actually consists of two classes - the meta class, which has the +alloc method and the regular class, which has the -init method.}:
 \begin{verbatim}SomeClass *myObj = [[SomeClass alloc] init];\end{verbatim}
@@ -76,7 +73,7 @@ Which after removing the casting and adding a little formatting is:
     sel_registerName("init"));
 \end{verbatim}
 
-So it's two nested \verb=objc_msgSend= calls. \verb=objc_msgSend= is a method that can be said to be the core of Objective-C run-time. It's the most used function of the run-time. Every method call in Objective-C gets translated into this variadic function call, which takes \verb=self= as the first argument (i.e.\ the object that the method is called on, or the message is sent to\footnote{Here can be seen the Smalltalk influence.}), the second argument is a selector (generally the method's name) and can be followed by arguments.
+So it's two nested \verb=objc_msgSend= calls\footnote{There are actually specific functions for methods that return floating point numbers or structures, as these may require special ABI treatment on some architectures.}. \verb=objc_msgSend= is a method that can be said to be the core of Objective-C run-time. It's the most used function of the run-time. Every method call in Objective-C gets translated into this variadic function call, which takes \verb=self= as the first argument (i.e.\ the object that the method is called on, or the message is sent to\footnote{Here can be seen the Smalltalk influence.}), the second argument is a selector (generally the method's name) and can be followed by arguments.
 
 The run-time then looks up the object's class, finds a function that implements this method (so called \verb=IMP=) and calls it. There's a several things to point out:
 
@@ -102,21 +99,39 @@ typedef struct class_t {  struct class_t *isa;  struct class_t *superclass;
 
 Every object is a pointer to a structure like this one. The first field, so-called \verb=isa=, is a pointer to the class structure (to the meta class instance). Second field points to the superclass. It might be confusing at first that it's a class structure, but remember that even the object's class is actually an object - an instance of the meta class\footnote{The root meta class's isa pointer points to the structure itself - i.e. there's a pointer cycle.}.
 
-\includegraphics[width=100mm]{metaclass_graph.png}
+Assume the following code:
+\begin{verbatim}@interface Rootclass
+@end
+@implementation Rootclass
+@end
 
-The compiler actually creates static class structures which are later on copied by the linker into the \verb=__OBJC= section of the Mach-O binary (on OS X). We will, however, focus on the run-time methods, ignoring linker dependencies.
+@interface Subclass : Rootclass
+@end
+@implementation Subclass
+@end 
+\end{verbatim}
+
+This declares two classes - \verb=Rootclass= and \verb=Subclass=. The \verb=Rootclass= is a new root class with no superclass. As neither of these classes declares any methods, calling anything on either class would result in a run-time exception, even the usual object creation via \verb=[[Rootclass alloc] init]= isn't available as \verb=Rootclass= doesn't declare the \verb=+alloc= method - it's declared on the \verb=NSObject= class, which is why you can create instances of the ``regular" classes inheriting from \verb=NSObject= this way.
+
+Hence we need to use the run-time \verb=class_createInstance= function to create an instance of the class: 
+\begin{verbatim}
+id obj = class_createInstance(objc_getClass("Subclass"), 0);
+\end{verbatim}
+
+The \verb=objc_getClass= function returns a pointer to the class called \verb=Subclass=, the \verb=objc_getClass= function creates an instance of the \verb=Subclass= class, with \verb=0= extra bytes\footnote{TODO: explain extra bytes.}. Here's a class and meta-class diagram of this situation.
+
+\includegraphics[width=120mm]{metaclass_graph.png}
+
+\subsection{Creating Classes Programmatically}
 
 There is a function called \verb=objc_allocateClassPair= which creates a brand new class and its meta class (together a class pair) on the run. All you need to specify is the superclass, new class name and extra bytes. Using functions such as \verb=class_addMethod=, \verb=class_addIvar=, \verb=class_addProtocol= and \verb=class_addProperty= can be used to add methods, ivars, protocols and properties to a class.
 
 Using these methods, you can easily substitute the Objective-C compiler, creating all classes at the beginning of the application run. 
 
+In reality, declaring a class doesn't cause the compiler to generate function calls, however, instead, the compiler creates static class structures which are later on copied by the linker into the \verb=__OBJC= section of the Mach-O binary (on OS X), which is copied on the launch time to memory and the classes just get registered to the run-time\footnote{Creating the class using the objc\_allocateClassPair function isn't enough in order to create an instance of this class, you need to register the class pair with the run-time as well using objc\_registerClassPair. This is simply to avoid creating an instance of the class before it gets fully initialized, e.g.\ from a different thread.}, which is much faster that dynamically create classes one by one, connecting all methods. We will, however, focus on the run-time methods, ignoring linker dependencies.
 
+\subsection{Translating Methods to Functions}
 
-The first argument can be either \verb=readwrite= or \verb=readonly=, second can be either \verb=assign= (default for non-object values), \verb=retain= (default for objects) or \verb=copy= which copies the object. Note that this doesn't mean any automatic object copying - the object must then implement the \verb=NSCopying= protocol, which defines -copy and -copyWithZone: methods. The last \verb=getter= argument can be used for modifying the getter name - without the third argument, this declaration would yield in -healthy and -setHealthy: method declarations. With the third argument, -isHealthy is generated (note that the convention is not to prefix getters with 'get'). 
-
-These methods may be completely omitted if the so-called dot-syntax is used. It may feel familiar to Java or C# developers, accessing fields using the '.' - \verb=BOOL h = obj.healthy;= and \verb=obj.healthy = h;=, however, my personal stance is against the dot-syntax - as Objective-C is a strict superset of C, the dot-syntax should (in my opinion) be used only for structs, not objects which are allocated on the heap (unless some special workarounds are used\footnote{http://www.mikeash.com/pyblog/friday-qa-2010-01-15-stack-and-heap-objects-in-objective-c.html}). The dot-syntax gets translated into regular Objective-C calls during compilation anyway.
-
-Method declarations begin with either \verb=-= or \verb=+= - the \verb=-= is used for instance methods, \verb=+= is used for class (static) methods.
 
 
 \begin{verbatim}
@@ -134,25 +149,6 @@ Method declarations begin with either \verb=-= or \verb=+= - the \verb=-= is use
 @end
 
 \end{verbatim}
-
-The method implementations are written between \verb=@implementation SomeClass= and \verb=@end=. The rest is just like in regular C with functions - the declaration of the method is followed by the code itself which is enclosed in { and } brackets.
-
-If you have declared \verb=@property='s in the class' interface (typically placed in the header file), you need to (unless you are using OS X 10.8 or later), use either \verb=@synthesize= or \verb=@dynamic=. \verb=@synthesize= is followed by a list of properties to synthesize. Optionally you can specify onto which object variable is the property mapped. For example,
-
-\begin{verbatim}
-  @synthesize healthy = _myVariable;
-\end{verbatim}
-
-will take \verb=someProperty= and map it to \verb=_myVariable=, i.e. calling \verb=[obj setHealthy:YES]= will result in \verb=_myVariable= being \verb=YES= (as C doesn't have native boolean type, the run-time defines \verb=BOOL= as \verb=unsigned char= and two values \verb=YES (1)= and \verb=NO (0)=).
-
-Using \verb=@dynamic= tells the compiler not to generate any methods, but you implement them on your own (for that particular property).
-
-
-\section{Run-time of Objective-C}
-
-As has been mentioned above, Objective-C is a strict superset of C language, where all objects are pointers to allocated structs with a specific structure (e.g. the first field of the struct is so-called isa - a pointer to the class of that particular object).
-  
-All of the Objective-C code can be actually rewritten in plain C - there's a LLVM Clang compiler option -rewrite-objc which will convert all the Objective-C syntax into calls of pure C methods - the run-time methods. If I run \begin{verbatim}clang -rewrite-objc test.m\end{verbatim}, where test.m contains the code that has been presented in the Syntax of Objective-C section, a new test.cpp (yes, it's actually a C++ file, though no C++ features are used) is created, containing the following code \footnote{I have taken the liberty of formatting the code and shortening it a little - it contains external run-time method and struct declarations, so that you can actually compile the file with a C compiler - provided you're linking against the Objective-C run-time library. Also, at the end, there were some linker-specific declarations.}:
 
 \begin{verbatim}
 typedef struct objc_object SomeClass;
@@ -174,72 +170,8 @@ static void _I_SomeClass_someMethod_(SomeClass * self, SEL _cmd,
      (void *)firstArgument, 1);
 }
 
-static struct {
-   struct _objc_method_list *next_method;
-   int method_count;
-   struct _objc_method method_list[2];
-} _OBJC_INSTANCE_METHODS_SomeClass 
-  __attribute__((used, section ("__OBJC, __inst_meth")))= {
-  0, 
-  2,
-  {
-    {
-      (SEL)"secondMethod:withTwoArguments:",
-      "v28@0:8^v16i24",
-      (void *)_I_SomeClass_secondMethod_withTwoArguments_
-    }
-    {
-      (SEL)"someMethod:",
-      "v24@0:8^v16",
-      (void *)_I_SomeClass_someMethod_
-    }
-  }
-};
-
-static struct {
-	struct _objc_method_list *next_method;
-	int method_count;
-	struct _objc_method method_list[1];
-} _OBJC_CLASS_METHODS_SomeClass 
-  __attribute__((used, section ("__OBJC, __cls_meth")))= {
-  0, 1,
-  {
-    {
-      (SEL)"doSomethingStatic",
-      "v16@0:8",
-      (void *)_C_SomeClass_doSomethingStatic
-    }
-  }	
-};
-
-static struct _objc_class _OBJC_METACLASS_SomeClass 
-  __attribute__((used, section ("__OBJC, __meta_class")))= {
-  (struct _objc_class *)"SomeClass",
-  0,
-  "SomeClass",
-  0,
-  2,
-  sizeof(struct _objc_class),
-  0, 
-  (struct _objc_method_list *)&_OBJC_CLASS_METHODS_SomeClass,
-  0,0,0,0
-};
-
-static struct _objc_class _OBJC_CLASS_SomeClass 
-  __attribute__((used, section ("__OBJC, __class")))= {
-  &_OBJC_METACLASS_SomeClass,
-  0,
-  "SomeClass",
-  0, 1, 0, 0,
-  (struct _objc_method_list *)&_OBJC_INSTANCE_METHODS_SomeClass, 
-  0, 0, 0, 0
-};
-
 \end{verbatim}
 
-There might be a lot of ``black magic`` going on. Note that this is not a real feature of clang compiler that is meant to be used in real life. It's more of a debugging tool. If you ever decide to programmatically create Objective-C classes, you definitely won't be creating structures like in the code above, but would call appropriate run-time methods for class allocations. As you can see here in the \verb=__attribute__= annotation, these structures will be stored in the \verb=__OBJC, *= sections of the resulting Mach-O binary image. This is quite system-specific, as I will mention later on when analyzing Apple's implementation of the run-time, there are many dyld\footnote{Apple's dynamic linker, open-source as a part of Darwin - http://www.opensource.apple.com/source/dyld/)}-specific functions that get called by the linker.
-
-This saves time when loading binary images - the classes are already constructed and allocated, but is subject to change with each run-time version change.
 
 Back to the generated code, though. As you can see, there are two generated functions that correspond to the methods declared by the class \verb=SomeClass=. Their names get slightly obfuscated - \verb=_X_ClassName_method_name_= - where X is either I for instance methods or C for class methods.
 
