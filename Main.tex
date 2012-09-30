@@ -75,7 +75,7 @@ Which after removing the casting and adding a little formatting is:
 
 So it's two nested \verb=objc_msgSend= calls\footnote{There are actually specific functions for methods that return floating point numbers or structures, as these may require special ABI treatment on some architectures.}. \verb=objc_msgSend= is a method that can be said to be the core of Objective-C run-time. It's the most used function of the run-time. Every method call in Objective-C gets translated into this variadic function call, which takes \verb=self= as the first argument (i.e.\ the object that the method is called on, or the message is sent to\footnote{Here can be seen the Smalltalk influence.}), the second argument is a selector (generally the method's name) and can be followed by arguments.
 
-The run-time then looks up the object's class, finds a function that implements this method (so called \verb=IMP=) and calls it. There's a several things to point out:
+The run-time then looks up the object's class, finds a function that implements this method (so called \verb=IMP=\footnote{IMP is defined as a pointer to a function: id (*IMP)(id, SEL, ...).}) and calls it. There's a several things to point out:
 
 • method \emph{names} are used. \verb=sel_registerName= is a function that makes sure that for that particular method name only one selector pointer is kept.
 • each of the calls goes to a different object. The first call gets to something returned by \verb=objc_getClass= which returns an instance of a meta class (which is an object as well)
@@ -88,7 +88,7 @@ If you care to investigate this hierarchy, here's a small example:
 \begin{verbatim}@interface ClassWithoutSuperclass
 @end\end{verbatim}
 
-This will declare a new root class. It has absolutely no functionality - no memory management \verb=retain= and \verb=release=, no \verb=+alloc= method is declared either - you wouldn't be able to even create a new instance of this class without the run-time function \verb=class_createInstance=\footnote{This is basically why it is recommended to inherit everything from NSObject (or any other basic object class) which implements some basic communication with the run-time as well as some basic memory management, etc.}.
+This will declare a new root class. It has absolutely no functionality - no memory management \verb=retain= and \verb=release=, no \verb=+alloc= method is declared either - you wouldn't be able to even create a new instance of this class without the run-time function \verb=class_createInstance=\footnote{This is basically why it is recommended to inherit all classes from NSObject (or any other root class) which implements some basic communication with the run-time as well as some basic memory management, etc.}.
 
 Each object is a pointer to a structure. Let's use this simplified class structure (it's more complex in real life):
 
@@ -132,53 +132,39 @@ In reality, declaring a class doesn't cause the compiler to generate function ca
 
 \subsection{Translating Methods to Functions}
 
-
+As noted several times before, all Objective-C code can be rewritten in pure C code. This brings us to a question, how are the methods translated to C constructs - obviously into a function, so-called \verb=IMP=. Let's use this class to demonstrate:
 
 \begin{verbatim}
 
 @implementation SomeClass
 +(void)doSomethingStatic{
-  // Nothing to do
+  // ...
 }
--(void)secondMethod:(void*)firstArgument withTwoArguments:(int)secondArgument{
-    // Do something meaningful, at last!
-}
--(void)someMethod:(void*)firstArgument{
-    [self secondMethod:firstArgument withTwoArguments:1];
+-(void)someMethod:(void*)arg1 secondArgument:(void*)arg2{
+  // ...
 }
 @end
 
 \end{verbatim}
 
+This gets translated into two functions:
+
 \begin{verbatim}
 typedef struct objc_object SomeClass;
 
-static void _C_SomeClass_doSomethingStatic(Class self, SEL _cmd) {
-  // Nothing to do
+void _C_SomeClass_doSomethingStatic(Class self, SEL _cmd){
+  // ...
 }
 
-static void _I_SomeClass_secondMethod_withTwoArguments_
-  (SomeClass * self, SEL _cmd, void *firstArgument, 
-  int secondArgument) {
-  // Do something meaningful, at last!
+void _I_SomeClass_someMethod_secondArgument(SomeClass *self,
+                             SEL _cmd, void *arg1, void *arg2){
+  //...
 }
-
-static void _I_SomeClass_someMethod_(SomeClass * self, SEL _cmd, 
-  void *firstArgument) {
-  ((void (*)(id, SEL, void *, int))(void *)objc_msgSend)((id)self,
-     sel_registerName("secondMethod:withTwoArguments:"), 
-     (void *)firstArgument, 1);
-}
-
 \end{verbatim}
 
+As you can see, each method gets translated into a function of at least two parameters. The first argument is \verb=self= - a pointer to the object the message is being sent to. In the first case a \verb=Class= object\footnote{The Class is defined as typedef struct objc\_class *Class.}, in the second case a pointer to the \verb=SomeClass= object. The second argument, \verb=_cmd=, is the selector (\verb=SEL=). Selector is a structure that consists of just the method's name, so theoretically, it's possible to simply retype \verb=char*= to \verb=SEL=, however, shouldn't be done as the run-time requires equally named selectors to point to the same structure (that's why the \verb=sel_registerName= should be used to convert a \verb=char*= to \verb=SEL= which unifies the equally named selectors).
 
-Back to the generated code, though. As you can see, there are two generated functions that correspond to the methods declared by the class \verb=SomeClass=. Their names get slightly obfuscated - \verb=_X_ClassName_method_name_= - where X is either I for instance methods or C for class methods.
-
-First two arguments are always the same - \verb=self= and \verb=_cmd=: \verb=self= points to the object the message is being sent and \verb=_cmd= is the selector (\verb=SEL=). Selector is a structure that consists of just the method's name, so theoretically, it's possible to simply retype \verb=char*= to \verb=SEL= as is being done later on in the method lists. Selectors have generally nothing to do with the actual method implementation.
-
-The first two methods do nothing, hence are uninteresting, but the second one calls (sends a message) its own method \verb=secondMethod:withTwoArguments:=. There's a lot of retyping going on within the call, but generally a function called \verb=objc_msgSend= is called, which lies at the core of all message calls\footnote{There are actually specific functions for methods that return floating point numbers or structures, as these may require special ABI treatment on some architectures.}. The first argument of the function is just passing the \verb=self= variable, for the \verb=_cmd= argument, it uses result of \verb=sel_registerName= - the result is a \verb=SEL= and this method makes sure that for selectors with the same name, the same pointer is returned - i.e. two objects with a method with the same name get the same \verb=SEL= pointer. The third argument is quite self-explanatory.
-
+The function names get slightly obfuscated - \verb=_X_ClassName_method_name_= - where \verb=X= is either \verb=I= for instance methods or \verb=C= for class methods. As Objective-C method names can have multiple parts, each followed by a semi-colon (e.g.\ \verb=someMethod:secondArgument:=), each part gets concatenated using an underscore.
 
 \chapter{Apple's Implementation}
 \section{Limitations}
