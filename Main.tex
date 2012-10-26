@@ -167,9 +167,75 @@ As you can see, each method gets translated into a function of at least two para
 The function names get slightly obfuscated - \verb=_X_ClassName_method_name_= - where \verb=X= is either \verb=I= for instance methods or \verb=C= for class methods. As Objective-C method names can have multiple parts, each followed by a semi-colon (e.g.\ \verb=someMethod:secondArgument:=), each part gets concatenated using an underscore.
 
 \chapter{Apple's Implementation}
+
+First thing that comes across mind when studying Apple's source codes is history - there's a lot of historical code there. You can find, for example, some code from the NeXT era and a port to Windows - NeXT had a set of APIs called OpenStep (which is the predecessor of today's Cocoa on OS X), which was written in Objective-C and was aiming to run on virtually any reasonable system\footnote{http://en.wikipedia.org/wiki/OpenStep}. Also, some of Apple's own software for Windows was written in Objective-C, hence the run-time needed to be compilable under Windows as well\footnote{http://jongampark.wordpress.com/2009/02/24/safari-4-beta-for-windows/}.
+
+While the legacy code is understandable as it is required to maintain binary compatibility of all existing binaries and the portability is generally an objective of this work, neither is done in a very clean fashion.
+
+\section{Portability}
+The portability is ensured by rather large \verb=#ifdef= - \verb=#else= - \verb=#endif= statements that use macros and static inline functions to define aliases to some OS X-specific functions on Windows, such as \verb=malloc_zone_malloc= or even POSIX-specific functions, like \verb=issetguid=. I will elaborate on these two examples.
+
+\subsection{Example 1 - malloc}
+On OS X, the malloc function has an extension to support memory zones\footnote{http://developer.apple.com/library/Mac/#documentation/Darwin/Reference/
+
+ManPages/man3/malloc\_zone\_malloc.3.html} - this way you can create multiple heaps, which can get destroyed entirely at once. It has a very limited usage nowadays, but back in the day when computers had only a little memory, it was useful, to allocate temporary objects (e.g.\ during a specific calculation) in its own zone, freeing it as a whole when you are done with these objects. For example, the NSMenu, which is a class representing a menu on OS X, has a class method +menuZone which returns a zone that is used for menu allocations - as a menu is an element that gets displayed on the screen for only a short period of time, all memory used to represent it is stored in a separate zone, freeing all the memory when the menu is dismissed and hence preventing memory fragmentation.
+
+As Windows supports only the regular \verb=malloc= function, this had to be solved - and it has been solved rather radically, by defining the \verb=malloc_*= methods as static inline methods that call the Windows API functions\footnote{objc-os.h}:
+
+\begin{verbatim}
+static inline void *malloc_zone_malloc(malloc_zone_t z, 
+                                              size_t size) { 
+    return malloc(size); 
+}
+\end{verbatim}
+
+While it's functional, if Microsoft ever decided to implement zones, it would break the code. Moreover, there is another function defined in the source code\footnote{objc-class.m}:
+
+\begin{verbatim}
+void *_malloc_internal(size_t size) {
+    return malloc_zone_malloc(_objc_internal_zone(), size);
+}
+\end{verbatim}
+
+It would, of course, make much more sense to simply declare these internal functions that would pass to the actual function using #if-#else.
+
+// TODO - point to my implementation using function pointers
+
+\subsection{Example 2 - issetguid}
+The other example is how is the \verb=issetguid= function transferred to the Windows environment:
+
+\begin{verbatim}
+#define issetugid() 0
+\end{verbatim}
+
 \section{Limitations}
-// TODO
-- Bridging, 16B objects minimum.
+There are several limitations that can be found in the code.
+
+\subsection{16B Object Minimum Size}
+Apple supplies several large libraries (or as they call it frameworks), that a vast majority of applications builds upon. In particular, the CoreFoundation and Foundation.
+
+CoreFoundation, although it implements many Objective-C classes\footnote{This can be easily verified using the class-dump tool - http://www.codethecode.com/projects/class-dump/}, they are used privately and it provides only C exports and headers.
+
+On the other hand, Foundation, its counterpart, has Objective-C exports.
+
+For example, \verb=CFStringRef= is a pointer to a structure used by the CoreFoundation to represent a string. Foundation has a \verb=NSString= class, which does generally the same. In order to prevent unnecessary code duplication as well as data conversions when using CoreFoundation functions (which accept \verb=CFStringRef=) from Objective-C code, toll-free bridging has been introduced.
+
+There is an intricate mechanism behind it\footnote{You can read more about it here: http://www.mikeash.com/pyblog/friday-qa-2010-01-22-toll-free-bridging-internals.html}, but means that instances of classes that support toll-free bridging, can be simply casted to their CoreFoundation counterpart and vice versa. Using the \verb=CFStringRef=/\verb=NSString= couple, this code if fully valid:
+
+\begin{verbatim}
+NSString *myString = @"Hello World!";
+CFStringRef duplicatedString = CFStringCreateCopy(NULL, 
+                                    (CFStringRef)myString);
+NSString *duplicatedString2 = (NSString*)duplicatedString;
+\end{verbatim}
+
+While this is very convenient to every Apple developer, it poses an unexpected limitation: all object instances need to have the same minimum size as CoreFoundation ``objects" - 16 bytes.\footnote{Can be also found in a comment in objc-class.m file within the \_class\_createInstancesFromZone function.}
+
+\subsection{Dynamic Linker Support}
+
+
+\section{C++ Influences}
+
 
 \end{document}
       
