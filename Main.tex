@@ -232,9 +232,24 @@ NSString *duplicatedString2 = (NSString*)duplicatedString;
 While this is very convenient to every Apple developer, it poses an unexpected limitation: all object instances need to have the same minimum size as CoreFoundation ``objects" - 16 bytes.\footnote{Can be also found in a comment in objc-class.m file within the \_class\_createInstancesFromZone function.}
 
 \subsection{Dynamic Linker Support}
+As it's faster to simply copy the data from the binary\footnote{In particular from the \_\_OBJC section.} than to construct the classes using the run-time functions, Apple's implementation contains a set of functions that are called by the dynamic linker (\verb=dyld=) to load classes from the binary image, link them to their superclasses and to register them.
+
+This, however, adds \verb=dyld= to the list of library dependencies, which is transitively required by \verb=libSystem=\footnote{Basic system library on OS X that every application needs to be linked to.} anyway, but it adds dependencies to the code itself.
+
+Also, loading a binary image of the classes introduces and issue with binary compatibility - any change in the internal representation of a class will cause the binary not to launch.
+
+Creating classes manually using the run-time methods ensures binary compatibility, while poses a question where should be the class information stored. One option is to generate a function with a specific name that's called by the dynamic linker, or calling it manually before anything else in the \verb=main= of your program.
+
+\subsection{C++ Influences}
+The newest parts of the Objective-C run-time use many C++ features, such as methods on structures, some C++ classes, e.g. \verb=vector= and tries to unify Objective-C and C++ exceptions.
+
+While this may help to clean up the code a little, it adds additional dependencies on C++ libraries.
 
 
-\section{C++ Influences}
+\section{Summary}
+Apple's implementation is riddled with a lot of obscure code and other very specific details\footnote{For example, when the class images are stored in the \_\_OBJC binary section, the superclass field is pointing to a string containing the name of that superclass. When the run-time is connecting the images, it's casting the superclasses pointer to char*, to read the superclass name, which is not a very clean solution.}. Moreover, the documentation is very brief, not every function has a description of what it exactly does, or only has a very short note that it is used from a different function somewhere else in the code. As will be described below, the GCC version of the run-time is much better documented in this matter.
+
+\chapter{GCC Implementation}
 
 
 \end{document}
