@@ -11,11 +11,18 @@
 \contentsline {subsection}{\numberline {2.1.2}Example 2 - issetguid}{14}
 \contentsline {section}{\numberline {2.2}Limitations}{14}
 \contentsline {subsection}{\numberline {2.2.1}16B Object Minimum Size}{15}
-\contentsline {subsection}{\numberline {2.2.2}Dynamic Linker Support}{15}
+\contentsline {subsection}{\numberline {2.2.2}Dynamic Loader Support}{15}
 \contentsline {subsection}{\numberline {2.2.3}C++ Influences}{16}
 \contentsline {section}{\numberline {2.3}Summary}{16}
 \contentsline {chapter}{\numberline {3}GCC Implementation}{17}
 \contentsline {section}{\numberline {3.1}Differences from Apple's Implementation}{17}
 \contentsline {subsection}{\numberline {3.1.1}Message Sending}{17}
-\contentsline {subsection}{\numberline {3.1.2}Typed Selectors}{18}
-\contentsline {section}{\numberline {3.2}Portability}{18}
+\contentsline {subsection}{\numberline {3.1.2}Module Loading}{18}
+\contentsline {subsection}{\numberline {3.1.3}Typed Selectors}{18}
+\contentsline {section}{\numberline {3.2}Portability and Limitations}{18}
+\contentsline {chapter}{\numberline {4}Etoil\'e Run-Time}{21}
+\contentsline {section}{\numberline {4.1}Overview}{21}
+\contentsline {section}{\numberline {4.2}Inline Caching}{21}
+\contentsline {section}{\numberline {4.3}Message Sending}{22}
+\contentsline {subsection}{\numberline {4.3.1}Slots}{22}
+\contentsline {section}{\numberline {4.4}Metaclasses}{22}

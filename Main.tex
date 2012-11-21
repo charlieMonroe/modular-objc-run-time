@@ -13,9 +13,9 @@
 \title{Objective-C Run-time}
 \author{Bc. Kry\u{s}tof V\'{a}\u{s}a}
 \date{}
-\maketitle 
+\maketitle{}
 
-\tableofcontents
+\tableofcontents{}
 
 \chapter{Objective-C}
 \section{Foreword}
@@ -233,14 +233,14 @@ NSString *duplicatedString2 = (NSString*)duplicatedString;
 
 While this is very convenient to every Apple developer, it poses an unexpected limitation: all object instances need to have the same minimum size as CoreFoundation ``objects" - 16 bytes.\footnote{Can be also found in a comment in objc-class.m file within the \_class\_createInstancesFromZone function.}
 
-\subsection{Dynamic Linker Support}
-As it's faster to simply copy the data from the binary\footnote{In particular from the \_\_OBJC section.} than to construct the classes using the run-time functions, Apple's implementation contains a set of functions that are called by the dynamic linker (\verb=dyld=) to load classes from the binary image, link them to their superclasses and to register them.
+\subsection{Dynamic Loader Support}
+As it's faster to simply copy the data from the binary\footnote{In particular from the \_\_OBJC section.} than to construct the classes using the run-time functions, Apple's implementation contains a set of functions that are called by the dynamic loader (\verb=dyld=) to load classes from the binary image, link them to their superclasses and to register them.
 
 This, however, adds \verb=dyld= to the list of library dependencies, which is transitively required by \verb=libSystem=\footnote{Basic system library on OS X that every application needs to be linked to.} anyway, but it adds dependencies to the code itself.
 
 Also, loading a binary image of the classes introduces and issue with binary compatibility - any change in the internal representation of a class will cause the binary not to launch.
 
-Creating classes manually using the run-time methods ensures binary compatibility, while poses a question where should be the class information stored. One option is to generate a function with a specific name that's called by the dynamic linker, or calling it manually before anything else in the \verb=main= of your program.
+Creating classes manually using the run-time methods ensures binary compatibility, while poses a question where should be the class information stored. One option is to generate a function with a specific name that's called by the dynamic loader, or calling it manually before anything else in the \verb=main= of your program.
 
 \subsection{C++ Influences}
 The newest parts of the Objective-C run-time use many C++ features, such as methods on structures, some C++ classes, e.g. \verb=vector= and tries to unify Objective-C and C++ exceptions.
@@ -283,6 +283,36 @@ While it is a nice idea to bring a little more type-safety into the Objective-C 
 
 The portability of the run-time is its only limitation and is defined simply: it requires a POSIX layer\footnote{On non-POSIX systems, it requires an additional POSIX layer, for example, on Windows, it requires Cygwin or MinGW.}. Most of the files import at least one POSIX file, usually \verb=<string.h>= for \verb=memcpy= function and its relatives.
 
-Another issue is that it relies on the \verb=gthread= library instead of\verb=pthread=. All threading support in this run-time is just a wrapper around \verb=gthread= that are part of GCC. While this allows some more efficient threading support on systems that natively do not use \verb=pthread= structures, it ties the run-time to GCC.
+Another issue is that it relies on the \verb=gthread= library instead of\verb=pthread=. All threading support in this run-time is just a wrapper around \verb=gthread= that are part of GCC. While this allows some more efficient threading support on systems that natively do not use \verb=pthread= structures, it ties the run-time to GCC. Also, the run-time uses thread-local storage using \verb=__thread= keyword, which isn't supported on all systems as it requires support from the linker, dynamic loader and system libraries\footnote{http://gcc.gnu.org/onlinedocs/gcc-4.3.2/gcc/Thread\_002dLocal.html}.
+
+\chapter{Etoil\'e Run-Time}
+\section{Overview}
+
+Unlike the previously described run-times, the Etoil\'e run-time tackles the task of providing a run-time from a totally different angle. While the other implementations simply aim to create a traditional Objective-C run-time, where Apple chooses to keep almost all of the original API for its Objective-C 2.0, Etoil\'e run-time tries to create a very generic run-time that can be used with many other languages as well.
+
+This task, however, required to start from scratch and leave all compatibility behind. As the author notes, the run-time itself was never standardized, unlike the language, so a person shouldn't rely that much on it.
+
+The source code of this run-time is much shorter than the other implementations\footnote{According to the author the run-time is just 15\% of the size of GCC's implementation, however, this run-time doesn't currently provide some of the modern features of run-times.}, however, its extensive use of macros makes it less readable, at least for me.
+
+\section{Inline Caching}
+Using monomorphic or polymorphic inline caching, the author was able to achieve impressive speeds, reducing the method call time to only twice the time of a pure C function call, even faster than the C++ method calls are.
+
+With every dynamic object-oriented language, a question arises, how to fetch the function that implements a method. This lookup function is usually the critical part of the run-time's performance. As this lookup is expensive, all of the run-times described here use some caching mechanisms.
+
+Imagine your class \verb=FCButton=, which is a subclass of \verb=NSButton=, which is a subclass of \verb=NSControl=, \verb=NSView=, \verb=NSResponder=, \verb=NSObject=. If the dispatch had to lookup each method, for example the very commonly used \verb=retain= and \verb=release=, which are implemented most likely just in the \verb=NSObject= root class, the lookup function would have to climb the whole class hierarchy, until it found the method implementation - the \verb=IMP= pointer.
+
+For this, cache has been introduced. Both Apple's and GCC's run-times have a cache, often called dispatch table - when the user wants to call a method, the run-time needs to look up the function pointer. First, it looks into the cache (which usually is fast), returns it, if it has been found, otherwise looks up the function pointer in the class hierarchy and saves it into the cache for further use.
+
+An issue here is that when the implementation of a method in some class is changed, all cache entries with the original function pointer need to be removed. The same applies when a new module has been loaded with a class category - a category may replace already existing method of that class.
+
+But even this lookup costs something - there's at least one C function call to fetch the data from the cache, plus the actual fetching from the cache. The approach of Etoil\'e run-time is to generate inline caches. Inline caches are static structures, prefixed with the \verb=__thread=\footnote{As noted above, this is a GCC extension, that needs support from the OS.}, so that each thread has its own cache. Granted, the cache this run-time offers is very limited size-wise, but it can speed up significantly a tight loop in which the same method is called on an object. 
+
+// TODO Explain more 
+
+\section{Message Sending}
+
+\subsection{Slots}
+
+\section{Metaclasses}
 
 \end{document}
