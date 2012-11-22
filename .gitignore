@@ -17,14 +17,9 @@ profile
 # OS X
 .DS_Store
 
-Main.aux
-
-Main.pdf
-
-Main.blg
-
-Main.log
-
-Main.bbl
-
-Main.synctex.gz
+*.aux
+*.pdf
+*.blg
+*.log
+*.bbl
+*.synctex.gz
