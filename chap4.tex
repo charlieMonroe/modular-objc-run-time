@@ -1,0 +1,93 @@
+\chapter{\'Etoil\'e / GNUstep}
+\section{\'Etoil\'e}
+
+\'Etoil\'e is an experimental run-time written by David Chisnall, a research assistant in computer science at Swansea University. It has been written as a part of his paper called \emph{A Modern Objective-C Runtime}\footnote{http://www.jot.fm/issues/issue\_2009\_01/article4/index.html}. Even though it is not a real-world run-time (i.e.\ no compiler supports it), it has introduced quite a few interesting ideas how to speed up the method lookup time as well as make the run-time more generic.
+
+Unlike the previously described run-times, the \'Etoil\'e run-time tackles the task of providing a run-time from a totally different angle. While the other implementations simply aim to create a traditional Objective-C run-time, where Apple chooses to keep almost all of the original API for its Objective-C 2.0, \'Etoil\'e run-time tries to create a very generic run-time that could be used with many other languages as well, which would result in a very easy language bridging\footnote{A mechanism, where objects from one language can be interacted with from another language.}.
+
+This task, however, required to start from scratch and leave all compatibility behind. As the author notes, the run-time itself was never standardized, unlike the language, so a person shouldn't rely that much on it. Hence all the \verb=objc_msgSend=, \verb=objc_getClass=, \verb=sel_registerName= are not available in this run-time. The data structures are modified, or completely missing - for example \verb=SEL= is defined as a \verb=uint32_t=, which is a hash for an internal representation of the selector, which is a \verb=objc_selector= structure, which contains name and a type string, like in GCC's run-time. 
+
+The source code of this run-time is much shorter than the other implementations\footnote{According to the author the run-time is just 15\% of the size of GCC's implementation, however, this run-time doesn't currently provide some of the modern features of run-times.}, however, its extensive use of macros makes it less readable, at least for me.
+
+\subsection{Slots}
+Instead of defining methods, the more generic approach is to define slots. A slot is the basic type for message lookup, a structure containing five fields: \verb=int offset=, \verb=IMP method=, \verb=char *types=, \verb=void *context= and \verb=uint32_t version=. This allows the run-time to store both properties and methods using a single structure: as the properties, introduced in Objective-C 2.0 run-time, are just wrappers around automatically generated getter and setter methods, this approach allows to define a property simply using a slot that has a defined \verb=offset= field, which servers as a number of bytes after the beginning of the object is that variable stored. By setting the \verb=method= field of the slot, the slot functions like a regular method.
+
+As I have mentioned, the run-time was built to meet needs of other languages as well, for example JavaScript (and other prototype-based languages), where you can dynamically add variables to an object. This can be done by adding a slot, which will then hold the value as well - in the \verb=context= field of the structure.
+
+Whenever the structure gets updated (\verb=IMP= is changed, etc.), the version is increased. This is important later on for caching.
+
+
+\subsection{Inline Caching}
+Using monomorphic or polymorphic inline caching, the author of Etoilé run-time was able to achieve impressive speeds, reducing the method call time to only twice the time of a pure C function call, even faster than the C++ method calls are.
+
+With every dynamic object-oriented language, a question arises, how to fetch the function that implements a method. This lookup function is usually the critical part of the run-time's performance. As this lookup is expensive, all of the run-times described here use some caching mechanisms.
+
+Imagine your class \verb=FCButton=, which is a subclass of \verb=NSButton=, which is a subclass of \verb=NSControl=, \verb=NSView=, \verb=NSResponder=, \verb=NSObject=. If the dispatch had to lookup each method, for example the very commonly used \verb=retain= and \verb=release=, which are implemented most likely just in the \verb=NSObject= root class, the lookup function would have to climb the whole class hierarchy, until it found the method implementation - the \verb=IMP= pointer.
+
+For this, cache has been introduced. Both Apple's and GCC's run-times have a cache, often called dispatch table - when the user wants to call a method, the run-time needs to look up the function pointer. First, it looks into the cache (which usually is fast), returns it, if it has been found, otherwise looks up the function pointer in the class hierarchy and saves it into the cache for further use.
+
+An issue here is that when the implementation of a method in some class is changed, all cache entries with the original function pointer need to be removed. The same applies when a new module has been loaded with a class category - a category may replace already existing method of that class.
+
+But even this lookup costs something - there's at least one C function call to fetch the data from the cache, plus the actual fetching from the cache. The approach of Etoil\'e run-time is to generate inline caches.
+
+Every time a method is supposed to be called, the following lookup macro is applied\footnote{This example uses the monomorphic cache. Unless you assume the same message will sent to objects of different classes, it is well sufficient. The polymorphic cache may be useful for class clusters (for example, NSString - which can be of multiple different classes, depending whether it's a constant string, created by run-time, etc.), or if you are expecting subclasses of the variable type class to be passed as well. }:
+
+\begin{verbatim}
+#define SLOT_LOOKUP_MIC(obj, sel_name, sel_types, sender, action)\
+do\
+{\
+    static SEL selector = 0;\
+    struct objc_slot * slot;\
+    if(selector == 0)\
+    {\
+        selector = lookup_typed_selector(sel_name, sel_types);\
+    }\
+    static __thread struct inline_cache_line cache;\
+    if(cache.slot != NULL \
+        &&\
+        cache.type == (id)obj->isa\
+        &&\
+        cache.version == cache.slot->version)\
+    {\
+        slot = cache.slot;\
+    }\
+    else\
+    {\
+        id object = (id)obj;\
+        slot = slot_lookup(&obj, selector, sender);\
+        if(obj == object)\
+        {\
+            cache.version = slot->version;\
+            cache.slot = slot;\
+            cache.type = obj->isa;\
+        }\
+    }\
+    struct objc_call call = { slot, selector, sender };\
+    action\
+} while(0)
+\end{verbatim}
+
+
+Inline caches are static \verb=__thread=\footnote{As noted above, this is a GCC extension, that needs support from the OS.} structures, so that each thread has its own cache. This static cache is created for every place in the code, where an method is called. The selector itself is cached, so no lookup is needed for it either. Then the cache is checked if it is filled with this object's class\footnote{I.e. this place in the code has been visited before, but the object has been of another class before - a polymorphic cache should be used here instead.} and the version matches the slot's version - if the slot has been modified since, the cache is invalidated.
+
+\subsection{Message Sending}
+
+The traditional message sending, where the method gets translated into a function with the first parameter \verb=self= and the second one \verb=_cmd= has been abandoned for a slightly more complicated, yet more flexible call:
+
+\begin{verbatim}
+typedef struct objc_call {
+  SLOT slot;
+  SEL selector;
+  id sender;
+} *CALL;
+#define _cmd (_call->selector)
+id method(id self, CALL _call, ...);
+\end{verbatim}
+
+This extends the original simple \verb=_cmd= of type \verb=SEL=: it adds a more context to the call, which can be used to implement a private inner class, for example, which determines with each call that the \verb=sender= is indeed its parent class.
+
+\subsection{Tags}
+
+\subsection{Metaclasses}
+
+Thanks to the slot-based approach, it was easy to 0

@@ -1,0 +1,82 @@
+\chapter{Apple's Implementation}
+
+First thing that comes across mind when studying Apple's source codes is history - there's a lot of historical code there. You can find, for example, some code from the NeXT era and a port to Windows - NeXT had a set of APIs called OpenStep (which is the predecessor of today's Cocoa on OS X), which was written in Objective-C and was aiming to run on virtually any reasonable system\footnote{http://en.wikipedia.org/wiki/OpenStep}. Also, some of Apple's own software for Windows was written in Objective-C, hence the run-time needed to be compilable under Windows as well\footnote{http://jongampark.wordpress.com/2009/02/24/safari-4-beta-for-windows/}.
+
+While the legacy code is understandable as it is required to maintain binary compatibility of all existing binaries and the portability is generally an objective of this work, neither is done in a very clean fashion.
+
+\section{Portability}
+The portability is ensured by rather large \verb=\#ifdef= - \verb=\#else= - \verb=#endif= statements that use macros and static inline functions to define aliases to some OS X-specific functions on Windows, such as \verb=malloc_zone_malloc= or even POSIX-specific functions, like \verb=issetguid=. I will elaborate on these two examples.
+
+\subsection{Example 1 - malloc}
+On OS X, the malloc function has an extension to support memory zones\footnote{http://developer.apple.com/library/Mac/\#documentation/Darwin/Reference/
+
+ManPages/man3/malloc\_zone\_malloc.3.html} - this way you can create multiple heaps, which can get destroyed entirely at once. It has a very limited usage nowadays, but back in the day when computers had only a little memory, it was useful, to allocate temporary objects (e.g.\ during a specific calculation) in its own zone, freeing it as a whole when you are done with these objects. For example, the NSMenu, which is a class representing a menu on OS X, has a class method +menuZone which returns a zone that is used for menu allocations - as a menu is an element that gets displayed on the screen for only a short period of time, all memory used to represent it is stored in a separate zone, freeing all the memory when the menu is dismissed and hence preventing memory fragmentation.
+
+As Windows supports only the regular \verb=malloc= function, this had to be solved - and it has been solved rather radically, by defining the \verb=malloc_*= methods as static inline methods that call the Windows API functions\footnote{objc-os.h}:
+
+\begin{verbatim}
+static inline void *malloc_zone_malloc(malloc_zone_t z, 
+                                              size_t size) { 
+    return malloc(size); 
+}
+\end{verbatim}
+
+While it's functional, if Microsoft ever decided to implement zones, it would break the code. Moreover, there is another function defined in the source code\footnote{objc-class.m}:
+
+\begin{verbatim}
+void *_malloc_internal(size_t size) {
+    return malloc_zone_malloc(_objc_internal_zone(), size);
+}
+\end{verbatim}
+
+It would, of course, make much more sense to simply declare these internal functions that would pass to the actual function using #if-#else.
+
+// TODO - point to my implementation using function pointers
+
+\subsection{Example 2 - issetguid}
+The other example is how is the \verb=issetguid= function transferred to the Windows environment:
+
+\begin{verbatim}
+#define issetugid() 0
+\end{verbatim}
+
+\section{Limitations}
+There are several limitations that can be found in the code.
+
+\subsection{16B Object Minimum Size}
+Apple supplies several large libraries (or as they call it frameworks), that a vast majority of applications builds upon. In particular, the CoreFoundation and Foundation.
+
+CoreFoundation, although it implements many Objective-C classes\footnote{This can be easily verified using the class-dump tool - http://www.codethecode.com/projects/class-dump/}, they are used privately and it provides only C exports and headers.
+
+On the other hand, Foundation, its counterpart, has Objective-C exports.
+
+For example, \verb=CFStringRef= is a pointer to a structure used by the CoreFoundation to represent a string. Foundation has a \verb=NSString= class, which does generally the same. In order to prevent unnecessary code duplication as well as data conversions when using CoreFoundation functions (which accept \verb=CFStringRef=) from Objective-C code, toll-free bridging has been introduced.
+
+There is an intricate mechanism behind it\footnote{You can read more about it here: http://www.mikeash.com/pyblog/friday-qa-2010-01-22-toll-free-bridging-internals.html}, but means that instances of classes that support toll-free bridging, can be simply casted to their CoreFoundation counterpart and vice versa. Using the \verb=CFStringRef=/\verb=NSString= couple, this code if fully valid:
+
+\begin{verbatim}
+NSString *myString = @"Hello World!";
+CFStringRef duplicatedString = CFStringCreateCopy(NULL, 
+                                    (CFStringRef)myString);
+NSString *duplicatedString2 = (NSString*)duplicatedString;
+\end{verbatim}
+
+While this is very convenient to every Apple developer, it poses an unexpected limitation: all object instances need to have the same minimum size as CoreFoundation ``objects" - 16 bytes.\footnote{Can be also found in a comment in objc-class.m file within the \_class\_createInstancesFromZone function.}
+
+\subsection{Dynamic Loader Support}
+As it's faster to simply copy the data from the binary\footnote{In particular from the \_\_OBJC section.} than to construct the classes using the run-time functions, Apple's implementation contains a set of functions that are called by the dynamic loader (\verb=dyld=) to load classes from the binary image, link them to their superclasses and to register them.
+
+This, however, adds \verb=dyld= to the list of library dependencies, which is transitively required by \verb=libSystem=\footnote{Basic system library on OS X that every application needs to be linked to.} anyway, but it adds dependencies to the code itself.
+
+Also, loading a binary image of the classes introduces and issue with binary compatibility - any change in the internal representation of a class will cause the binary not to launch.
+
+Creating classes manually using the run-time methods ensures binary compatibility, while poses a question where should be the class information stored. One option is to generate a function with a specific name that's called by the dynamic loader, or calling it manually before anything else in the \verb=main= of your program.
+
+\subsection{C++ Influences}
+The newest parts of the Objective-C run-time use many C++ features, such as methods on structures, some C++ classes, e.g. \verb=vector= and tries to unify Objective-C and C++ exceptions.
+
+While this may help to clean up the code a little, it adds additional dependencies on C++ libraries.
+
+
+\section{Summary}
+Apple's implementation is riddled with a lot of obscure code and other very specific details\footnote{For example, when the class images are stored in the \_\_OBJC binary section, the superclass field is pointing to a string containing the name of that superclass. When the run-time is connecting the images, it's casting the superclasses pointer to char*, to read the superclass name, which is not a very clean solution.}. Moreover, the documentation is very brief, not every function has a description of what it exactly does, or only has a very short note that it is used from a different function somewhere else in the code. As will be described below, the GCC version of the run-time is much better documented in this matter.
