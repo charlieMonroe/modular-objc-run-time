@@ -1,12 +1,12 @@
-#include "function-types.h"
+/*
+ * This file contains functions and structures that are meant for the run-time
+ * setup and initialization.
+ */
 
-typedef signed char BOOL;
-#define YES ((BOOL)1)
-#define NO ((BOOL)0)
+#ifndef OBJC_RUNTIME_H_
+#define OBJC_RUNTIME_H_
 
-#ifndef NULL
-	#define NULL ((void*)0)
-#endif
+#include "function-types.h" // For function types in the struct
 
 /**
  * A structure that defines the run-time setup. This means all functions that
@@ -41,11 +41,12 @@ extern void objc_runtime_get_setup(objc_runtime_setup_struct *setup);
  * within the setup structure.
  */
 
-// A macro for creating declares
+// A macro for creating function declarations
 #define objc_runtime_create_getter_setter_function_decls(type, name)\
-	 extern void objc_runtime_set_##name(type *name);\
+	 extern void objc_runtime_set_##name(type name);\
 	 extern type objc_runtime_get_##name(void);
 
 objc_runtime_create_getter_setter_function_decls(objc_allocator, allocator);
 objc_runtime_create_getter_setter_function_decls(objc_abort, abort);
 
+#endif //OBJC_RUNTIME_H_

@@ -1,6 +1,9 @@
-// Include both its counterparts
-#include "runtime.h"
-#include "runtime-private.h"
+/*
+ * This file implements initialization and setup functions of the run-time.
+ */
+
+#include "runtime-private.h" // The public header is included here
+#include "types.h" // For BOOL, YES and NO
 
 // This is marked during objc_init() as YES. After that point, no modifications
 // to the setup may be made.
@@ -13,9 +16,9 @@ objc_runtime_setup_struct objc_setup;
 void objc_runtime_set_setup(objc_runtime_setup_struct *setup){
 	// Check if either setup is NULL or the run-time has been already 
 	// initialized - if so, we need to abort
-	if (setup == NULL) {
+	if (setup == OBJC_NULL) {
 		// At this point, the abort function doesn't have to be set.
-		if (objc_setup.abort != NULL){
+		if (objc_setup.abort != OBJC_NULL){
 			objc_setup.abort("Cannot pass NULL setup!");
 		}else{
 			return;
@@ -32,7 +35,7 @@ void objc_runtime_set_setup(objc_runtime_setup_struct *setup){
 
 // See header for documentation
 void objc_runtime_get_setup(objc_runtime_setup_struct *setup){
-	if (setup != NULL){
+	if (setup != OBJC_NULL){
 		*setup = objc_setup;
 	}
 }
@@ -41,7 +44,7 @@ void objc_runtime_get_setup(objc_runtime_setup_struct *setup){
 
 // A macro that creates the getter and setter function bodies.
 #define objc_runtime_create_getter_setter_function_body(type, name)\
-	void objc_runtime_set_##name(type *name){\
+	void objc_runtime_set_##name(type name){\
 		if (objc_runtime_has_been_initialized){\
 			objc_setup.abort("Cannot modify the run-time " #name " after the " 				"run-time has been initialized");\
 		}\
