@@ -1,5 +1,5 @@
-\chapter{\'Etoil\'e / GNUstep}
-\section{\'Etoil\'e}
+\chapter{\'Etoil\'e}
+\section{What is \'Etoil\'e}
 
 \'Etoil\'e is an experimental run-time written by David Chisnall, a research assistant in computer science at Swansea University. It has been written as a part of his paper called \emph{A Modern Objective-C Runtime}\footnote{http://www.jot.fm/issues/issue\_2009\_01/article4/index.html}. Even though it is not a real-world run-time (i.e.\ no compiler supports it), it has introduced quite a few interesting ideas how to speed up the method lookup time as well as make the run-time more generic.
 
@@ -68,7 +68,7 @@ do\
 \end{verbatim}
 
 
-Inline caches are static \verb=__thread=\footnote{As noted above, this is a GCC extension, that needs support from the OS.} structures, so that each thread has its own cache. This static cache is created for every place in the code, where an method is called. The selector itself is cached, so no lookup is needed for it either. Then the cache is checked if it is filled with this object's class\footnote{I.e. this place in the code has been visited before, but the object has been of another class before - a polymorphic cache should be used here instead.} and the version matches the slot's version - if the slot has been modified since, the cache is invalidated.
+Inline caches are static \verb=__thread=\footnote{As noted above, this is a GCC extension, that needs support from the OS.} structures, so that each thread has its own cache. This static cache is created for every place in the code, where an method is called. The selector itself is cached, so no lookup is needed for it either. Then the cache is checked if it is filled with this object's class\footnote{I.e.\ this place in the code has been visited before, but the object has been of another class before - a polymorphic cache should be used here instead.} and the version matches the slot's version - if the slot has been modified since, the cache is invalidated.
 
 \subsection{Message Sending}
 
@@ -88,6 +88,15 @@ This extends the original simple \verb=_cmd= of type \verb=SEL=: it adds a more 
 
 \subsection{Tags}
 
+Each object has a couple of tags - additional fields that aren't declared by the object itself. In particular, each object has its own mutex, refcount\footnote{Number of references - used for reference-based memory management.}, size, slots and lookup function.
+
+As each object has its own mutex, unlike Apple's and GCC's run-times, where a pool of locks\footnote{For each object a hash is computed, which determines which lock should be used. If it is already taken by another object, another lock is used. The pool is claimed to be big enough, though, that in regular situations no contention is encountered.} is used to minimize memory usage as well as the cost related to initializing a recursive mutex, even though some systems have lazy-initialization available. This, however, decreases the contention to none at all.
+
+Each object also has its own dispatch table, unlike the other run-times, where the dispatch table is directly at the class. This allows to change the dispatch object-based, i.e. switching method implementations for just one object, adding a method for just one object, etc.
+
+This leads to the last interesting tag, which is a lookup function. A lookup function is a function that goes through the dispatch table of the object and looks for the implementation of a method you want to call. Here, you can change the lookup function simply on an per-object basis, which allows to implement proxy objects very efficiently, making proxy calls virtually the same speed as direct calls.
+
 \subsection{Metaclasses}
 
-Thanks to the slot-based approach, it was easy to 0
+Another difference between the \'Etoil\'e run-time and the others is the lack of metaclasses. The class methods are simply put into a dispatch table directly on the class. In the traditional run-time, the instance methods have a dispatch table on the class, class methods are instance methods of its metaclass. Here, the dispatch table of instance methods is installed directly into the object, while the class methods have a dispatch table on the class itself. Hence no metaclasses are needed in this run-time.
+

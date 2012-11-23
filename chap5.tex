@@ -1,0 +1,28 @@
+\chapter{Modular Run-Time}
+\section{Objectives}
+
+The main objective of this work is to create a prototype of a run-time that will have no dependencies on any external libraries, not even the POSIX ones, allowing the developer to set up his own run-time from different modules.
+
+Also, no constructs that require OS support (dynamic loader, standard OS libraries, etc.) will be used. Such constructs include \verb=static __thread= (which creates a new copy of the variable declared for each thread created) or \newline \verb=__attribute__((constructor))= (which marks the function to be called by the dynamic loader right after the bundle has been loaded).
+
+This will, however, require for example the user to call some run-time initializing functions as they won't get called by the dynamic loader. On systems that do support the constructor functions, this can be easily avoided by compiling the run-time with an additional file which will declare and implement a constructor 
+
+\subsection{Example 1: Lock-less run-time}
+In a single-threaded application, there is no need for any locking whatsoever. All of the existing implementations require some locking, even though they are trying to use lock-free structures, such as sparse arrays that do not support deleting.
+
+But even so, any \verb=@synchronized(obj)= code is translated to actually lock a mutex associated with \verb=obj=, be it either a mutex from a lock pool in the traditional run-times, or a mutex that is associated just with \verb=obj= in the \'Etoil\'e run-time. This can speed up both loading of the application and code execution.
+
+\subsection{Example 2: Kernel usage}
+
+To get the existing run-times working in a kernel of an operating system might be tricky, depending on how much is the kernel POSIX-compatible. But even so, the \verb=malloc= functions and others usually are just wrappers around kernel allocators, which slows down allocation of all structures within the run-time.
+
+Using the modular run-time it will be possible to change the allocator with a simple function-pointer assignment.
+
+
+\subsection{Example 3: Benchmarking}
+
+The modularity that will be introduced by this work will allow anyone to explore changes in the speed of the run-time simply by changing internal data structures used to hold the class list, selector list and caching. This may help the future development of the run-time.
+
+
+\section{Run-time Setup}
+
