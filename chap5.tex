@@ -35,6 +35,11 @@ You can view the structure here:
 typedef struct {
   objc_abort abort;
   objc_allocator allocator;
+  struct {
+    objc_class_holder_creator creator;
+    objc_class_holder_destroyer destroyer;
+    objc_class_holder_lookup lookup;
+  } class_holder;
 } objc_runtime_setup_struct;
 \end{verbatim}
 
@@ -42,15 +47,27 @@ This allows the modularity of the run-time. One can, at the beginning of his pro
 
 A description of each of those functions follows:
 
-\subsection{Allocator}
+\subsection{Abort}
+
+It is commonly said that there is no software without bugs - hence it is sometimes necessary to abort the program execution if the program gets into an inconsistent point, or a point where illegal arguments are passed to the environment (for example, setting the run-time setup structure to NULL).
+
+\subsection{Allocator, Deallocator, Reallocator and Zero-allocator}
 
 As the run-time needs new memory for dynamic object creation, an allocator is needed. All existing run-times use \verb=malloc=, which, however, ties them to Unix-based operating systems.
 
 The Modular Run-Time lets you specify your own allocator, which can be, for example, just a wrapper around \verb=malloc= adding some debug logging, or a completely different allocator, e.g.\ a kernel allocator as has been mentioned before. It can also be just the \verb=malloc= function itself, as the function type takes just one argument - the size of the memory required and returns a \verb=void*= pointer.
 
-\subsection{Abort}
+Sometimes, the memory acquired should be filled with zeros - just as the \verb=calloc= function would do, however, it is called \verb=objc_zero_allocator\ zero_allocator= in this run-time. The \verb=calloc= function can be assigned, however.
 
-It is commonly said that there is no software without bugs - hence it is sometimes necessary to abort the program execution if the program gets into an inconsistent point, or a point where illegal arguments are passed to the environment (for example, setting the run-time setup structure to NULL).
+For dynamically growing structures, reallocation may be needed - hence the inclusion of the reallocating function. It is pointer-compatible with the \verb=realloc= function.
+
+When the run-time is done with memory it has allocated, it will deallocate it using the deallocate function, which has the same signature as the POSIX \verb=free= function.
+
+\subsection{Arrays}
+
+A lot of the code of the traditional run-times is riddled with code that is takes care of consistency of dynamically growing arrays (or rather arrays of arrays) - there's a lot of duplicate code for functions related to lists of methods, protocols, etc.\ on each class.
+
+This run-time declares a \verb=objc_array= type, which is again just a retyped \verb=void*=, but can be implemented any possible way. The implementation includes a working implementation of such an array and installs these function pointers at initialization, unless other pointers are provided. 
 
 
 \subsection{Class Holder}

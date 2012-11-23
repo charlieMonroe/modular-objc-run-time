@@ -36,8 +36,14 @@ typedef struct objc_object {
  
 // A definition for a class holder - a data structure that is responsible for
 // keeping a list of classes registered with the run-time, looking them up, etc.
-typedef void* objc_class_holder;
+typedef void *objc_class_holder;
 
+// A definition for a dynamically growing array structure. The easiest 
+// implementation is to create a structure which includes a counter of objects,
+// size of the array, and a dynamically allocated C-array of inserted pointers.
+// It is used to keep arrays of methods, protocols, etc. on a class.
+// This run-time provides a default implementation of such an array.
+typedef void *objc_array;
 
 
 #endif // OBJC_TYPES_H_
