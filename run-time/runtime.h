@@ -17,6 +17,12 @@
 typedef struct {
 	objc_abort abort;
 	objc_allocator allocator;
+	struct {
+		objc_class_holder_creator creator;
+		objc_class_holder_destroyer destroyer;
+		objc_class_holder_lookup lookup;
+	} class_holder;
+	
 } objc_runtime_setup_struct;
 
 
@@ -48,5 +54,8 @@ extern void objc_runtime_get_setup(objc_runtime_setup_struct *setup);
 
 objc_runtime_create_getter_setter_function_decls(objc_allocator, allocator);
 objc_runtime_create_getter_setter_function_decls(objc_abort, abort);
+objc_runtime_create_getter_setter_function_decls(objc_class_holder_creator, class_holder_creator);
+objc_runtime_create_getter_setter_function_decls(objc_class_holder_destroyer, class_holder_destroyer);
+objc_runtime_create_getter_setter_function_decls(objc_class_holder_lookup, class_holder_lookup);
 
 #endif //OBJC_RUNTIME_H_

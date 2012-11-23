@@ -3,7 +3,6 @@
  */
 
 #include "runtime-private.h" // The public header is included here
-#include "types.h" // For BOOL, YES and NO
 
 // This is marked during objc_init() as YES. After that point, no modifications
 // to the setup may be made.
@@ -43,18 +42,21 @@ void objc_runtime_get_setup(objc_runtime_setup_struct *setup){
 /********** Getters and setters. ***********/
 
 // A macro that creates the getter and setter function bodies.
-#define objc_runtime_create_getter_setter_function_body(type, name)\
+#define objc_runtime_create_getter_setter_function_body(type, name, struct_path)\
 	void objc_runtime_set_##name(type name){\
 		if (objc_runtime_has_been_initialized){\
 			objc_setup.abort("Cannot modify the run-time " #name " after the "\
 				 				"run-time has been initialized");\
 		}\
-	    objc_setup.name = name;\
+	    objc_setup.struct_path = name;\
 	}\
 	type objc_runtime_get_##name(void){ \
-		return objc_setup.name; \
+		return objc_setup.struct_path; \
 	}
 
-objc_runtime_create_getter_setter_function_body(objc_allocator, allocator);
-objc_runtime_create_getter_setter_function_body(objc_abort, abort);
+objc_runtime_create_getter_setter_function_body(objc_allocator, allocator, allocator)
+objc_runtime_create_getter_setter_function_body(objc_abort, abort, abort)
+objc_runtime_create_getter_setter_function_body(objc_class_holder_creator, creator, class_holder.creator)
+objc_runtime_create_getter_setter_function_body(objc_class_holder_destroyer, destroyer, class_holder.destroyer)
+objc_runtime_create_getter_setter_function_body(objc_class_holder_lookup, lookup, class_holder.lookup)
 

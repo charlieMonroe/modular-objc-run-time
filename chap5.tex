@@ -3,7 +3,7 @@
 
 The main objective of this work is to create a prototype of a run-time that will have no dependencies on any external libraries, not even the POSIX ones, allowing the developer to set up his own run-time from different modules.
 
-Also, no constructs that require OS support (dynamic loader, standard OS libraries, etc.) will be used. Such constructs include \verb=static __thread= (which creates a new copy of the variable declared for each thread created) or \newline \verb=__attribute__((constructor))= (which marks the function to be called by the dynamic loader right after the bundle has been loaded).
+Also, no constructs that require OS support (dynamic loader, standard OS libraries, etc.) will be used. Such constructs include \verb=static\ __thread= (which creates a new copy of the variable declared for each thread created) or \newline{} \verb=__attribute__((constructor))= (which marks the function to be called by the dynamic loader right after the bundle has been loaded).
 
 This will, however, require for example the user to call some run-time initializing functions as they won't get called by the dynamic loader. On systems that do support the constructor functions, this can be easily avoided by compiling the run-time with an additional file which will declare and implement a constructor 
 
@@ -51,3 +51,11 @@ The Modular Run-Time lets you specify your own allocator, which can be, for exam
 \subsection{Abort}
 
 It is commonly said that there is no software without bugs - hence it is sometimes necessary to abort the program execution if the program gets into an inconsistent point, or a point where illegal arguments are passed to the environment (for example, setting the run-time setup structure to NULL).
+
+
+\subsection{Class Holder}
+
+The run-time needs to keep track of all classes that are registered with it. To do so, it needs to keep a list in some data structure. As the run-time is designed to be flexible, it doesn't matter what data structure at all.
+
+There is a defined data type \verb=objc_class_holder= which, however, is only a redefined \verb=void*=. Using the run-times function pointers \verb=class_holder.creator=, \verb=class_holder.destroyer=, \verb=class_holder.lookup= and TODO, the run-time creates the data structure required, has means to destroy it, lookup a class according to its name and TODO.
+
