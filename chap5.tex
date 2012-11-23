@@ -26,3 +26,28 @@ The modularity that will be introduced by this work will allow anyone to explore
 
 \section{Run-time Setup}
 
+At the core of the run-time, there is a structure \verb=objc_runtime_setup_struct objc_setup= - while the user has no direct access to this structure, the run-time itself can access it directly for the sake of the speed, to eliminate unnecessary function calls that would serve just as proxy calls.
+
+You can view the structure here:
+
+\begin{verbatim}
+  // TODO: paste the final structure when available
+typedef struct {
+  objc_abort abort;
+  objc_allocator allocator;
+} objc_runtime_setup_struct;
+\end{verbatim}
+
+This allows the modularity of the run-time. One can, at the beginning of his program, modify all of those pointers using setter functions declared in \verb=runtime.h=. After the runtime has been initialized, however, the whole structure is sealed from changes using those setter functions to prevent any data corruption (as some data structures may be already initialized, changing these functions could lead to bad memory access, etc.). Using any of the setter functions after the run-time has been initialized will lead to a crash of the program (using the abort function supplied).
+
+A description of each of those functions follows:
+
+\subsection{Allocator}
+
+As the run-time needs new memory for dynamic object creation, an allocator is needed. All existing run-times use \verb=malloc=, which, however, ties them to Unix-based operating systems.
+
+The Modular Run-Time lets you specify your own allocator, which can be, for example, just a wrapper around \verb=malloc= adding some debug logging, or a completely different allocator, e.g.\ a kernel allocator as has been mentioned before. It can also be just the \verb=malloc= function itself, as the function type takes just one argument - the size of the memory required and returns a \verb=void*= pointer.
+
+\subsection{Abort}
+
+It is commonly said that there is no software without bugs - hence it is sometimes necessary to abort the program execution if the program gets into an inconsistent point, or a point where illegal arguments are passed to the environment (for example, setting the run-time setup structure to NULL).

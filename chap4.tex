@@ -9,7 +9,7 @@ This task, however, required to start from scratch and leave all compatibility b
 
 The source code of this run-time is much shorter than the other implementations\footnote{According to the author the run-time is just 15\% of the size of GCC's implementation, however, this run-time doesn't currently provide some of the modern features of run-times.}, however, its extensive use of macros makes it less readable, at least for me.
 
-\subsection{Slots}
+\section{Slots}
 Instead of defining methods, the more generic approach is to define slots. A slot is the basic type for message lookup, a structure containing five fields: \verb=int offset=, \verb=IMP method=, \verb=char *types=, \verb=void *context= and \verb=uint32_t version=. This allows the run-time to store both properties and methods using a single structure: as the properties, introduced in Objective-C 2.0 run-time, are just wrappers around automatically generated getter and setter methods, this approach allows to define a property simply using a slot that has a defined \verb=offset= field, which servers as a number of bytes after the beginning of the object is that variable stored. By setting the \verb=method= field of the slot, the slot functions like a regular method.
 
 As I have mentioned, the run-time was built to meet needs of other languages as well, for example JavaScript (and other prototype-based languages), where you can dynamically add variables to an object. This can be done by adding a slot, which will then hold the value as well - in the \verb=context= field of the structure.
@@ -17,7 +17,7 @@ As I have mentioned, the run-time was built to meet needs of other languages as 
 Whenever the structure gets updated (\verb=IMP= is changed, etc.), the version is increased. This is important later on for caching.
 
 
-\subsection{Inline Caching}
+\section{Inline Caching}
 Using monomorphic or polymorphic inline caching, the author of Etoilé run-time was able to achieve impressive speeds, reducing the method call time to only twice the time of a pure C function call, even faster than the C++ method calls are.
 
 With every dynamic object-oriented language, a question arises, how to fetch the function that implements a method. This lookup function is usually the critical part of the run-time's performance. As this lookup is expensive, all of the run-times described here use some caching mechanisms.
@@ -70,7 +70,7 @@ do\
 
 Inline caches are static \verb=__thread=\footnote{As noted above, this is a GCC extension, that needs support from the OS.} structures, so that each thread has its own cache. This static cache is created for every place in the code, where an method is called. The selector itself is cached, so no lookup is needed for it either. Then the cache is checked if it is filled with this object's class\footnote{I.e.\ this place in the code has been visited before, but the object has been of another class before - a polymorphic cache should be used here instead.} and the version matches the slot's version - if the slot has been modified since, the cache is invalidated.
 
-\subsection{Message Sending}
+\section{Message Sending}
 
 The traditional message sending, where the method gets translated into a function with the first parameter \verb=self= and the second one \verb=_cmd= has been abandoned for a slightly more complicated, yet more flexible call:
 
@@ -86,7 +86,7 @@ id method(id self, CALL _call, ...);
 
 This extends the original simple \verb=_cmd= of type \verb=SEL=: it adds a more context to the call, which can be used to implement a private inner class, for example, which determines with each call that the \verb=sender= is indeed its parent class.
 
-\subsection{Tags}
+\section{Tags}
 
 Each object has a couple of tags - additional fields that aren't declared by the object itself. In particular, each object has its own mutex, refcount\footnote{Number of references - used for reference-based memory management.}, size, slots and lookup function.
 
@@ -96,7 +96,7 @@ Each object also has its own dispatch table, unlike the other run-times, where t
 
 This leads to the last interesting tag, which is a lookup function. A lookup function is a function that goes through the dispatch table of the object and looks for the implementation of a method you want to call. Here, you can change the lookup function simply on an per-object basis, which allows to implement proxy objects very efficiently, making proxy calls virtually the same speed as direct calls.
 
-\subsection{Metaclasses}
+\section{Metaclasses}
 
 Another difference between the \'Etoil\'e run-time and the others is the lack of metaclasses. The class methods are simply put into a dispatch table directly on the class. In the traditional run-time, the instance methods have a dispatch table on the class, class methods are instance methods of its metaclass. Here, the dispatch table of instance methods is installed directly into the object, while the class methods have a dispatch table on the class itself. Hence no metaclasses are needed in this run-time.
 

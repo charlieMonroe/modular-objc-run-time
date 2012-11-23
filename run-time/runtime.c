@@ -16,9 +16,9 @@ objc_runtime_setup_struct objc_setup;
 void objc_runtime_set_setup(objc_runtime_setup_struct *setup){
 	// Check if either setup is NULL or the run-time has been already 
 	// initialized - if so, we need to abort
-	if (setup == OBJC_NULL) {
+	if (setup == NULL) {
 		// At this point, the abort function doesn't have to be set.
-		if (objc_setup.abort != OBJC_NULL){
+		if (objc_setup.abort != NULL){
 			objc_setup.abort("Cannot pass NULL setup!");
 		}else{
 			return;
@@ -35,7 +35,7 @@ void objc_runtime_set_setup(objc_runtime_setup_struct *setup){
 
 // See header for documentation
 void objc_runtime_get_setup(objc_runtime_setup_struct *setup){
-	if (setup != OBJC_NULL){
+	if (setup != NULL){
 		*setup = objc_setup;
 	}
 }
@@ -46,7 +46,8 @@ void objc_runtime_get_setup(objc_runtime_setup_struct *setup){
 #define objc_runtime_create_getter_setter_function_body(type, name)\
 	void objc_runtime_set_##name(type name){\
 		if (objc_runtime_has_been_initialized){\
-			objc_setup.abort("Cannot modify the run-time " #name " after the " 				"run-time has been initialized");\
+			objc_setup.abort("Cannot modify the run-time " #name " after the "\
+				 				"run-time has been initialized");\
 		}\
 	    objc_setup.name = name;\
 	}\
