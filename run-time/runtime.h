@@ -16,7 +16,7 @@
  */
 typedef struct {
 	struct {
-		// Keep the allocator at the top. It is likely the most often used
+		// Keep the allocator at the top. It is one of the most often used
 		// function (called with every object creation), keeping it first
 		// requires no additional computation to determine the address of the
 		// pointer, when called from within the structure
@@ -27,6 +27,7 @@ typedef struct {
 	} memory;
 	struct {
 		objc_abort abort;
+		objc_exit exit;
 	} execution;
 	struct {
 		objc_class_holder_creator creator;
@@ -34,6 +35,9 @@ typedef struct {
 		objc_class_holder_inserter inserter;
 		objc_class_holder_lookup lookup;
 	} class_holder;
+	struct {
+		objc_log log;
+	} logging;
 	
 } objc_runtime_setup_struct;
 
@@ -65,6 +69,7 @@ extern void objc_runtime_get_setup(objc_runtime_setup_struct *setup);
 	 extern type objc_runtime_get_##name(void);
 
 objc_runtime_create_getter_setter_function_decls(objc_abort, abort);
+objc_runtime_create_getter_setter_function_decls(objc_exit, exit);
 objc_runtime_create_getter_setter_function_decls(objc_allocator, allocator);
 objc_runtime_create_getter_setter_function_decls(objc_deallocator, deallocator);
 objc_runtime_create_getter_setter_function_decls(objc_reallocator, reallocator);
@@ -72,5 +77,6 @@ objc_runtime_create_getter_setter_function_decls(objc_zero_allocator, zero_alloc
 objc_runtime_create_getter_setter_function_decls(objc_class_holder_creator, class_holder_creator);
 objc_runtime_create_getter_setter_function_decls(objc_class_holder_destroyer, class_holder_destroyer);
 objc_runtime_create_getter_setter_function_decls(objc_class_holder_lookup, class_holder_lookup);
+objc_runtime_create_getter_setter_function_decls(objc_log, log);
 
 #endif //OBJC_RUNTIME_H_

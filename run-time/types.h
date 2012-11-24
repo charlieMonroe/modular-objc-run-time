@@ -36,6 +36,7 @@ typedef struct objc_object {
  
 // A definition for a class holder - a data structure that is responsible for
 // keeping a list of classes registered with the run-time, looking them up, etc.
+// Priority of this structure should be lookup speed.
 typedef void *objc_class_holder;
 
 // A definition for a dynamically growing array structure. The easiest 

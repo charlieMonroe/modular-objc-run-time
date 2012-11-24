@@ -18,7 +18,26 @@
  * Unlike the POSIX function, this one takes one extra argument with a reason
  * why it has aborted.
  */
-typedef void*(*objc_abort)(const char*);
+typedef void(*objc_abort)(const char*);
+ 
+/**
+ * A function pointer to an exit function. The exit function should terminate
+ * the program peacefully, just like the POSIX function.
+ */
+typedef void(*objc_exit)(int);
+
+
+/*********** Logging ***********/
+
+/**
+  * A function pointer to a logging function. These logs contain important
+  * messages to the user and shouldn't be ignored even in a release
+  * environment.
+  *
+  * printf is a compatible function.
+  */
+typedef void(*objc_log)(const char*, ...);
+ 
 
 /*********** Memory management ***********/
 

@@ -62,6 +62,7 @@ void objc_runtime_get_setup(objc_runtime_setup_struct *setup){
 	}
 
 objc_runtime_create_getter_setter_function_body(objc_abort, abort, execution.abort)
+objc_runtime_create_getter_setter_function_body(objc_exit, exit, execution.exit)
 objc_runtime_create_getter_setter_function_body(objc_allocator, allocator, memory.allocator)
 objc_runtime_create_getter_setter_function_body(objc_deallocator, deallocator, memory.deallocator)
 objc_runtime_create_getter_setter_function_body(objc_reallocator, reallocator, memory.reallocator)
@@ -70,4 +71,5 @@ objc_runtime_create_getter_setter_function_body(objc_class_holder_creator, class
 objc_runtime_create_getter_setter_function_body(objc_class_holder_destroyer, class_holder_destroyer, class_holder.destroyer)
 objc_runtime_create_getter_setter_function_body(objc_class_holder_inserter, class_holder_inserter, class_holder.inserter)
 objc_runtime_create_getter_setter_function_body(objc_class_holder_lookup, class_holder_lookup, class_holder.lookup)
+objc_runtime_create_getter_setter_function_body(objc_log, log, logging.log)
 
