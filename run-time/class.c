@@ -2,19 +2,13 @@
  * Implementation of the class-related functions.
  */
 
-#include "class.h"
+#include "class-private.h"
 #include "runtime-private.h"
 #include "utilities.h"
 
 // A class holder - all classes that get registered
 // with the run-time get stored here.
 objc_class_holder objc_classes;
-
-// Actual private structure of Class.
-struct objc_class {
-	Class super_class;
-	char *name;
-};
 
 
 // See header for documentation
@@ -30,7 +24,10 @@ Class objc_createClass(Class superclass, const char *name) {
 	}
 	
 	Class newClass = (Class)(objc_setup.memory.allocator(sizeof(struct objc_class)));
+	newClass->super_class = superclass;
 	newClass->name = objc_strcpy(name);
+	newClass->class_methods = NULL; // Lazy-loading
+	newClass->instance_methods = NULL; // Lazy-loading
 	
 	return newClass;
 }

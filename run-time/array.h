@@ -41,4 +41,17 @@ extern void objc_array_remove_at_index(objc_array array, unsigned int index);
 // Size of the array (i.e. number of pointers stored)
 extern unsigned int objc_array_size(objc_array array);
 
+
+// LOCKABLE
+
+// Creates a new objc_array with the ability to lock itself using a mutex
+extern objc_array objc_array_create_lockable(void);
+
+// Locks the mutex associated with that particular array
+extern void objc_array_lock_for_reading(objc_array array);
+extern void objc_array_lock_for_writing(objc_array array);
+
+// Unlocks the mutex associated with that particular array
+extern void objc_array_unlock(objc_array array);
+
 #endif // OBJC_ARRAY_H_

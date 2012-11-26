@@ -46,5 +46,8 @@ typedef void *objc_class_holder;
 // This run-time provides a default implementation of such an array.
 typedef void *objc_array;
 
+// A definition for a read/write lock.
+typedef void *objc_rw_lock;
+
 
 #endif // OBJC_TYPES_H_

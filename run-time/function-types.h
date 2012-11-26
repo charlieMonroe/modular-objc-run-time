@@ -86,15 +86,67 @@ typedef objc_class_holder(*objc_class_holder_creator)(void);
 typedef void(*objc_class_holder_destroyer)(objc_class_holder);
 
 /**
- * Adds the class to the data structure. For easier manipulation, the name
- * is passed as well, so that you don't need to call class_getName().
+ * Adds the class to the data structure.
  */
-typedef void(*objc_class_holder_inserter)(objc_class_holder, Class, const char*);
+typedef void(*objc_class_holder_inserter)(objc_class_holder, Class);
 
 /**
  * Find a class in the objc_class_holder according to the class name. Return
  * NULL if the class isn't in the class holder.
  */
 typedef Class(*objc_class_holder_lookup)(objc_class_holder, const char*);
- 
+
+/*********** Synchronization ***********/
+
+/**
+ * Creates a new RW lock and returns a pointer to it. If the current system
+ * doesn't have RW locks, a mutex can be used instead.
+ */
+typedef objc_rw_lock(*objc_rw_lock_creator)(void);
+
+/**
+ * Deallocates RW lock.
+ */
+typedef void(*objc_rw_lock_destroyer)(objc_rw_lock);
+
+/**
+ * Locks the RW lock for reading.
+ */
+typedef void(*objc_rw_lock_read_lock)(objc_rw_lock);
+
+/**
+ * Locks the RW lock for writing.
+ */
+typedef void(*objc_rw_lock_write_lock)(objc_rw_lock);
+
+/**
+ * Unlocks the RW lock.
+ */
+typedef void(*objc_rw_lock_unlock)(objc_rw_lock);
+
+
+/*********** objc_array ***********/
+
+/**
+ * Two creators for an array - one is lockable (i.e. a rw/lock is
+ * initialized), the other not.
+ */
+typedef objc_array(*objc_array_creator)(void);
+typedef objc_array(*objc_array_lockable_creator)(void);
+
+/**
+ * Function that frees the array memory.
+ */
+typedef void(*objc_array_destroyer)(objc_array);
+
+/**
+ * Returns a pointer at index.
+ */
+typedef void*(*objc_array_getter)(objc_array, unsigned int);
+
+/**
+ * Adds an item at the end of the array;
+ */
+typedef void(*objc_array_append)(objc_array, void*);
+
 #endif //OBJC_FUNCTION_TYPES_H_

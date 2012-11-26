@@ -3,10 +3,10 @@
   * but aren't that hard to implement here for speed sake.
   */
 
-#ifndef OBJ_UTILITIES_H_
-#define OBJ_UTILITIES_H_
+#ifndef OBJC_UTILITIES_H_
+#define OBJC_UTILITIES_H_
 
-#include "runtime.h"
+#include "runtime-private.h"
 
 /*
   * Just as the regular strlen function, returns a number of non-zero characters.
@@ -46,4 +46,32 @@ static inline char *objc_strcpy(const char *str){
 	return result;
 }
 
-#endif // OBJ_UTILITIES_H_
+/*
+ * Returns YES if the strings are equal.
+ */
+static inline BOOL objc_strings_equal(const char *str1, const char *str2){
+	if (str1 == NULL && str2 == NULL){
+		return YES;
+	}
+	
+	if (str1 == NULL || str2 == NULL){
+		// Just one of them NULL
+		return NO;
+	}
+	
+	unsigned int index = 0;
+	while (YES) {
+		if (str1[index] == str2[index]){
+			if (str1[index] == '\0'){
+				// Equal
+				return YES;
+			}
+			continue;
+		}
+		return NO;
+	}
+	
+	return NO;
+}
+
+#endif // OBJC_UTILITIES_H_

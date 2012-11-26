@@ -10,6 +10,7 @@ static const unsigned int _objc_array_default_capacity = 4;
 typedef struct _objc_array {
 	unsigned int _capacity;
 	unsigned int _currentIndex; // Pointer to the last item in array
+	objc_rw_lock _lock;
 	void **_array;
 } *_objc_array;
 
@@ -31,17 +32,38 @@ objc_array objc_array_create(void){
 	_objc_array arr = objc_setup.memory.allocator(sizeof(struct _objc_array));
 	arr->_capacity = _objc_array_default_capacity;
 	arr->_currentIndex = -1;
+	arr->_lock = NULL;
 	arr->_array = objc_setup.memory.zero_allocator(sizeof(void*) * arr->_capacity);
 	
 	return arr;
+}
+
+objc_array objc_array_create_lockable(void){
+	_objc_array arr = objc_array_create();
+	arr->_lock = objc_setup.sync.rwlock.creator();
+	return (objc_array)arr;
+}
+
+void objc_array_lock_for_reading(objc_array array){
+	objc_setup.sync.rwlock.rlock(((_objc_array)array)->_lock);
+}
+void objc_array_lock_for_writing(objc_array array){
+	objc_setup.sync.rwlock.wlock(((_objc_array)array)->_lock);
+}
+
+void objc_array_unlock(objc_array array){
+	objc_setup.sync.rwlock.unlock(((_objc_array)array)->_lock);
 }
 
 void objc_array_destroy(objc_array array){
 	if (array == NULL){
 		return;
 	}
-	
-	objc_setup.memory.deallocator(((_objc_array)array)->_array);
+	_objc_array arr = (_objc_array)array;
+	objc_setup.memory.deallocator(arr->_array);
+	if (arr->_lock != NULL){
+		objc_setup.sync.rwlock.destroyer(arr->_lock);
+	}
 	objc_setup.memory.deallocator(array);
 }
 
@@ -116,9 +138,12 @@ void objc_array_remove_at_index(objc_array array, unsigned int index){
 		return;
 	}
 	
-	// Otherwise - take the last item and move it to the index slot
-	arr->_array[index] = arr->_array[arr->_currentIndex];
-	arr->_array[arr->_currentIndex] = NULL;
+	// Otherwise - shift everything after
+	int i;
+	for (i = index; i < size - 1; ++i){
+		arr->_array[i] = arr->_array[i + 1];
+	}
+	arr->_array[i] = NULL;
 	--arr->_currentIndex;
 }
 

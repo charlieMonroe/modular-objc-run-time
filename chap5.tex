@@ -67,12 +67,16 @@ When the run-time is done with memory it has allocated, it will deallocate it us
 
 A lot of the code of the traditional run-times is riddled with code that is takes care of consistency of dynamically growing arrays (or rather arrays of arrays) - there's a lot of duplicate code for functions related to lists of methods, protocols, etc.\ on each class.
 
-This run-time declares a \verb=objc_array= type, which is again just a retyped \verb=void*=, but can be implemented any possible way. The implementation includes a working implementation of such an array and installs these function pointers at initialization, unless other pointers are provided. 
+This run-time declares a \verb=objc_array= type, which is just a retyped \verb=void*=, but can be implemented in any possible way. The run-time includes a working implementation of such an array and installs these function pointers at initialization, unless other pointers are provided.
+
+The default implementation is a structure that contains two \verb=unsigned int=s - one that remembers the allocated capacity of the array, the second one pointing to an index in the actual allocated array holding the items. If the structure is initialized as lock-able, then a mutex is allocated as well.
 
 
 \subsection{Class Holder}
 
 The run-time needs to keep track of all classes that are registered with it. To do so, it needs to keep a list in some data structure. As the run-time is designed to be flexible, it doesn't matter what data structure at all.
 
-There is a defined data type \verb=objc_class_holder= which, however, is only a redefined \verb=void*=. Using the run-times function pointers \verb=class_holder.creator=, \verb=class_holder.destroyer=, \verb=class_holder.lookup= and TODO, the run-time creates the data structure required, has means to destroy it, lookup a class according to its name and TODO.
+There is a defined data type \verb=objc_class_holder= which, however, is again only a redefined \verb=void*=. Using the run-times function pointers \verb=class_holder.creator=, \verb=class_holder.destroyer=, \verb=class_holder.lookup= and TODO, the run-time creates the data structure required, has means to destroy it, lookup a class according to its name and TODO.
+
+The run-time provides a default implementation of this structure, a simple hash table which resembles slightly NXMapTable from Apple's run-time, but removes all dependencies and is made slightly less complicated.
 
