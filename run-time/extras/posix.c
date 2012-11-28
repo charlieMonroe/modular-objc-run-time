@@ -49,9 +49,9 @@ static void _objc_posix_init(void){
 	
 	objc_runtime_set_rw_lock_creator(_rw_lock_creator);
 	objc_runtime_set_rw_lock_destroyer(_rw_lock_destroyer);
-	objc_runtime_set_rw_lock_rlock((objc_rw_lock_read_lock)pthread_rwlock_rdlock);
-	objc_runtime_set_rw_lock_wlock((objc_rw_lock_write_lock)pthread_rwlock_wrlock);
-	objc_runtime_set_rw_lock_unlock((objc_rw_lock_unlock)pthread_rwlock_unlock);
+	objc_runtime_set_rw_lock_rlock((objc_rw_lock_read_lock_f)pthread_rwlock_rdlock);
+	objc_runtime_set_rw_lock_wlock((objc_rw_lock_write_lock_f)pthread_rwlock_wrlock);
+	objc_runtime_set_rw_lock_unlock((objc_rw_lock_unlock_f)pthread_rwlock_unlock);
 	
 	objc_runtime_init();
 }

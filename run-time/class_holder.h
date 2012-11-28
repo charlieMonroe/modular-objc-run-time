@@ -18,5 +18,8 @@ extern objc_class_holder objc_class_holder_create(void);
 extern void objc_class_holder_destroy(objc_class_holder holder);
 extern void objc_class_holder_insert_class(objc_class_holder holder, Class cl);
 extern Class objc_class_holder_lookup_class(objc_class_holder holder, const char *name);
+extern void objc_class_holder_rlock(objc_class_holder holder);
+extern void objc_class_holder_wlock(objc_class_holder holder);
+extern void objc_class_holder_unlock(objc_class_holder holder);
 
 #endif // OBJC_CLASS_HOLDER_H_

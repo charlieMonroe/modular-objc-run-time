@@ -18,13 +18,13 @@
  * Unlike the POSIX function, this one takes one extra argument with a reason
  * why it has aborted.
  */
-typedef void(*objc_abort)(const char*);
+typedef void(*objc_abort_f)(const char*);
  
 /**
  * A function pointer to an exit function. The exit function should terminate
  * the program peacefully, just like the POSIX function.
  */
-typedef void(*objc_exit)(int);
+typedef void(*objc_exit_f)(int);
 
 
 /*********** Logging ***********/
@@ -36,7 +36,7 @@ typedef void(*objc_exit)(int);
   *
   * printf is a compatible function.
   */
-typedef int(*objc_log)(const char*, ...);
+typedef int(*objc_log_f)(const char*, ...);
  
 
 /*********** Memory management ***********/
@@ -48,28 +48,28 @@ typedef int(*objc_log)(const char*, ...);
  */
 // TODO: change to size_t or similar, though allocating more than 4GB of memory
 // at once is quite unusual... Fixme?
-typedef void*(*objc_allocator)(unsigned int);
+typedef void*(*objc_allocator_f)(unsigned int);
  
 /**
  * A function pointer to a deallocator. The deallocator should take just one  
  * parameter - a pointer to the memory that should be freed. Generally should
  * work just like free().
  */
-typedef void(*objc_deallocator)(void*);
+typedef void(*objc_deallocator_f)(void*);
  
 /**
  * A function pointer to a reallocator. The reallocator should try to change 
  * the size of the memory to the specific size. Generally should behave just
  * like realloc().
  */
-typedef void*(*objc_reallocator)(void*, unsigned int);
+typedef void*(*objc_reallocator_f)(void*, unsigned int);
  
 /**
  * A function pointer to a zero-allocator. Unlike the regular calloc() function,
  * this function takes only one argument, just like objc_allocator indicating 
  * the size of memory requested. It should be equivalent to calloc(1, size).
  */
-typedef void*(*objc_zero_allocator)(unsigned int);
+typedef void*(*objc_zero_allocator_f)(unsigned int);
  
  
 /*********** objc_class_holder ***********/
@@ -78,57 +78,71 @@ typedef void*(*objc_zero_allocator)(unsigned int);
  * Creates a new class holder data structure. objc_class_holder is defined in
  * types.h as simply void* and can be a pointer to virtually any data structure.
  */
-typedef objc_class_holder(*objc_class_holder_creator)(void);
+typedef objc_class_holder(*objc_class_holder_creator_f)(void);
  
 /**
  * Destroys (and frees from memory) the whole class holder data structure.
  */
-typedef void(*objc_class_holder_destroyer)(objc_class_holder);
+typedef void(*objc_class_holder_destroyer_f)(objc_class_holder);
 
 /**
  * Adds the class to the data structure.
  */
-typedef void(*objc_class_holder_inserter)(objc_class_holder, Class);
+typedef void(*objc_class_holder_inserter_f)(objc_class_holder, Class);
 
 /**
  * Find a class in the objc_class_holder according to the class name. Return
  * NULL if the class isn't in the class holder.
  */
-typedef Class(*objc_class_holder_lookup)(objc_class_holder, const char*);
+typedef Class(*objc_class_holder_lookup_f)(objc_class_holder, const char*);
+
+/**
+ * The class holder should be a lockable structure, allowing access from
+ * multiple threads. The structure should use the locks provided by the
+ * run-time so that in case the locks are set to no-op in single-threaded
+ * environment, no locking is indeed performed.
+ *
+ * To speed things up, a rw lock should be used. If the structure used
+ * is a lock-free structure, you can simply no-op these functions (they
+ * still need to be non-NULL, though).
+ */
+typedef void(*objc_class_holder_rlock_f)(objc_class_holder);
+typedef void(*objc_class_holder_wlock_f)(objc_class_holder);
+typedef void(*objc_class_holder_unlock_f)(objc_class_holder);
 
 /*********** Synchronization ***********/
 
 /**
  * Creates a new RW lock and returns a pointer to it. If the current system
- * doesn't have RW locks, a mutex can be used instead.
+ * doesn't support RW locks, a mutex can be used instead.
  */
-typedef objc_rw_lock(*objc_rw_lock_creator)(void);
+typedef objc_rw_lock(*objc_rw_lock_creator_f)(void);
 
 /**
  * Deallocates RW lock.
  */
-typedef void(*objc_rw_lock_destroyer)(objc_rw_lock);
+typedef void(*objc_rw_lock_destroyer_f)(objc_rw_lock);
 
 /**
  * Locks the RW lock for reading. Returns 0 if successful,
  * non-zero for error. The error code is defined by the
  * lock implementation.
  */
-typedef int(*objc_rw_lock_read_lock)(objc_rw_lock);
+typedef int(*objc_rw_lock_read_lock_f)(objc_rw_lock);
 
 /**
  * Locks the RW lock for writing. Returns 0 if successful,
  * non-zero for error. The error code is defined by the
  * lock implementation.
  */
-typedef int(*objc_rw_lock_write_lock)(objc_rw_lock);
+typedef int(*objc_rw_lock_write_lock_f)(objc_rw_lock);
 
 /**
  * Unlocks the RW lock. Returns 0 if successful,
  * non-zero for error. The error code is defined by the
  * lock implementation.
  */
-typedef int(*objc_rw_lock_unlock)(objc_rw_lock);
+typedef int(*objc_rw_lock_unlock_f)(objc_rw_lock);
 
 
 /*********** objc_array ***********/
@@ -138,22 +152,22 @@ typedef int(*objc_rw_lock_unlock)(objc_rw_lock);
  * initialized), the other not. The argument is initial capacity of 
  * the array.
  */
-typedef objc_array(*objc_array_creator)(unsigned int);
-typedef objc_array(*objc_array_lockable_creator)(unsigned int);
+typedef objc_array(*objc_array_creator_f)(unsigned int);
+typedef objc_array(*objc_array_lockable_creator_f)(unsigned int);
 
 /**
  * Function that frees the array memory.
  */
-typedef void(*objc_array_destroyer)(objc_array);
+typedef void(*objc_array_destroyer_f)(objc_array);
 
 /**
  * Returns a pointer at index.
  */
-typedef void*(*objc_array_getter)(objc_array, unsigned int);
+typedef void*(*objc_array_getter_f)(objc_array, unsigned int);
 
 /**
  * Adds an item at the end of the array;
  */
-typedef void(*objc_array_append)(objc_array, void*);
+typedef void(*objc_array_append_f)(objc_array, void*);
 
 #endif //OBJC_FUNCTION_TYPES_H_

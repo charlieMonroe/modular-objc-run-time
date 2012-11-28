@@ -16,9 +16,11 @@ Class objc_createClass(Class superclass, const char *name) {
 		objc_setup.execution.abort("Trying to create a class with NULL or empty name.");
 	}
 	
+	objc_setup.class_holder.wlock(objc_classes);
 	if (objc_setup.class_holder.lookup(objc_classes, name) != NULL){
 		// i.e. a class with this name already exists
 		objc_setup.logging.log("A class with this name already exists (%s).\n", name);
+		objc_setup.class_holder.unlock(objc_classes);
 		return NULL;
 	}
 	
@@ -30,6 +32,7 @@ Class objc_createClass(Class superclass, const char *name) {
 	newClass->flags.in_construction = YES;
 	
 	objc_setup.class_holder.inserter(objc_classes, newClass);
+	objc_setup.class_holder.unlock(objc_classes);
 	
 	return newClass;
 }
@@ -93,7 +96,11 @@ Class objc_getClass(const char *name){
 	if (name == NULL){
 		return Nil;
 	}
+	
+	objc_setup.class_holder.rlock(objc_classes);
 	Class c = objc_setup.class_holder.lookup(objc_classes, name);
+	objc_setup.class_holder.unlock(objc_classes);
+	
 	if (c->flags.in_construction){
 		// Still in construction
 		return Nil;

@@ -16,34 +16,37 @@
  */
 
 typedef struct {
-	objc_allocator allocator;
-	objc_deallocator deallocator;
-	objc_reallocator reallocator;
-	objc_zero_allocator zero_allocator;
+	objc_allocator_f allocator;
+	objc_deallocator_f deallocator;
+	objc_reallocator_f reallocator;
+	objc_zero_allocator_f zero_allocator;
 } objc_setup_memory;
 
 typedef struct {
-	objc_abort abort;
-	objc_exit exit;
+	objc_abort_f abort;
+	objc_exit_f exit;
 } objc_setup_execution;
 
 typedef struct {
-	objc_class_holder_creator creator;
-	objc_class_holder_destroyer destroyer;
-	objc_class_holder_inserter inserter;
-	objc_class_holder_lookup lookup;
+	objc_class_holder_creator_f creator;
+	objc_class_holder_destroyer_f destroyer;
+	objc_class_holder_inserter_f inserter;
+	objc_class_holder_lookup_f lookup;
+	objc_class_holder_rlock_f rlock;
+	objc_class_holder_wlock_f wlock;
+	objc_class_holder_unlock_f unlock;
 } objc_setup_class_holder;
 
 typedef struct {
-	objc_log log;
+	objc_log_f log;
 } objc_setup_logging;
 
 typedef struct {
-	objc_rw_lock_creator creator;
-	objc_rw_lock_destroyer destroyer;
-	objc_rw_lock_read_lock rlock;
-	objc_rw_lock_write_lock wlock;
-	objc_rw_lock_unlock unlock;
+	objc_rw_lock_creator_f creator;
+	objc_rw_lock_destroyer_f destroyer;
+	objc_rw_lock_read_lock_f rlock;
+	objc_rw_lock_write_lock_f wlock;
+	objc_rw_lock_unlock_f unlock;
 } objc_setup_rw_lock;
 
 typedef struct {
@@ -51,11 +54,11 @@ typedef struct {
 } objc_setup_sync;
 
 typedef struct {
-	objc_array_creator creator;
-	objc_array_lockable_creator lockable_creator;
-	objc_array_destroyer destroyer;
-	objc_array_getter getter;
-	objc_array_append append;
+	objc_array_creator_f creator;
+	objc_array_lockable_creator_f lockable_creator;
+	objc_array_destroyer_f destroyer;
+	objc_array_getter_f getter;
+	objc_array_append_f append;
 } objc_setup_array;
 
 typedef struct {
@@ -109,25 +112,28 @@ extern void objc_runtime_init(void);
 	 extern void objc_runtime_set_##name(type name);\
 	 extern type objc_runtime_get_##name(void);
 
-objc_runtime_create_getter_setter_function_decls(objc_abort, abort)
-objc_runtime_create_getter_setter_function_decls(objc_exit, exit)
-objc_runtime_create_getter_setter_function_decls(objc_allocator, allocator)
-objc_runtime_create_getter_setter_function_decls(objc_deallocator, deallocator)
-objc_runtime_create_getter_setter_function_decls(objc_reallocator, reallocator)
-objc_runtime_create_getter_setter_function_decls(objc_zero_allocator, zero_allocator)
-objc_runtime_create_getter_setter_function_decls(objc_class_holder_creator, class_holder_creator)
-objc_runtime_create_getter_setter_function_decls(objc_class_holder_destroyer, class_holder_destroyer)
-objc_runtime_create_getter_setter_function_decls(objc_class_holder_lookup, class_holder_lookup)
-objc_runtime_create_getter_setter_function_decls(objc_log, log)
-objc_runtime_create_getter_setter_function_decls(objc_rw_lock_creator, rw_lock_creator)
-objc_runtime_create_getter_setter_function_decls(objc_rw_lock_destroyer, rw_lock_destroyer)
-objc_runtime_create_getter_setter_function_decls(objc_rw_lock_read_lock, rw_lock_rlock)
-objc_runtime_create_getter_setter_function_decls(objc_rw_lock_write_lock, rw_lock_wlock)
-objc_runtime_create_getter_setter_function_decls(objc_rw_lock_unlock, rw_lock_unlock)
-objc_runtime_create_getter_setter_function_decls(objc_array_creator, array_creator)
-objc_runtime_create_getter_setter_function_decls(objc_array_lockable_creator, array_lockable_creator)
-objc_runtime_create_getter_setter_function_decls(objc_array_destroyer, array_destroyer)
-objc_runtime_create_getter_setter_function_decls(objc_array_getter, array_getter)
-objc_runtime_create_getter_setter_function_decls(objc_array_append, array_append)
+objc_runtime_create_getter_setter_function_decls(objc_abort_f, abort)
+objc_runtime_create_getter_setter_function_decls(objc_exit_f, exit)
+objc_runtime_create_getter_setter_function_decls(objc_allocator_f, allocator)
+objc_runtime_create_getter_setter_function_decls(objc_deallocator_f, deallocator)
+objc_runtime_create_getter_setter_function_decls(objc_reallocator_f, reallocator)
+objc_runtime_create_getter_setter_function_decls(objc_zero_allocator_f, zero_allocator)
+objc_runtime_create_getter_setter_function_decls(objc_class_holder_creator_f, class_holder_creator)
+objc_runtime_create_getter_setter_function_decls(objc_class_holder_destroyer_f, class_holder_destroyer)
+objc_runtime_create_getter_setter_function_decls(objc_class_holder_lookup_f, class_holder_lookup)
+objc_runtime_create_getter_setter_function_decls(objc_class_holder_rlock_f, class_holder_rlock)
+objc_runtime_create_getter_setter_function_decls(objc_class_holder_wlock_f, class_holder_wlock)
+objc_runtime_create_getter_setter_function_decls(objc_class_holder_unlock_f, class_holder_unlock)
+objc_runtime_create_getter_setter_function_decls(objc_log_f, log)
+objc_runtime_create_getter_setter_function_decls(objc_rw_lock_creator_f, rw_lock_creator)
+objc_runtime_create_getter_setter_function_decls(objc_rw_lock_destroyer_f, rw_lock_destroyer)
+objc_runtime_create_getter_setter_function_decls(objc_rw_lock_read_lock_f, rw_lock_rlock)
+objc_runtime_create_getter_setter_function_decls(objc_rw_lock_write_lock_f, rw_lock_wlock)
+objc_runtime_create_getter_setter_function_decls(objc_rw_lock_unlock_f, rw_lock_unlock)
+objc_runtime_create_getter_setter_function_decls(objc_array_creator_f, array_creator)
+objc_runtime_create_getter_setter_function_decls(objc_array_lockable_creator_f, array_lockable_creator)
+objc_runtime_create_getter_setter_function_decls(objc_array_destroyer_f, array_destroyer)
+objc_runtime_create_getter_setter_function_decls(objc_array_getter_f, array_getter)
+objc_runtime_create_getter_setter_function_decls(objc_array_append_f, array_append)
 
 #endif //OBJC_RUNTIME_H_

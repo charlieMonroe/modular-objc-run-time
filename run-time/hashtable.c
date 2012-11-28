@@ -21,10 +21,12 @@ typedef struct {
 } _objc_hash_table_bucket;
 
 struct _objc_hash_table_str {
-	unsigned int entry_count;
-	unsigned int bucket_count;
 	const char*(*keyGetter)(void*);
 	BOOL(*equalityFunction)(void*, void*);
+	objc_rw_lock lock;
+	unsigned int entry_count;
+	unsigned int bucket_count;
+	
 	_objc_hash_table_bucket *buckets; // Lazily allocated!
 };
 
@@ -133,14 +135,24 @@ _objc_hash_table objc_hash_table_create(unsigned int capacity, const char*(*keyG
 	_objc_hash_table table = (_objc_hash_table)(objc_setup.memory.allocator(sizeof(struct _objc_hash_table_str)));
 	table->entry_count = 0;
 	table->buckets = NULL;
+	table->lock = NULL;
 	table->bucket_count = GOOD_CAPACITY(capacity);
 	table->keyGetter = keyGetter;
 	table->equalityFunction = equalityFunction;
 	return table;
 }
 
+_objc_hash_table objc_hash_table_create_lockable(unsigned int capacity, const char*(*keyGetter)(void*), BOOL(*equalityFunction)(void*, void*)){
+	_objc_hash_table table = objc_hash_table_create(capacity, keyGetter, equalityFunction);
+	table->lock = objc_setup.sync.rwlock.creator();
+	return table;
+}
+
 void objc_hash_table_destroy(_objc_hash_table table){
 	objc_hash_table_clear(table);
+	if (table->lock != NULL){
+		objc_setup.sync.rwlock.destroyer(table->lock);
+	}
 	objc_setup.memory.deallocator(table);
 }
 void objc_hash_table_insert(_objc_hash_table table, void *obj){
@@ -224,3 +236,12 @@ void *objc_hash_table_get(_objc_hash_table table, const char *key) {
 	return NULL;
 }
 
+void objc_hash_table_rlock(_objc_hash_table table){
+	objc_setup.sync.rwlock.rlock(table->lock);
+}
+void objc_hash_table_wlock(_objc_hash_table table){
+	objc_setup.sync.rwlock.wlock(table->lock);
+}
+void objc_hash_table_unlock(_objc_hash_table table){
+	objc_setup.sync.rwlock.unlock(table->lock);
+}
