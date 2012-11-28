@@ -38,7 +38,7 @@ struct objc_class {
 	
 	
 	
-	void *extraSpace;
+	void *extra_space;
 };
 
 void objc_class_init(void);

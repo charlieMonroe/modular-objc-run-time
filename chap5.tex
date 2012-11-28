@@ -3,12 +3,15 @@
 
 The main objective of this work is to create a prototype of a run-time that will have no dependencies on any external libraries, not even the POSIX ones, allowing the developer to set up his own run-time from different modules.
 
-Also, no constructs that require OS support (dynamic loader, standard OS libraries, etc.) will be used. Such constructs include \verb=static\ __thread= (which creates a new copy of the variable declared for each thread created) or \newline{} \verb=__attribute__((constructor))= (which marks the function to be called by the dynamic loader right after the bundle has been loaded).
+Also, no constructs that require any OS support (dynamic loader, standard OS libraries, etc.) will be used. This means, that constructs such as \verb=static\ __thread= (which creates a new copy of the variable declared for each thread created) or \newline{} \verb=__attribute__((constructor))= (which marks the function to be called by the dynamic loader right after the binary has been loaded) can be used either.
 
-This will, however, require for example the user to call some run-time initializing functions as they won't get called by the dynamic loader. On systems that do support the constructor functions, this can be easily avoided by compiling the run-time with an additional file which will declare and implement a constructor 
+This will, however, requires the user to call some run-time initializing functions manually at the beginning of the program's execution, as they won't get called by the dynamic loader. On systems that do support the constructor functions, this can be easily avoided by compiling the run-time with an additional file which will declare and implement a constructor, as can be seen in the \verb=posix.c= file, which is included with the run-time as an extra, which demonstrates how to add support for your operating system.
+
+In a real-world scenario, of course, we cannot require that each user supplies all these functions first thing in the \verb=main= function. For example, on \verb=*nix=\footnote{Most Unix systems, cannot be guaranteed that this will work on all of the systems.} systems, this can be easily solved by compiling the library with a single \verb=.c= file which has a function populating the setup structure with system-specific functions. This function can then either be called by the dynamic loader (which requires support from the dynamic loader), or can have a GCC-specific \verb=__attribute__((constructor))= if the system supports it. If neither is an option, then the user really needs to call this system-specific function to populate the run-time setup and then initialize the run-time, if the system-specific function hasn't done so. An example of this can be found in the \verb=posix.c= file which is bundled with the run-time as an example.
+
 
 \subsection{Example 1: Lock-less run-time}
-In a single-threaded application, there is no need for any locking whatsoever. All of the existing implementations require some locking, even though they are trying to use lock-free structures, such as sparse arrays that do not support deleting.
+In a single-threaded application (or applications, where you know that Objective-C code will be used only in one thread), there is no need for any locking whatsoever. All of the existing implementations require some locking, even though they are trying to use lock-free structures, such as sparse arrays that do not support deleting.
 
 But even so, any \verb=@synchronized(obj)= code is translated to actually lock a mutex associated with \verb=obj=, be it either a mutex from a lock pool in the traditional run-times, or a mutex that is associated just with \verb=obj= in the \'Etoil\'e run-time. This can speed up both loading of the application and code execution.
 
@@ -44,8 +47,6 @@ typedef struct {
 \end{verbatim}
 
 This allows the modularity of the run-time. One can, at the beginning of his program, modify all of those pointers using setter functions declared in \verb=runtime.h=. After the runtime has been initialized, however, the whole structure is sealed from changes using those setter functions to prevent any data corruption (as some data structures may be already initialized, changing these functions could lead to bad memory access, etc.). Using any of the setter functions after the run-time has been initialized will lead to a crash of the program (using the abort function supplied).
-
-In a real-world scenario, of course, we cannot assume that each user will supply all these functions first thing in the \verb=main= function. For example, on \verb=*nix=\footnote{Most Unix systems, cannot be guaranteed that this will work on all of the systems.} systems, this can be easily solved by compiling the library with a single \verb=.c= file which has a function populating the setup structure with system-specific functions. This function can then either be called by the dynamic loader (which requires support from the dynamic loader), or can have a GCC-specific \verb=__attribute__((constructor))= if the system supports it. If neither is an option, then the user really needs to call this system-specific function to populate the run-time setup and then initialize the run-time, if the system-specific function hasn't done so. An example of this can be found in the \verb=posix.c= file which is bundled with the run-time as an example.
 
 A description of each of those functions follows:
 
@@ -86,18 +87,52 @@ The run-time provides a default implementation of this structure, a simple hash 
 
 At the core of the run-time lies a structure representing a class. Like the \'Etoil\'e run-time, this run-time doesn't provide a class pair - a class and its meta-class, but only a single class object that contains class methods as well. While it abandons the Smalltalk similarities, it provides greater flexibility, allowing the Objective-C class structure to be used for other languages as well.
 
-\subsection{Structure of Class}
+\subsection{Structure of a Class}
 
-The class structure begins in the traditional fashion with a pointer to its superclass - the \verb=isa= pointer. This pointer is followed by the class name, class methods and instance methods. Both class methods and instance methods use the \verb=objc_array= structure, which is a list of method lists.
+The class structure begins in the traditional fashion with a pointer to its superclass - the \verb=isa= pointer. This pointer is followed by the class name, class methods and instance methods. Both class methods and instance methods use the \verb=objc_array= structure, which is a list of lists of \verb=Method=s, just like in the other run-times 
 
 // TODO: cache, ivars
 
 \section{Extensibility of Classes}
 
-The run-time has been built as a bare minimum for running an Objective-C program. Hooks have been implemented, however, to allow to add additional features to classes and objects. There is an example bundled with the run-time: properties.
+While the other run-times allow the user to specify extra space when allocating both a class and an object, it is very limiting as if you want to add this extra space, you need to replace the \verb=+alloc= method of \verb=NSObject=, but even so, it will not affect all classes in the run-time as not all objects are subclasses of \verb=NSObject= (e.g.\ \verb=NSProxy=).
+
+This is why the modular run-time has introduced class extensions which allow developers to extend the run-time capabilities dynamically. Class extensions can be compared to the run-time delegates. The class extensions must get registered using the \verb=objc_class_add_extension()= function before the run-time gets initialized.
+
+This function has a single argument: a pointer to a \verb=objc_class_extension= structure:
+
+\begin{verbatim}
+  typedef struct _objc_class_extension {
+	struct _objc_class_extension *next_extension;
+
+
+	void(*class_initializer)(Class, void*);
+	void(*object_initializer)(id, void*);
+	void(*object_deallocator)(id, void*);
+	
+	unsigned int extra_class_space;
+	unsigned int extra_object_space;
+} objc_class_extension;
+\end{verbatim}
+
+The first field, \verb=next_extension= is a pointer to the next extension as the run-time keeps class extensions in a linked list. The run-time populates this field automatically.
+
+This field is followed by three function pointers:
+
+\begin{itemize}
+  \item \verb=class_initialize= - this function gets called each time a class is registered with the run-time using \verb=objc_finish_class()=. This is the place where the extra space, to which a pointer is passed as the second argument, should get populated and initialized.
+  \item \verb=object_initializer= - any time an object is allocated, this function gets called in order to initialize the extra space in the object (again, the second argument is a pointer to the extra space within the structure).
+  \item \verb=object_deallocator= - before the object gets deallocated, each class extension is provided an option to deallocated any dynamically 
+\end{itemize}
+
+
+There is an example bundled with the run-time: properties.
 
 \subsection{Properties}
 
 The run-time itself doesn't include support for properties, however, the run-time provides support for extending both the class and the object itself.
 
 // TODO describe
+
+
+\subsection{Performance}

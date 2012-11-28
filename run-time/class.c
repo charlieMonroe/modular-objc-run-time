@@ -3,12 +3,32 @@
  */
 
 #include "class-private.h"
+#include "class-extension.h"
 #include "runtime-private.h"
 #include "utilities.h"
 
 // A class holder - all classes that get registered
 // with the run-time get stored here.
 objc_class_holder objc_classes;
+
+// Class extension linked list
+objc_class_extension *class_extensions;
+
+static inline unsigned int _objc_extra_class_space_for_extensions(void){
+	static unsigned int cached_result = 0;
+	if (cached_result != 0 || class_extensions == NULL){
+		// The result has already been cached, or no extensions are installed
+		return cached_result;
+	}
+	
+	objc_class_extension *ext = class_extensions;
+	while (ext != NULL){
+		cached_result += ext->extra_class_space;
+		ext = ext->next_extension;
+	}
+	
+	return cached_result;
+}
 
 // See header for documentation
 Class objc_createClass(Class superclass, const char *name) {
@@ -24,7 +44,7 @@ Class objc_createClass(Class superclass, const char *name) {
 		return NULL;
 	}
 	
-	Class newClass = (Class)(objc_setup.memory.allocator(sizeof(struct objc_class)));
+	Class newClass = (Class)(objc_setup.memory.allocator(sizeof(struct objc_class) + _objc_extra_class_space_for_extensions()));
 	newClass->super_class = superclass;
 	newClass->name = objc_strcpy(name);
 	newClass->class_methods = NULL; // Lazy-loading
@@ -110,10 +130,34 @@ Class objc_getClass(const char *name){
 }
 
 void objc_finishClass(Class cl){
+	// Pass the class through all extensions
+	objc_class_extension *ext = class_extensions;
+	void *extra_space = cl->extra_space;
+	while (ext != NULL) {
+		ext->class_initializer(cl, extra_space);
+		extra_space += ext->extra_class_space;
+		ext = ext->next_extension;
+	}
+	
 	// That's it! Just mark it as not in construction
 	cl->flags.in_construction = NO;
 }
 
 void objc_class_init(void){
 	objc_classes = objc_setup.class_holder.creator();
+}
+
+void objc_class_add_extension(objc_class_extension *extension){
+	if (objc_classes != NULL){
+		objc_setup.execution.abort("The run-time has already been initialized."
+					   " No class extensions may be installed at this point anymore.");
+	}
+	
+	if (class_extensions == NULL){
+		class_extensions = extension;
+	}else{
+		// Prepend the extension
+		extension->next_extension = class_extensions;
+		class_extensions = extension;
+	}
 }
