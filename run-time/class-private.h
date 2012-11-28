@@ -27,6 +27,20 @@ struct objc_class {
 	// WARNING: Both are lazily created!
 	objc_array class_methods;
 	objc_array instance_methods;
+	objc_array ivars;
+	
+	// Cache
+	
+	
+	struct {
+		BOOL in_construction : 1;
+	} flags;
+	
+	
+	
+	void *extraSpace;
 };
+
+void objc_class_init(void);
 
 #endif // OBJC_CLASS_PRIVATE_H_

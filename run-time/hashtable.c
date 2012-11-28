@@ -53,6 +53,9 @@ static inline unsigned int _objc_hash_table_hash(const char *key){
  * Returns a pointer to the bucket for that key.
  */
 static inline _objc_hash_table_bucket *_objc_hash_table_bucket_for_key(_objc_hash_table table, const char *key){
+	if (table->buckets == NULL){
+		table->buckets = objc_setup.memory.zero_allocator(sizeof(_objc_hash_table_bucket) * table->bucket_count);
+	}
 	return &(table->buckets[_objc_hash_table_hash(key) & (table->bucket_count - 1)]);
 }
 static inline _objc_hash_table_bucket *_objc_hash_table_bucket_for_obj(_objc_hash_table table, void *obj){

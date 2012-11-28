@@ -3,6 +3,9 @@
  */
 
 #include "runtime-private.h" // The public header is included here
+#include "array.h" // For default array implementation
+#include "class_holder.h" // For default class holder imp
+#include "class-private.h" // For class_init
 
 // This is marked during objc_init() as YES. After that point, no modifications
 // to the setup may be made.
@@ -37,6 +40,53 @@ void objc_runtime_get_setup(objc_runtime_setup_struct *setup){
 	if (setup != NULL){
 		*setup = objc_setup;
 	}
+}
+
+
+static int _objc_runtime_default_log(const char *format, ...){
+	return 0;
+}
+
+#define objc_runtime_init_check_function_pointer(struct_path)\
+	if (objc_setup.struct_path == NULL){\
+		objc_setup.execution.abort("No function pointer set for " #struct_path "!");\
+	}
+
+#define objc_runtime_init_check_function_pointer_with_default_imp(struct_path, imp)\
+	if (objc_setup.struct_path == NULL){\
+		objc_setup.struct_path = imp;\
+	}
+
+// See header for documentation
+void objc_runtime_init(void){
+	objc_runtime_init_check_function_pointer(execution.abort)
+	objc_runtime_init_check_function_pointer(execution.exit)
+	
+	objc_runtime_init_check_function_pointer(memory.allocator)
+	objc_runtime_init_check_function_pointer(memory.deallocator)
+	objc_runtime_init_check_function_pointer(memory.reallocator)
+	objc_runtime_init_check_function_pointer(memory.zero_allocator)
+	
+	objc_runtime_init_check_function_pointer(sync.rwlock.creator)
+	objc_runtime_init_check_function_pointer(sync.rwlock.destroyer)
+	objc_runtime_init_check_function_pointer(sync.rwlock.rlock)
+	objc_runtime_init_check_function_pointer(sync.rwlock.unlock)
+	objc_runtime_init_check_function_pointer(sync.rwlock.wlock)
+	
+	objc_runtime_init_check_function_pointer_with_default_imp(logging.log, _objc_runtime_default_log)
+	
+	objc_runtime_init_check_function_pointer_with_default_imp(array.creator, objc_array_create)
+	objc_runtime_init_check_function_pointer_with_default_imp(array.lockable_creator, objc_array_create_lockable)
+	objc_runtime_init_check_function_pointer_with_default_imp(array.append, objc_array_add)
+	objc_runtime_init_check_function_pointer_with_default_imp(array.destroyer, objc_array_destroy)
+	objc_runtime_init_check_function_pointer_with_default_imp(array.getter, objc_array_pointer_at_index)
+	
+	objc_runtime_init_check_function_pointer_with_default_imp(class_holder.creator, objc_class_holder_create)
+	objc_runtime_init_check_function_pointer_with_default_imp(class_holder.destroyer, objc_class_holder_destroy)
+	objc_runtime_init_check_function_pointer_with_default_imp(class_holder.inserter, objc_class_holder_insert_class)
+	objc_runtime_init_check_function_pointer_with_default_imp(class_holder.lookup, objc_class_holder_lookup_class)
+	
+	objc_class_init();
 }
 
 /********** Getters and setters. ***********/

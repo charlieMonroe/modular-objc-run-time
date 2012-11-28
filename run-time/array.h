@@ -13,7 +13,7 @@
 #define OBJC_ARRAY_NOT_FOUND ((unsigned int)(-1))
 
 // Creates a new objc_array object
-extern objc_array objc_array_create(void);
+extern objc_array objc_array_create(unsigned int capacity);
 
 // Destroys (i.e. frees the objc_array object). No action is
 // performed on the pointers. It's up to the array owner
@@ -45,7 +45,7 @@ extern unsigned int objc_array_size(objc_array array);
 // LOCKABLE
 
 // Creates a new objc_array with the ability to lock itself using a mutex
-extern objc_array objc_array_create_lockable(void);
+extern objc_array objc_array_create_lockable(unsigned int capacity);
 
 // Locks the mutex associated with that particular array
 extern void objc_array_lock_for_reading(objc_array array);

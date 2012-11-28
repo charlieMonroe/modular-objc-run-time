@@ -26,7 +26,7 @@ The modularity that will be introduced by this work will allow anyone to explore
 
 \section{Run-time Setup}
 
-At the core of the run-time, there is a structure \verb=objc_runtime_setup_struct objc_setup= - while the user has no direct access to this structure, the run-time itself can access it directly for the sake of the speed, to eliminate unnecessary function calls that would serve just as proxy calls.
+At the core of the run-time, there is a structure \verb=objc_runtime_setup_struct objc_setup= - while the user has no direct access to this structure, the run-time itself can access it directly for the sake of the speed, to eliminate unnecessary function calls that would serve just as proxy calls.\footnote{The user doesn't have a direct access to the structure only as a security precaution so that the structure cannot be modified from the outside during the program execution. Of course, the user can easily get the setup using the 'objc\_runtime\_get\_setup' function, which returns the current setup structure. The user can then cache this structure for performance.}
 
 You can view the structure here:
 
@@ -44,6 +44,8 @@ typedef struct {
 \end{verbatim}
 
 This allows the modularity of the run-time. One can, at the beginning of his program, modify all of those pointers using setter functions declared in \verb=runtime.h=. After the runtime has been initialized, however, the whole structure is sealed from changes using those setter functions to prevent any data corruption (as some data structures may be already initialized, changing these functions could lead to bad memory access, etc.). Using any of the setter functions after the run-time has been initialized will lead to a crash of the program (using the abort function supplied).
+
+In a real-world scenario, of course, we cannot assume that each user will supply all these functions first thing in the \verb=main= function. For example, on \verb=*nix=\footnote{Most Unix systems, cannot be guaranteed that this will work on all of the systems.} systems, this can be easily solved by compiling the library with a single \verb=.c= file which has a function populating the setup structure with system-specific functions. This function can then either be called by the dynamic loader (which requires support from the dynamic loader), or can have a GCC-specific \verb=__attribute__((constructor))= if the system supports it. If neither is an option, then the user really needs to call this system-specific function to populate the run-time setup and then initialize the run-time, if the system-specific function hasn't done so. An example of this can be found in the \verb=posix.c= file which is bundled with the run-time as an example.
 
 A description of each of those functions follows:
 
@@ -76,7 +78,26 @@ The default implementation is a structure that contains two \verb=unsigned int=s
 
 The run-time needs to keep track of all classes that are registered with it. To do so, it needs to keep a list in some data structure. As the run-time is designed to be flexible, it doesn't matter what data structure at all.
 
-There is a defined data type \verb=objc_class_holder= which, however, is again only a redefined \verb=void*=. Using the run-times function pointers \verb=class_holder.creator=, \verb=class_holder.destroyer=, \verb=class_holder.lookup= and TODO, the run-time creates the data structure required, has means to destroy it, lookup a class according to its name and TODO.
+There is a defined data type \verb=objc_class_holder= which, however, is again only a retyped \verb=void*=. Using the run-times function pointers \verb=class_holder.creator=, \verb=class_holder.destroyer=, \verb=class_holder.lookup= and TODO, the run-time creates the data structure required, has means to destroy it, lookup a class according to its name and TODO.
 
-The run-time provides a default implementation of this structure, a simple hash table which resembles slightly NXMapTable from Apple's run-time, but removes all dependencies and is made slightly less complicated.
+The run-time provides a default implementation of this structure, a simple hash table which resembles slightly \verb=NXMapTable= from Apple's run-time, but removes all dependencies and is made slightly less complicated.
 
+\section{Class}
+
+At the core of the run-time lies a structure representing a class. Like the \'Etoil\'e run-time, this run-time doesn't provide a class pair - a class and its meta-class, but only a single class object that contains class methods as well. While it abandons the Smalltalk similarities, it provides greater flexibility, allowing the Objective-C class structure to be used for other languages as well.
+
+\subsection{Structure of Class}
+
+The class structure begins in the traditional fashion with a pointer to its superclass - the \verb=isa= pointer. This pointer is followed by the class name, class methods and instance methods. Both class methods and instance methods use the \verb=objc_array= structure, which is a list of method lists.
+
+// TODO: cache, ivars
+
+\section{Extensibility of Classes}
+
+The run-time has been built as a bare minimum for running an Objective-C program. Hooks have been implemented, however, to allow to add additional features to classes and objects. There is an example bundled with the run-time: properties.
+
+\subsection{Properties}
+
+The run-time itself doesn't include support for properties, however, the run-time provides support for extending both the class and the object itself.
+
+// TODO describe

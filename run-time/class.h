@@ -18,4 +18,11 @@
   */
 extern Class objc_createClass(Class superclass, const char *name);
 
+extern void objc_addClassMethod(Class cl, Method m);
+extern void objc_addClassMethods(Class cl, Method *m, unsigned int count);
+extern void objc_addMethod(Class cl, Method m);
+extern void objc_addMethods(Class cl, Method *m, unsigned int count);
+extern Class objc_getClass(const char *name);
+extern void objc_finishClass(Class cl);
+
 #endif //OBJC_CLASS_H_

@@ -36,7 +36,7 @@ typedef void(*objc_exit)(int);
   *
   * printf is a compatible function.
   */
-typedef void(*objc_log)(const char*, ...);
+typedef int(*objc_log)(const char*, ...);
  
 
 /*********** Memory management ***********/
@@ -110,29 +110,36 @@ typedef objc_rw_lock(*objc_rw_lock_creator)(void);
 typedef void(*objc_rw_lock_destroyer)(objc_rw_lock);
 
 /**
- * Locks the RW lock for reading.
+ * Locks the RW lock for reading. Returns 0 if successful,
+ * non-zero for error. The error code is defined by the
+ * lock implementation.
  */
-typedef void(*objc_rw_lock_read_lock)(objc_rw_lock);
+typedef int(*objc_rw_lock_read_lock)(objc_rw_lock);
 
 /**
- * Locks the RW lock for writing.
+ * Locks the RW lock for writing. Returns 0 if successful,
+ * non-zero for error. The error code is defined by the
+ * lock implementation.
  */
-typedef void(*objc_rw_lock_write_lock)(objc_rw_lock);
+typedef int(*objc_rw_lock_write_lock)(objc_rw_lock);
 
 /**
- * Unlocks the RW lock.
+ * Unlocks the RW lock. Returns 0 if successful,
+ * non-zero for error. The error code is defined by the
+ * lock implementation.
  */
-typedef void(*objc_rw_lock_unlock)(objc_rw_lock);
+typedef int(*objc_rw_lock_unlock)(objc_rw_lock);
 
 
 /*********** objc_array ***********/
 
 /**
  * Two creators for an array - one is lockable (i.e. a rw/lock is
- * initialized), the other not.
+ * initialized), the other not. The argument is initial capacity of 
+ * the array.
  */
-typedef objc_array(*objc_array_creator)(void);
-typedef objc_array(*objc_array_lockable_creator)(void);
+typedef objc_array(*objc_array_creator)(unsigned int);
+typedef objc_array(*objc_array_lockable_creator)(unsigned int);
 
 /**
  * Function that frees the array memory.

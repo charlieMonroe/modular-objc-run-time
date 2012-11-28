@@ -19,13 +19,25 @@ typedef signed char BOOL;
 // Opaque declaration of a Class. The actual structure is private to 
 // the run-time, declared in class.c.
 typedef struct objc_class *Class;
- 
+
+// Opaque declaration of a Method. The actual structure is private to
+// the run-time, declared in method.c.
+typedef struct objc_method *Method;
+
+// A definition of a SEL.
+typedef struct objc_selector {
+	const char *name;
+} *SEL;
+
 // Definition of id - a pointer to an object - a struct, where the first field
 // is so-called isa, in GCC run-time called 'class_pointer'. I've chosen to keep
 // the 'isa' name.
 typedef struct objc_object {
 	Class isa;
 } *id;
+
+// A definition of a method implementation function pointer
+typedef id(*IMP)(id target, SEL _cmd, ...);
 
 // Definitions of nil and Nil.
 // nil is used for objects, Nil for classes. It doesn't really matter,

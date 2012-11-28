@@ -66,6 +66,7 @@ static inline BOOL objc_strings_equal(const char *str1, const char *str2){
 				// Equal
 				return YES;
 			}
+			++index;
 			continue;
 		}
 		return NO;

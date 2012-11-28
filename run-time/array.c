@@ -28,9 +28,9 @@ static inline void _objc_array_grow(_objc_array arr){
 }
 
 
-objc_array objc_array_create(void){
+objc_array objc_array_create(unsigned int capacity){
 	_objc_array arr = objc_setup.memory.allocator(sizeof(struct _objc_array));
-	arr->_capacity = _objc_array_default_capacity;
+	arr->_capacity = capacity == 0 ? _objc_array_default_capacity : capacity;
 	arr->_currentIndex = -1;
 	arr->_lock = NULL;
 	arr->_array = objc_setup.memory.zero_allocator(sizeof(void*) * arr->_capacity);
@@ -38,8 +38,8 @@ objc_array objc_array_create(void){
 	return arr;
 }
 
-objc_array objc_array_create_lockable(void){
-	_objc_array arr = objc_array_create();
+objc_array objc_array_create_lockable(unsigned int capacity){
+	_objc_array arr = objc_array_create(capacity);
 	arr->_lock = objc_setup.sync.rwlock.creator();
 	return (objc_array)arr;
 }
