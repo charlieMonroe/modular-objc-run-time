@@ -122,8 +122,14 @@ This field is followed by three function pointers:
 \begin{itemize}
   \item \verb=class_initialize= - this function gets called each time a class is registered with the run-time using \verb=objc_finish_class()=. This is the place where the extra space, to which a pointer is passed as the second argument, should get populated and initialized.
   \item \verb=object_initializer= - any time an object is allocated, this function gets called in order to initialize the extra space in the object (again, the second argument is a pointer to the extra space within the structure).
-  \item \verb=object_deallocator= - before the object gets deallocated, each class extension is provided an option to deallocated any dynamically 
+  \item \verb=object_deallocator= - before the object gets deallocated, each class extension is provided an option to deallocated any dynamically allocated structures.
 \end{itemize}
+
+While it allows to extend the classes with new functionality, for example properties, or ARC (the \verb=object_deallocator= can do all the automatic deallocations), it poses an issue at the compile time - how much extra space should be left? The compiler needs to know the size of the class structure to generate.
+
+One option is to re-allocate all classes with the extra space and copy over all pointers of the class internal structures (it is enough to copy over pointers as the memory will be kept alive). Assuming 1000 classes in a larger application, each class having 64 bytes + those extra bytes, this gives 64 kB of extra memory per application. While this isn't that much nowadays, it would slow down the application launch.
+
+Other option is to dynamically allocate the extra space for each class, so the class structure stays of the same size, with the extra space being outside of the structure itself.
 
 
 There is an example bundled with the run-time: properties.

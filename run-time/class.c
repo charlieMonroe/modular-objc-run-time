@@ -44,12 +44,19 @@ Class objc_createClass(Class superclass, const char *name) {
 		return NULL;
 	}
 	
-	Class newClass = (Class)(objc_setup.memory.allocator(sizeof(struct objc_class) + _objc_extra_class_space_for_extensions()));
+	Class newClass = (Class)(objc_setup.memory.allocator(sizeof(struct objc_class)));
 	newClass->super_class = superclass;
 	newClass->name = objc_strcpy(name);
 	newClass->class_methods = NULL; // Lazy-loading
 	newClass->instance_methods = NULL; // Lazy-loading
 	newClass->flags.in_construction = YES;
+	
+	unsigned int extra_space = _objc_extra_class_space_for_extensions();
+	if (extra_space != 0){
+		newClass->extra_space = objc_setup.memory.allocator(extra_space);
+	}else{
+		newClass->extra_space = NULL;
+	}
 	
 	objc_setup.class_holder.inserter(objc_classes, newClass);
 	objc_setup.class_holder.unlock(objc_classes);
@@ -133,10 +140,12 @@ void objc_finishClass(Class cl){
 	// Pass the class through all extensions
 	objc_class_extension *ext = class_extensions;
 	void *extra_space = cl->extra_space;
-	while (ext != NULL) {
-		ext->class_initializer(cl, extra_space);
-		extra_space += ext->extra_class_space;
-		ext = ext->next_extension;
+	if (extra_space != NULL){
+		while (ext != NULL) {
+			ext->class_initializer(cl, extra_space);
+			extra_space += ext->extra_class_space;
+			ext = ext->next_extension;
+		}
 	}
 	
 	// That's it! Just mark it as not in construction
