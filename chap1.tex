@@ -60,9 +60,11 @@ So it's two nested \verb=objc_msgSend= calls\footnote{There are actually specifi
 
 The run-time then looks up the object's class, finds a function that implements this method (so called \verb=IMP=\footnote{IMP is defined as a pointer to a function: id (*IMP)(id, SEL, ...).}) and calls it. There's a several things to point out:
 
-• method \emph{names} are used. \verb=sel_registerName= is a function that makes sure that for that particular method name only one selector pointer is kept.
-• each of the calls goes to a different object. The first call gets to something returned by \verb=objc_getClass= which returns an instance of a meta class (which is an object as well)
-• every class consists of two classes - a class pair - one regular of which you create objects and one meta - which typically (unless you manually craft another one) has only one instance: a receiver for class methods (static methods).
+\begin{itemize}
+\item method \emph{names} are used. \verb=sel_registerName= is a function that makes sure that for that particular method name only one selector pointer is kept.
+\item each of the calls goes to a different object. The first call gets to something returned by \verb=objc_getClass= which returns an instance of a meta class (which is an object as well)
+\item every class consists of two classes - a class pair - one regular of which you create objects and one meta - which typically (unless you manually craft another one) has only one instance: a receiver for class methods (static methods).
+\end{itemize}
 
 If you care to investigate this hierarchy, here's a small example:
 

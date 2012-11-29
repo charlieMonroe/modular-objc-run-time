@@ -21,7 +21,7 @@ static inline void *malloc_zone_malloc(malloc_zone_t z,
 }
 \end{verbatim}
 
-While it's functional, if Microsoft ever decided to implement zones, it would break the code. Moreover, there is another function defined in the source code\footnote{objc-class.m}:
+While it's functional, if Microsoft ever decided to implement zones into its version of malloc, it would break the code as it would result in duplicated symbol definition. Moreover, there is another function defined in the source code\footnote{objc-class.m}:
 
 \begin{verbatim}
 void *_malloc_internal(size_t size) {

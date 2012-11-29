@@ -53,7 +53,7 @@ Class objc_createClass(Class superclass, const char *name) {
 	
 	unsigned int extra_space = _objc_extra_class_space_for_extensions();
 	if (extra_space != 0){
-		newClass->extra_space = objc_setup.memory.allocator(extra_space);
+		newClass->extra_space = objc_setup.memory.zero_allocator(extra_space);
 	}else{
 		newClass->extra_space = NULL;
 	}
@@ -142,7 +142,9 @@ void objc_finishClass(Class cl){
 	void *extra_space = cl->extra_space;
 	if (extra_space != NULL){
 		while (ext != NULL) {
-			ext->class_initializer(cl, extra_space);
+			if (ext->class_initializer != NULL){
+				ext->class_initializer(cl, extra_space);
+			}
 			extra_space += ext->extra_class_space;
 			ext = ext->next_extension;
 		}
@@ -154,6 +156,18 @@ void objc_finishClass(Class cl){
 
 void objc_class_init(void){
 	objc_classes = objc_setup.class_holder.creator();
+	
+	// Cache the extension offsets
+	objc_class_extension *ext = class_extensions;
+	unsigned int class_extra_space = 0;
+	unsigned int object_extra_space = 0;
+	while (ext != NULL) {
+		ext->class_extra_space_offset = class_extra_space;
+		ext->object_extra_space_offset = object_extra_space;
+		class_extra_space += ext->extra_class_space;
+		object_extra_space += ext->extra_object_space;
+		ext = ext->next_extension;
+	}
 }
 
 void objc_class_add_extension(objc_class_extension *extension){

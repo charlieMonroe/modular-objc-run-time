@@ -70,6 +70,12 @@ typedef void*(*objc_reallocator_f)(void*, unsigned int);
  * the size of memory requested. It should be equivalent to calloc(1, size).
  */
 typedef void*(*objc_zero_allocator_f)(unsigned int);
+
+/**
+ * A function pointer to zero-out a chunk of memory. Functionality should
+ * be the same as bzero.
+ */
+typedef void(*objc_memory_eraser_f)(void*, unsigned int);
  
  
 /*********** objc_class_holder ***********/

@@ -20,6 +20,7 @@ typedef struct {
 	objc_deallocator_f deallocator;
 	objc_reallocator_f reallocator;
 	objc_zero_allocator_f zero_allocator;
+	objc_memory_eraser_f memory_eraser;
 } objc_setup_memory;
 
 typedef struct {
@@ -118,6 +119,7 @@ objc_runtime_create_getter_setter_function_decls(objc_allocator_f, allocator)
 objc_runtime_create_getter_setter_function_decls(objc_deallocator_f, deallocator)
 objc_runtime_create_getter_setter_function_decls(objc_reallocator_f, reallocator)
 objc_runtime_create_getter_setter_function_decls(objc_zero_allocator_f, zero_allocator)
+objc_runtime_create_getter_setter_function_decls(objc_memory_eraser_f, memory_eraser)
 objc_runtime_create_getter_setter_function_decls(objc_class_holder_creator_f, class_holder_creator)
 objc_runtime_create_getter_setter_function_decls(objc_class_holder_destroyer_f, class_holder_destroyer)
 objc_runtime_create_getter_setter_function_decls(objc_class_holder_lookup_f, class_holder_lookup)

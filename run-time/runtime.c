@@ -66,6 +66,7 @@ void objc_runtime_init(void){
 	objc_runtime_init_check_function_pointer(memory.deallocator)
 	objc_runtime_init_check_function_pointer(memory.reallocator)
 	objc_runtime_init_check_function_pointer(memory.zero_allocator)
+	objc_runtime_init_check_function_pointer(memory.memory_eraser)
 	
 	objc_runtime_init_check_function_pointer(sync.rwlock.creator)
 	objc_runtime_init_check_function_pointer(sync.rwlock.destroyer)
@@ -120,6 +121,7 @@ objc_runtime_create_getter_setter_function_body(objc_allocator_f, allocator, mem
 objc_runtime_create_getter_setter_function_body(objc_deallocator_f, deallocator, memory.deallocator)
 objc_runtime_create_getter_setter_function_body(objc_reallocator_f, reallocator, memory.reallocator)
 objc_runtime_create_getter_setter_function_body(objc_zero_allocator_f, zero_allocator, memory.zero_allocator)
+objc_runtime_create_getter_setter_function_body(objc_memory_eraser_f, memory_eraser, memory.memory_eraser)
 objc_runtime_create_getter_setter_function_body(objc_class_holder_creator_f, class_holder_creator, class_holder.creator)
 objc_runtime_create_getter_setter_function_body(objc_class_holder_destroyer_f, class_holder_destroyer, class_holder.destroyer)
 objc_runtime_create_getter_setter_function_body(objc_class_holder_inserter_f, class_holder_inserter, class_holder.inserter)

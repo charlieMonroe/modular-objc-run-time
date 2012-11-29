@@ -17,6 +17,9 @@ typedef struct _objc_class_extension {
 	// field
 	struct _objc_class_extension *next_extension;
 	
+	// NOTE: any of these functions *may* be NULL if no
+	// action is required
+	//
 	// This function is responsible for initializing
 	// the extra space in the class. The second parameter
 	// is a pointer to the extra space within the class
@@ -40,6 +43,15 @@ typedef struct _objc_class_extension {
 	// the extra space is valid
 	unsigned int extra_class_space;
 	unsigned int extra_object_space;
+	
+	// When the run-time is initialized, each extensions
+	// structure gets a pre-computed offsets from the extra
+	// space part of the object or class. This is merely a convenience
+	// so that the class extension list doens't need to be iterated
+	// every time an extension needs to access the object's extra
+	// space
+	unsigned int class_extra_space_offset;
+	unsigned int object_extra_space_offset;
 } objc_class_extension;
 
 // Caller is responsible for keeping the structure in memory.
