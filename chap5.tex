@@ -140,7 +140,7 @@ As the run-time needs new memory for dynamic object creation, an allocator is ne
 
 The Modular Run-Time lets you specify your own allocator, which can be, for example, just a wrapper around \verb=malloc= adding some debug logging, or a completely different allocator, e.g.\ a kernel allocator as has been mentioned before. It can also be just the \verb=malloc= function itself, as the function type takes just one argument - the size of the memory required and returns a \verb=void*= pointer.
 
-Sometimes, the memory acquired should be filled with zeros - just as the \verb=calloc= function would do, however, it is called \verb=objc_zero_allocator\ zero_allocator= in this run-time. The \verb=calloc= function can be assigned, however.
+Sometimes, the memory acquired should be filled with zeros - just as the \verb=calloc= function would do, however, it is called \verb=zero_allocator= in this run-time. The \verb=calloc= function can be assigned, however.
 
 For dynamically growing structures, reallocation may be needed - hence the inclusion of the reallocating function. It is pointer-compatible with the \verb=realloc= function.
 

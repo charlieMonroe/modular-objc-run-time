@@ -12,6 +12,7 @@
 #define OBJC_USES_INLINE_FUNCTIONS 0
 
 #if OBJC_USES_INLINE_FUNCTIONS
+
 /********* INLINE FUNCTIONS *********/
 //#if TARGET_MY_OS
 	//#include "os-my-os.h"
@@ -20,6 +21,7 @@
 //#endif
 
 #else
+
 /********* FUNCTION POINTERS *********/
 
 #include "runtime-private.h"
@@ -29,6 +31,5 @@
 
 
 #endif
-
 
 #endif // OBJC_OS_H_

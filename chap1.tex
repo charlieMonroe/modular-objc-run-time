@@ -1,41 +1,42 @@
 \chapter{Objective-C}
-\section{Foreword}
-
-This thesis will analyze source codes of existing versions of Objective-C run-time, their limitations or requirements for compilation. Result of this work will be a prototype of a modular Objective-C run-time, which will allow easy configuration of the run-time environment both at the compilation and run time. For example, for a single-threaded application, you can turn off the locking of internal structures without affecting stability, yet performance can be improved (with each message sent\footnote{In Objective-C method calls are called messages being sent to objects, just like in Smalltalk.}, a lock can be potentially locked when the method implementation isn't cached and the class hierarchy has to be searched) - this may save quite a few syscalls.
-
-There are three available Objective-C run-time implementations (to my knowledge) - one is provided by \emph{Apple} and is used in its OS X and iOS systems - there are slight differences between the iOS and OS X versions of the run-time (e.g.\ iOS doesn't support garbage collection and only the new 2.0 run-time is available). Within this thesis, when talking about Apple's implementation of the run-time, the OS X version will be the one talked about. Then there's a run-time provided with \emph{GCC} and a more experimental one called \emph{\'{E}toil\'{e}}\footnote{http://www.jot.fm/issues/issue\_2009\_01/article4/index.html}.
-
-Even though I will mention a few words about the garbage collection and ARC\footnote{ARC - automatic reference counting, a feature introduced in Xcode 4.2 (Xcode is Apple's IDE) that uses compiler's static analysis combined with special keywords to automatically insert retain/release calls so that the developer doesn't need to manually manage reference counts on objects.}, not much attention will be paid to them as garbage collection is being deprecated in OS X 10.8 (TODO - ELABORATE IN APPLE SECTION - and has severe dependencies on Mac OS X itself) and ARC is relatively new and uses a lot of compiler-dependent features as well as auto-zeroing weak references, etc.; which is beyond the scope of this work. Instead, the focus will be put on the core functionality of the run-time, analysis of the current implementations and designing the modular run-time itself.
   
 \section{Brief history of Objective-C}
 
-In the early 1980s, Brad Cox and Tom Love decided to bring the object-oriented concept to the world of C while maintaining full backward compatibility, strongly inspired by Smalltalk
+In the early 1980s, Brad Cox and Tom Love decided to bring the object-oriented concept to the world of C while maintaining full backward compatibility. The result was Objective-C, a language heavily inspired by the Smalltalk language. At first, the language had no compiler support, but as all Objective-C code can be actually rewritten in pure C, a preprocessor was a sufficient tool.
 
-In 1988, NeXT has licensed Objective-C from Stepstone (the company Cox and Love owned), added Objective-C support to the GCC compiler and decided to use it in its OpenStep and NeXTStep operating systems.
+In 1988, NeXT has licensed Objective-C from Stepstone (the company Cox and Love owned), added Objective-C support to the GCC compiler and decided to use it in its OpenStep and NeXTSTEP operating systems (many classes in Apple's frameworks have a \verb=NS= prefix to the date, which stands either for NeXTSTEP, or NeXT-Sun as the OpenStep operating system has been developer in cooperation with Sun Microsystems\footnote{http://en.wikipedia.org/wiki/OpenStep}).
 
 After Apple had acquired NeXT in 1996, Objective-C stayed alive in Rhapsody\footnote{http://en.wikipedia.org/wiki/Rhapsody\_(operating\_system)} and later on in Mac OS X, where it's the preferred programming language to the date.
 
-For this whole time, the Objective-C language stayed almost the same without any significant changes. In 2006, Apple announced Objective-C 2.0 (which was released in Mac OS X 10.5 in 2007), which introduced garbage collection (which has been deprecated in 10.8 in favor of more efficient ARC - automatic reference counting\footnote{http://cocoaheads.tumblr.com/post/17719985728/10-8-objective-c-enhancements}), properties (object variables with automatically generated getters and/or setters with specified memory management), fast enumeration (enumeration over collections in a foreach-style), and some other minor improvements.
+For this whole time, the Objective-C language stayed almost the same without any significant changes, until 2006, when Apple announced Objective-C 2.0 (released as a part of Mac OS X 10.5 in 2007), which introduced garbage collection (since then deprecated in 10.8 in favor of more efficient ARC - automatic reference counting\footnote{http://cocoaheads.tumblr.com/post/17719985728/10-8-objective-c-enhancements}), properties (object variables with automatically generated getters and/or setters with specified memory management), fast enumeration (enumeration over collections in a foreach-style), and some other minor improvements.
 
-Lately, more improvements have been made to Objective-C, most importantly the aforementioned ARC (automatic reference counting). Apple's run-time a hardcoded set of selectors (method names) that handle the memory management, -autorelease, -retain, -release (together called ARR), in particular. ARC automatically inserts these method calls and automatically generates a -dealloc method (which is called when the object is being deallocated) - which requires compiler support, though.
+Lately, more improvements have been made to Objective-C, most importantly the aforementioned ARC (automatic reference counting). Apple's run-time has a hardcoded set of selectors (method names) that handle the memory management, \verb=-autorelease=, \verb=-retain=, \verb=-release= (together called ARR), in particular. ARC automatically inserts these method calls and automatically generates a \verb=-dealloc= method (which is called when the object is being deallocated) - this, however, heavily depends on compiler support, though, as it needs to statically analyze the code in order to safely insert these ARR calls..
 
 This, however, presents a problem - none of the ARR calls must be called directly in the code - hence you need to convert all of your code to ARC\@. One disadvantage which results in a big advantage - compatibility with all libraries (Apple calls Objective-C libraries frameworks) - this was a big disadvantage of garbage collection: 
 
-You could keep the code as it was as the run-time itself redirected the ARR methods to a no-op function on the fly, however, all linked libraries/frameworks/plugins needed to be recompiled with garbage collection support turned on. This caused two things: mess in the code as if you migrated your code to garbage-collection-enabled environment, it was riddled with ARR calls, however, newly written code typically omitted those calls, making the code inconsistent; and some libraries never got GC support anyway, so you couldn't use them in GC-enabled applications.
+You could keep the code as it was as the run-time itself redirected the ARR methods to a no-op function on the fly, however, all linked libraries / frameworks / plugins needed to be recompiled with garbage collection support turned on. This caused two things: mess in the code as if you migrated your code to garbage-collection-enabled environment, it was riddled with ARR calls, however, newly written code typically missed those calls, making the code inconsistent; and some libraries never got GC support anyway, so you couldn't use them in GC-enabled applications.
 
-In the newest release of OS X 10.8, several new features have been included - default synthesis of getters (in prior versions, you had to declare \verb=@property= in the header file and use \verb=@sythesize= or \verb=@dynamic= in the implementation file - see Syntax of Objective-C), type-safe enums, literals for NSArray, NSDictionary and NSNumber (classes declared in Apple's Foundation framework), etc.
+In the newest release of OS X - 10.8, several more new features have been included - default synthesis of getters (in prior versions, you had to declare \verb=@property= in the header file and use \verb=@sythesize= or \verb=@dynamic= in the implementation file - see Syntax of Objective-C), type-safe enums, literals for \verb=NSArray=, \verb=NSDictionary= and \verb=NSNumber= (classes declared in Apple's Foundation framework), etc.
 
 \section{Compilation of Objective-C}
 
-Objective-C is an object-oriented programming language that is a strict superset of C. Any C code can be used within Objective-C source code\footnote{The examples below relate to Apple's version of the run-time. Other versions of the run-time may call different function, and even use different structures. These examples are here to simply illustrate the mechanism of translation to C functions.}. Its run-time is written in C as well, some parts in assembly language (mostly performance optimizations) or more recently in C++ (more about that later on). This thesis assumes that you have some brief knowledge of both C and Objective-C, at least syntax-wise.
+Objective-C is an object-oriented programming language that is a strict superset of C. Any C code can be used within Objective-C source code. Its run-time is written in C as well, some parts in the assembly language (mostly performance optimizations) or more recently in C++ (more about that later on). This thesis assumes that you have some brief knowledge of both C and Objective-C, at least syntax-wise.
 
-All Objective-C code can be translated to calls of C run-time functions\footnote{There's a LLVM Clang compiler option -rewrite-objc which will convert all the Objective-C syntax into calls of pure C methods - the run-time methods. When run `clang -rewrite-objc test.m', where test.m contains the Objective-C code, a new test.cpp is created, containing the translated code.} - for example, sending a message to an object isn't anything else than calling a run-time function \verb=objc_msgSend=.
+And the other way around, all Objective-C code can be translated to calls of C run-time functions. There is a LLVM Clang compiler option \verb=-rewrite-objc= which will convert all the Objective-C syntax into calls of pure C methods - the run-time methods. When run 
 
-This section will cover compilation of Objective-C code and how it's translated into calling run-time functions.
+\begin{verbatim}
+  clang -rewrite-objc test.m
+\end{verbatim}
+
+where \verb=test.m= contains the Objective-C code, a new test.cpp is created, containing the translated code. For example, sending a message to an object isn't anything else than calling a run-time function \verb=objc_msgSend=. Note that the run-time implementations may differ in the function names, or even use different structures and the way methods are invoked. The examples below will show how the code translation works with Apple's version of the run-time. These examples are here to simply illustrate the mechanism of translation to C functions.
 
 \subsection{Calling methods}
 
-This is a sample code that sends two messages - each to a different object, though\footnote{As will be explained later on, each class actually consists of two classes - the meta class, which has the +alloc method and the regular class, which has the -init method.}:
+As has been mentioned before, calling a method isn't anything else than calling a \verb=objc_msgSend= variadic function, which is responsible for finding a function pointer that implements the actual method and invoking it.
+
+\paragraph{Example}
+Here a sample code that sends two messages - each to a different object, though - each class actually consists of two classes - the meta class, which has the \verb=+alloc= method and the regular class (an instance of the metaclass), which has the \verb=-init= method.
+
 \begin{verbatim}SomeClass *myObj = [[SomeClass alloc] init];\end{verbatim}
 
 This will be translated to:
@@ -56,24 +57,45 @@ Which after removing the casting and adding a little formatting is:
     sel_registerName("init"));
 \end{verbatim}
 
-So it's two nested \verb=objc_msgSend= calls\footnote{There are actually specific functions for methods that return floating point numbers or structures, as these may require special ABI treatment on some architectures.}. \verb=objc_msgSend= is a method that can be said to be the core of Objective-C run-time. It's the most used function of the run-time. Every method call in Objective-C gets translated into this variadic function call, which takes \verb=self= as the first argument (i.e.\ the object that the method is called on, or the message is sent to\footnote{Here can be seen the Smalltalk influence.}), the second argument is a selector (generally the method's name) and can be followed by arguments.
+So it's two nested \verb=objc_msgSend= calls. There are actually specific functions for methods that return floating point numbers or structures, as these require special ABI treatment on some architectures - for example the structures are returned as a hidden first argument of the function. \verb=objc_msgSend= is a method that can be said to be the core of Objective-C run-time. It's the most used function of the run-time. Every method call in Objective-C gets translated into this variadic function call, which takes \verb=self= as the first argument (i.e.\ the object that the method is called on, or the message is sent to), the second argument is a selector (generally the method's name) and can be followed by arguments.
 
-The run-time then looks up the object's class, finds a function that implements this method (so called \verb=IMP=\footnote{IMP is defined as a pointer to a function: id (*IMP)(id, SEL, ...).}) and calls it. There's a several things to point out:
+\subparagraph{GCC Run-time}
+
+The GCC run-time differs slightly from Apple's run-time - it doesn't have a \verb=objc_msgSend= function, but uses \verb=objc_msg_lookup= function, which rather returns a pointer to the implementation function itself (the so-called \verb=IMP=). The same example would compile under the GCC run-time into the following calls:
+
+\begin{verbatim}
+  id receiver1 = objc_getClass("SomeClass");
+  SEL selector1 = sel_registerName("alloc");
+  IMP allocIMP = objc_msg_lookup(receiver1, 
+                                  selector1);
+  id receiver2 = allocIMP(receiver1, selector1);
+  SEL selector2 = sel_registerName("init");
+  IMP initIMP = objc_msg_lookup(receiver2, 
+                                  selector2);
+  SomeClass *myObj = initIMP(receiver2, selector2);
+\end{verbatim}
+
+As you can see, Apple's run-time differs only in the fact that the \verb=objc_msgSend= calls the function directly, whereas the GCC run-time looks up the function and then calls it. This has a small advantage that it doesn't require any special variants of functions, like in Apple's run-time, where the \verb=objc_msgSend= has 4 variants depending on the return type.
+
+\hspace{20pt}
+
+But even so, the principe is the same - the run-time needs to look up the object's class, find a function that implements that particular method (so called \verb=IMP=, an implementation pointer, a pointer to a function with the following signature: id (*IMP)(id, SEL, ...)) and the function gets called either by \verb=objc_msgSend=, or or directly. There's a several things to point out:
 
 \begin{itemize}
-\item method \emph{names} are used. \verb=sel_registerName= is a function that makes sure that for that particular method name only one selector pointer is kept.
-\item each of the calls goes to a different object. The first call gets to something returned by \verb=objc_getClass= which returns an instance of a meta class (which is an object as well)
+\item method \emph{names} are used. \verb=sel_registerName= is a function that makes sure that for that particular method name only one selector pointer is kept. A selector is a pointer to a structure representing a method name. On some run-times, selectors are typed, i.e. methods of the same name, but with different argument types result in different selectors. While Objective-C doesn't support method overloading, the selector storage is program-wise, not just per class.
+\item each of the calls goes to a different object. The first call gets to something returned by \verb=objc_getClass= which returns a class, which is an instance of a meta class (which is an object as well). The second call goes already to an object - instance of the class (the class hierarchy is described below).
 \item every class consists of two classes - a class pair - one regular of which you create objects and one meta - which typically (unless you manually craft another one) has only one instance: a receiver for class methods (static methods).
 \end{itemize}
 
+\subsection{Class Hierarchy}
 If you care to investigate this hierarchy, here's a small example:
 
-\verb=NSObject= class is part of the Foundation framework Apple supplies. Even though its often assumed to be the one and only root class in Objective-C, this is quite incorrect: there can be as many root classes in Objective-C as you wish - \verb=NSProxy= is an example and you can easily create your own.
+\verb=NSObject= class is part of the Foundation framework Apple supplies. Even though it is often assumed to be the one and only root class in Objective-C, this is quite incorrect: there can be as many root classes in Objective-C as you wish - \verb=NSProxy= is an example and you can easily create your own.
 
 \begin{verbatim}@interface ClassWithoutSuperclass
 @end\end{verbatim}
 
-This will declare a new root class. It has absolutely no functionality - no memory management \verb=retain= and \verb=release=, no \verb=+alloc= method is declared either - you wouldn't be able to even create a new instance of this class without the run-time function \verb=class_createInstance=\footnote{This is basically why it is recommended to inherit all classes from NSObject (or any other root class) which implements some basic communication with the run-time as well as some basic memory management, etc.}.
+This will declare a new root class. It has absolutely no functionality - no memory management \verb=-retain= and \verb=-release=, no \verb=+alloc= method is declared either - you wouldn't be able to even create a new instance of this class without the run-time function \verb=class_createInstance= - which is basically why it is recommended to inherit all classes from NSObject (or any other prepared root class) which implements some basic communication with the run-time as well as some basic memory management, etc.
 
 Each object is a pointer to a structure. Let's use this simplified class structure (it's more complex in real life):
 
