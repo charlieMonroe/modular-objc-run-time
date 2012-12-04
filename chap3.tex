@@ -1,10 +1,12 @@
 \chapter{GCC Implementation}
 
-In comparison to Apple's source codes, GCC's code is much cleaner and very well documented - even every \verb=#include= is commented why and which functions from that file are used. Aside from this, there are multiple differences between the Apple and GCC implementations of the run-time.
+GCC is, as probably everyone knows, a GNU C compiler, hence this run-time implementation is often referred to as the GNU Objective-C run-time. It is bundled with the GCC compiler, allowing non-Apple systems to run Objective-C code as well.
+
+In comparison with Apple's source codes, GCC's code is much cleaner and well documented - even every \verb=#include= is commented why and which functions from that file are used. Aside from this code-style aspect, there are multiple differences between the Apple and GCC implementations of the run-time.
 
 \section{Differences from Apple's Implementation}
 \subsection{Message Sending}
-Apple's run-time uses the \verb=objc_msgSend= function to send messages to objects. This function needs to handle finding the correct \verb=IMP= function for the selector, execute it and return the return value of the function. This, unfortunately, has a slight disadvantage - on some architectures, some values (\verb=double= and \verb=struct= values, for example) get returned a different way - using a different register, which needs to be taken into account. Hence Apple's implementation contains several other functions, such as \verb=objc_msgSend_stret= for structures and \verb=objc_msgSend_fpret= for float values\footnote{On i386 computers, the 'fpret' is used for double values, on x86-64, just for long double values. The 'stret' function has, unlike other objc\_msgSend functions has a pointer to the structure address as a first argument and returns void. Other arguments follow the structure pointer.}.
+Apple's run-time uses the \verb=objc_msgSend= function to send messages to objects. This function needs to handle finding the correct \verb=IMP= function for the selector, execute it and return the return value of the function. This, unfortunately, has a slight disadvantage - on some architectures, some values (\verb=double= and \verb=struct= values, for example) get returned a different way - using a different register, or altogether on the stack, which needs to be taken into account. Hence Apple's implementation contains several other functions, such as \verb=objc_msgSend_stret= for structures and \verb=objc_msgSend_fpret= for float values. On i386 computers, the \verb=*_fpret= is used for \verb=double= values, on x86-64, just for \verb=long double= values. The \verb=*_stret= function has, unlike other \verb=objc_msgSend= functions has a pointer to the structure address as a first argument and returns void (just as the regular C compiler in fact does for functions returning structures - they are compiled into functions having one extra argument and void return value). Other arguments follow the structure pointer.
 
 The GCC implementation takes another approach, which requires no specialized functions. A \verb=[receiver method]= gets compiled to the following two lines:
 
@@ -12,22 +14,34 @@ The GCC implementation takes another approach, which requires no specialized fun
 IMP function = objc_msg_lookup(receiver, @selector(method));id result = function(receiver, @selector(method));
 \end{verbatim}
 
-While this solution has a disadvantage that several calls to Objective-C objects cannot be chained as in the example in Chapter 1, it is not a crippling disadvantage as this code is very rarely written by the developer and chaining function calls require the C compiler to place the value into a temporary variable anyway, so there isn't any performance cost - if any, it may one instruction of fetching an extra variable - the function, but this is outweighed by the message lookup mechanism anyways.
+Going back to the example in \ref{Code example}, this would get translated to
+
+\begin{verbatim}
+id obj1 = (id)objc_getClass("SomeClass");
+IMP function1 = objc_msg_lookup(class, @selector("alloc"));
+id obj2 = function1(obj1, @selector("alloc"));
+IMP function2 = objc_msg_lookup(obj2, @selector("init"));
+SomeClass *myObj = function2(obj2, @selector("init"));
+\end{verbatim}
+
+While this solution has a disadvantage that several calls to Objective-C objects cannot be chained as in the example in Chapter 1, it is not a crippling disadvantage as this code is very rarely written by the developer by hand and chaining function calls requires the C compiler to place the value into temporary variables anyway, so there isn't any performance cost - if any, it may be one instruction of fetching an extra variable - the function, but this is asymptotically outweighed by the message lookup mechanism anyways.
 
 \subsection{Module Loading}
 
-TODO - investigate
+While the GCC run-time does provide a way to simply copy over class structures from somewhere in the memory, but unlike Apple's implementation, this isn't tied to any specific dynamic loader, only defines a set of structures in \verb=module-abi-8.h=, such as \verb=objc_module= and \verb=objc_symtab=, which describe structures the compiler should generate for each selector, class or category, etc.\ and the dynamic loader can call a few functions, passing those structures that may be loaded from any part of the file, be it a Mach-O file, or ELF file, or any other executable file type.
+
+Simply said, the GCC run-time provides an API for the dynamic loader to use, whereas Apple's run-time takes some of the loader's work, going through the Mach-O headers and looking for the classes to load.
 
 \subsection{Typed Selectors}
 
-In Apple's implementation, selectors (\verb=SEL=) are pointers to a structure with just one field - a \verb=char*= which includes the selector's name. Whenever you want to send a message to an object, you need to retrieve a selector for name (using the \verb=sel_registerName= function). As the run-time needs the message sending to be as fast as possible, it hashes the selector in order to find the \verb=IMP= for that particular object. Thanks to registering the selectors, each selector is unique and there can't be two selectors with the same name in the run-time. This allows the message lookup mechanism to simply create a hash from the pointer and find a method by a simple pointer comparison, without actually reading the string.
+In Apple's implementation, selectors (\verb=SEL=) are pointers to a structure with just one field - a \verb=char*= which includes the selector's name. Whenever you want to send a message to an object, you need to retrieve a selector for name (using the \verb=sel_registerName= function). As the run-time needs the message sending to be as fast as possible, it hashes the selector in order to find the \verb=IMP= for that particular object. Thanks to registering the selectors, each selector is unique and there can't be two selectors with the same name in the run-time. This allows the message lookup mechanism to simply create a hash from the selector pointer itself and find a method by a simple pointer comparison, without actually reading the string.
 
-GCC's implementation extends the selectors into typed selectors - the selector structure has a second field which also contains \verb=char*=, but this time, there are encoded types the method takes. This means that \verb=-(void)hello:(int)anInt;= and \verb=-(void)hello:(id)anObject;= have different selectors, while they yield in the same selectors in Apple's implementation\footnote{This, of course, requires an introduction of new run-time functions, such as 'sel\_registerTypedName'.}.
+GCC's implementation extends the selectors into typed selectors - the selector structure has a second field which also contains \verb=char*=, but this time, there are encoded types the method takes. This means that \verb=-(void)hello:(int)anInt;= and \verb=-(void)hello:(id)anObject;= have different selectors, while they yield in the same selectors in Apple's implementation. This, of course, requires introduction of new run-time functions, such as \verb=sel_registerTypedName=.
 
-While it is a nice idea to bring a little more type-safety into the Objective-C world, it just brings mess into the run-time, in my opinion. The GCC run-time tries keep ABI compatibility with Apple's run-time, which doesn't have typed selectors. So, suddenly, there is a mix of typed and untyped selectors.
+While it is a nice idea to bring a little more type-safety into the Objective-C world, it just brings mess into the run-time, in my opinion. The GCC run-time tries keep ABI compatibility with Apple's run-time, which doesn't have typed selectors. So, suddenly, there is a mix of typed and untyped selectors, while the typed selectors are the preferred ones and should be used, however, the run-time doesn't require this (though requiring this could actually introduce method overloading in Objective-C).
 
 \section{Portability and Limitations}
 
-The portability of the run-time is its only limitation and is defined simply: it requires a POSIX layer\footnote{On non-POSIX systems, it requires an additional POSIX layer, for example, on Windows, it requires Cygwin or MinGW.}. Most of the files import at least one POSIX file, usually \verb=<string.h>= for \verb=memcpy= function and its relatives.
+The portability of the run-time is its only limitation and is defined simply: it requires a POSIX layer - on non-POSIX systems, it requires an additional POSIX layer, for example, on Windows, it requires Cygwin or MinGW. Most of the files import at least one POSIX file, usually \verb=<string.h>= for \verb=memcpy= function and its relatives.
 
 Another issue is that it relies on the \verb=gthread= library instead of\verb=pthread=. All threading support in this run-time is just a wrapper around \verb=gthread= that are part of GCC. While this allows some more efficient threading support on systems that natively do not use \verb=pthread= structures, it ties the run-time to GCC. Also, the run-time uses thread-local storage using \verb=__thread= keyword, which isn't supported on all systems as it requires support from the linker, dynamic loader and system libraries\footnote{http://gcc.gnu.org/onlinedocs/gcc-4.3.2/gcc/Thread\_002dLocal.html}.

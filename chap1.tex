@@ -49,6 +49,7 @@ This will be translated to:
 
 Which after removing the casting and adding a little formatting is:
 
+\label{Code example}
 \begin{verbatim}SomeClass *myObj = 
   objc_msgSend(
     objc_msgSend(
@@ -288,5 +289,44 @@ As you can see, to avoid deadlocks in case of exceptions, the synchronization \v
 
 The \verb=@try-@catch-@finally= is, of course, again translated into C code, to be precise, the compiler uses the \verb=_setjmp= function to install a stack exception data and the run-time uses \verb=longjmp= function to throw exceptions - this is, however, only used for the old run-time - Apple's new run-time uses the C++ unwind library.
 
+\subsection{Protocols}
+
+Protocols are a way of declaring methods with no implementation that classes conforming to that particular protocol should implement. This mechanism is called \verb=interface= is Java, for example.
+
+When a class conforms to a protocol, a pointer to a protocol is installed in its protocol list, which is quite obvious, but brings up a question, what is a protocol, in terms of structures.
+
+Protocols are really nothing, but instances of internal class \verb=Protocol=:
+
+\begin{verbatim}
+@protocol SomeProtocol
+-(id)protocolMethod;
+@end
 
 
+...
+Class cl = objc_getClass("Protocol");
+BOOL isProtocol = [@protocol(SomeProtocol) isKindOfClass:cl];
+...
+\end{verbatim}
+
+The \verb=isProtocol= variable is set to \verb=YES=. Or, if you prefer this way:
+
+\begin{verbatim}
+printf(@"%s\n", class_getName(((id)@protocol(SomeProtocol))->isa));
+\end{verbatim}
+
+This prints out, indeed, \verb=Protocol=. Interestingly enough, the
+
+\begin{verbatim}@protocol(SomeProtocol)\end{verbatim}
+  
+construct isn't simply translated to
+
+\begin{verbatim}objc_getProtocol("SomeProtocol")\end{verbatim}
+
+but is translated into 
+
+\begin{verbatim}(Protocol *)&_OBJC_PROTOCOL_SomeProtocol\end{verbatim}
+
+- a pointer to a certain exported protocol structure, that is part of the binary (and this isn't an optimization because the protocol is declared in the same source file).
+
+Of course, the run-time needs to populate the \verb=isa= pointers of each protocol when loading the binary.
