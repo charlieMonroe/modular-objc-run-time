@@ -1,5 +1,7 @@
 \chapter{Apple's Implementation}
 
+A lot of Apple's source code is \href{''http://www.opensource.apple.com''}{open-sourced} and this includes its implementation of Objective-C run-time.
+
 First thing that comes across mind when studying Apple's source codes is history - there's a lot of historical code there. You can find, for example, some code from the NeXT era and a port to Windows - NeXT had a set of APIs called OpenStep (which is the predecessor of today's Cocoa on OS X), which was written in Objective-C and was aiming to run on virtually any reasonable system\footnote{http://en.wikipedia.org/wiki/OpenStep}. Also, some of Apple's own software for Windows was written in Objective-C, hence the run-time needed to be compilable under Windows as well\footnote{http://jongampark.wordpress.com/2009/02/24/safari-4-beta-for-windows/}.
 
 While the legacy code is understandable as it is required to maintain binary compatibility of all existing binaries and the portability is generally an objective of this work, neither is done in a very clean fashion.
