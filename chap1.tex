@@ -330,3 +330,104 @@ but is translated into
 - a pointer to a certain exported protocol structure, that is part of the binary (and this isn't an optimization because the protocol is declared in the same source file).
 
 Of course, the run-time needs to populate the \verb=isa= pointers of each protocol when loading the binary.
+
+\subsection{Required Classes}
+
+There are several language constructs that are compiled directly into objects, requiring the run-time to include classes for these objects.
+
+\paragraph{Strings} The regular \verb=char*= C strings in quotes are simply a pointer to a chunk of memory that is typed as an array of \verb=char=s, which by definition cannot be an object, as the first field of \verb=id= is an \verb=isa= pointer. Hence it cannot be treated as an object and has to be wrapped in an object representing an Objective-C string - hence the \verb=@"Objective-C String"= notation.
+
+This poses a question what is the string compiled to.
+
+\begin{verbatim}
+NSString *myString = @"My String";
+\end{verbatim}
+
+This gets compiled into:
+
+\begin{verbatim}
+NSString *myString = (NSString *)&__NSConstantStringImpl_test_m_0;
+\end{verbatim}
+
+Now, what is \verb=__NSConstantStringImpl_test_m_0=? That is actually a static object:
+
+\begin{verbatim}
+static __NSConstantStringImpl 
+        __NSConstantStringImpl_test_m_0 
+        __attribute__ ((section ("__DATA, __cfstring"))) = 
+         {
+           __CFConstantStringClassReference,
+           0x000007c8,
+           "My String",
+           9
+         };
+\end{verbatim}
+
+So, we have something resembling an object - the first field is \newline{}\verb=__CFConstantStringClassReference=, which seems like something that could be the \verb=isa= pointer, following by a hexadecimal number (flags), the actual \verb=char*= string and length of this string. And indeed:
+
+\begin{verbatim}
+struct __NSConstantStringImpl {
+  int *isa;
+  int flags;
+  char *str;
+  long length;
+};
+\end{verbatim}
+
+Apple's implementation takes advantage of the CoreFoundation framework and toll-free bridging (see Chapter 2), not including the constant string implementation in the run-time itself at all (thus forcing all Objective-C programs to link against the CoreFoundation and Foundation frameworks). The GCC implementation, on the other hand, includes a \verb=NXConstantString= class (unlike Apple's implementation, the run-time then needs to fill in the \verb=isa= pointers with actual class pointers at the run-time).
+
+\paragraph{Blocks}
+
+Apple has introduced lambda functions C language extension in OS X 10.6 - so called blocks:
+
+\begin{verbatim}
+void(^myBlock)(void *) = ^(void *arg){
+  // Do something with the argument
+};
+\end{verbatim}
+
+This declares an anonymous function that can be used even out of the current scope and the function itself can freely use variables from within the scope of the method where the block is declared in a read-only manner. For read-write access to variables, the variables need to be declared as \verb=__block=, which generally makes them static variables, allowing the block to modify the variable even when the program execution is already out of scope.
+
+This simple block gets translated into this piece of code (some minor changes to the code have been made to improve readability):
+
+\begin{verbatim}
+struct __block_impl {
+  void *isa;
+  int Flags;
+  int Reserved;
+  void *FuncPtr;
+};
+
+
+struct __myBlockImpl {
+  struct __block_impl impl;
+  struct __myBlockDescription *Desc;
+  __myBlockImpl(void *fp, struct __myBlockDescription *desc, 
+                                                int flags=0) {
+    impl.isa = &_NSConcreteStackBlock;
+    impl.Flags = flags;
+    impl.FuncPtr = fp;
+    Desc = desc;
+  }
+};
+
+static void __myBlock_block_fnc(struct __myBlockImpl *__cself, 
+                                                    void *arg){
+  // Do something with the argument
+}
+
+static struct __myBlockDescription {
+  unsigned long reserved;
+  unsigned long Block_size;
+} __myBlockDescription_DATA = { 0, sizeof(struct __myBlockImpl) };
+
+...
+
+void(*myBlock)(void *) = &__myBlockImpl(__myBlock_block_fnc, 
+                                      &__myBlockDescription_DATA);
+
+\end{verbatim}
+
+While this indeed seems like a lot of fuzz for a block that does nothing, the actual mechanism behind is a lot more intriguing once you start using variables from within the scope inside the block - then all the variables get copied over into \verb=__myBlockImpl= (that's why the \verb=Block_size= gets assigned \verb=sizeof(=\verb=struct= \verb=__myBlockImpl)= as the \verb=_myBlockImpl= can be as large as possible depending on the number of variables used within the block).
+
+Apart from the C++ usage (the structure constructor), the noteworthy part is the \verb=impl= field of \verb=__myBlockImpl= - which begins with an \verb=isa= pointer which is (again) filled with a specific class pointer. This allows the structure to be sent ARR methods, and hence be treated as an object, allowing it to be added to the \verb=NSArray= and \verb=NSDictionary= collections.
