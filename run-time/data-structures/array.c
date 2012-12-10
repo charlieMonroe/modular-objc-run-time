@@ -1,7 +1,7 @@
 
 
 #include "array.h"
-#include "runtime-private.h"
+#include "os.h"
 
 // Default capacity for the array
 static const unsigned int _objc_array_default_capacity = 4;
@@ -19,7 +19,7 @@ static inline void _objc_array_grow(_objc_array arr){
 	// Don't be too agressive growing - adding half of the original capacity
 	// is quite enough
 	arr->_capacity += (arr->_capacity) / 2;
-	arr->_array = objc_setup.memory.reallocator(arr->_array, sizeof(void*) * arr->_capacity);
+	arr->_array = objc_realloc(arr->_array, sizeof(void*) * arr->_capacity);
 	
 	// Realloc doesn't zero the memory, need to do it manually
 	for (int i = arr->_currentIndex + 1; i < arr->_capacity; ++i){
@@ -29,30 +29,30 @@ static inline void _objc_array_grow(_objc_array arr){
 
 
 objc_array objc_array_create(unsigned int capacity){
-	_objc_array arr = objc_setup.memory.allocator(sizeof(struct _objc_array));
+	_objc_array arr = objc_alloc(sizeof(struct _objc_array));
 	arr->_capacity = capacity == 0 ? _objc_array_default_capacity : capacity;
 	arr->_currentIndex = -1;
 	arr->_lock = NULL;
-	arr->_array = objc_setup.memory.zero_allocator(sizeof(void*) * arr->_capacity);
+	arr->_array = objc_zero_alloc(sizeof(void*) * arr->_capacity);
 	
 	return arr;
 }
 
 objc_array objc_array_create_lockable(unsigned int capacity){
 	_objc_array arr = objc_array_create(capacity);
-	arr->_lock = objc_setup.sync.rwlock.creator();
+	arr->_lock = objc_rw_lock_create();
 	return (objc_array)arr;
 }
 
 void objc_array_lock_for_reading(objc_array array){
-	objc_setup.sync.rwlock.rlock(((_objc_array)array)->_lock);
+	objc_rw_lock_rlock(((_objc_array)array)->_lock);
 }
 void objc_array_lock_for_writing(objc_array array){
-	objc_setup.sync.rwlock.wlock(((_objc_array)array)->_lock);
+	objc_rw_lock_wlock(((_objc_array)array)->_lock);
 }
 
 void objc_array_unlock(objc_array array){
-	objc_setup.sync.rwlock.unlock(((_objc_array)array)->_lock);
+	objc_rw_lock_unlock(((_objc_array)array)->_lock);
 }
 
 void objc_array_destroy(objc_array array){
@@ -60,11 +60,11 @@ void objc_array_destroy(objc_array array){
 		return;
 	}
 	_objc_array arr = (_objc_array)array;
-	objc_setup.memory.deallocator(arr->_array);
+	objc_dealloc(arr->_array);
 	if (arr->_lock != NULL){
-		objc_setup.sync.rwlock.destroyer(arr->_lock);
+		objc_rw_lock_destroy(arr->_lock);
 	}
-	objc_setup.memory.deallocator(array);
+	objc_dealloc(array);
 }
 
 void objc_array_add(objc_array array, void *ptr){
@@ -105,9 +105,9 @@ unsigned int objc_array_index_of_pointer(objc_array array, void *ptr){
 
 void *objc_array_pointer_at_index(objc_array array, unsigned int index){
 	_objc_array arr = (_objc_array)array;
-	if (index >= arr->_currentIndex){
-		objc_setup.logging.log("%s - Index out of range (%i / %i)", __FUNCTION__, index, arr->_currentIndex);
-		objc_setup.execution.abort("Index out of bounds.");
+	if (index > arr->_currentIndex){
+		objc_log("%s - Index out of range (%i / %i)", __FUNCTION__, index, objc_array_size(array));
+		objc_abort("Index out of bounds.");
 	}
 	
 	return arr->_array[index];
@@ -127,8 +127,8 @@ void objc_array_remove_at_index(objc_array array, unsigned int index){
 	_objc_array arr = (_objc_array)array;
 	unsigned int size = objc_array_size(array);
 	if (index >= size){
-		objc_setup.logging.log("%s - Index out of range (%i / %i)", __FUNCTION__, index, arr->_currentIndex);
-		objc_setup.execution.abort("Index out of bounds.");
+		objc_log("%s - Index out of range (%i / %i)", __FUNCTION__, index, size);
+		objc_abort("Index out of bounds.");
 	}
 	
 	if (index == size - 1){

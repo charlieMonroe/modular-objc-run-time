@@ -39,6 +39,15 @@ typedef struct {
 } objc_setup_class_holder;
 
 typedef struct {
+	objc_selector_holder_creator_f creator;
+	objc_selector_holder_inserter_f inserter;
+	objc_selector_holder_lookup_f lookup;
+	objc_selector_holder_rlock_f rlock;
+	objc_selector_holder_wlock_f wlock;
+	objc_selector_holder_unlock_f unlock;
+} objc_setup_selector_holder;
+
+typedef struct {
 	objc_log_f log;
 } objc_setup_logging;
 
@@ -60,6 +69,7 @@ typedef struct {
 	objc_array_destroyer_f destroyer;
 	objc_array_getter_f getter;
 	objc_array_append_f append;
+	objc_array_count_f count;
 } objc_setup_array;
 
 typedef struct {
@@ -76,6 +86,7 @@ typedef struct {
 	// If, however, you modify one pointer of the set,
 	// all other pointers need to be modified as well...
 	objc_setup_class_holder class_holder;
+	objc_setup_selector_holder selector_holder;
 	objc_setup_array array;
 	
 } objc_runtime_setup_struct;
@@ -126,6 +137,13 @@ objc_runtime_create_getter_setter_function_decls(objc_class_holder_lookup_f, cla
 objc_runtime_create_getter_setter_function_decls(objc_class_holder_rlock_f, class_holder_rlock)
 objc_runtime_create_getter_setter_function_decls(objc_class_holder_wlock_f, class_holder_wlock)
 objc_runtime_create_getter_setter_function_decls(objc_class_holder_unlock_f, class_holder_unlock)
+
+objc_runtime_create_getter_setter_function_decls(objc_selector_holder_creator_f, selector_holder_creator)
+objc_runtime_create_getter_setter_function_decls(objc_selector_holder_lookup_f, selector_holder_lookup)
+objc_runtime_create_getter_setter_function_decls(objc_selector_holder_rlock_f, selector_holder_rlock)
+objc_runtime_create_getter_setter_function_decls(objc_selector_holder_wlock_f, selector_holder_wlock)
+objc_runtime_create_getter_setter_function_decls(objc_selector_holder_unlock_f, selector_holder_unlock)
+
 objc_runtime_create_getter_setter_function_decls(objc_log_f, log)
 objc_runtime_create_getter_setter_function_decls(objc_rw_lock_creator_f, rw_lock_creator)
 objc_runtime_create_getter_setter_function_decls(objc_rw_lock_destroyer_f, rw_lock_destroyer)
@@ -137,5 +155,6 @@ objc_runtime_create_getter_setter_function_decls(objc_array_lockable_creator_f, 
 objc_runtime_create_getter_setter_function_decls(objc_array_destroyer_f, array_destroyer)
 objc_runtime_create_getter_setter_function_decls(objc_array_getter_f, array_getter)
 objc_runtime_create_getter_setter_function_decls(objc_array_append_f, array_append)
+objc_runtime_create_getter_setter_function_decls(objc_array_count_f, array_count)
 
 #endif //OBJC_RUNTIME_H_

@@ -5,7 +5,10 @@
 #include "runtime-private.h" // The public header is included here
 #include "array.h" // For default array implementation
 #include "class_holder.h" // For default class holder imp
+#include "selector_holder.h" // For default selector holder imp
 #include "class-private.h" // For class_init
+#include "selector-private.h" // For selector_init
+#include "os.h" // To figure out if the run-time is using inline functions or function pointers
 
 // This is marked during objc_init() as YES. After that point, no modifications
 // to the setup may be made.
@@ -16,18 +19,23 @@ objc_runtime_setup_struct objc_setup;
 
 // See header for documentation
 void objc_runtime_set_setup(objc_runtime_setup_struct *setup){
+	if (OBJC_USES_INLINE_FUNCTIONS){
+		objc_log("The run-time uses inline functions. Setting the function pointers has no effect.");
+		return;
+	}
+	
 	// Check if either setup is NULL or the run-time has been already 
 	// initialized - if so, we need to abort
 	if (setup == NULL) {
 		// At this point, the abort function doesn't have to be set.
-		if (objc_setup.execution.abort != NULL){
-			objc_setup.execution.abort("Cannot pass NULL setup!");
+		if (objc_abort != NULL){
+			objc_abort("Cannot pass NULL setup!");
 		}else{
 			return;
 		}
 	}else if (objc_runtime_has_been_initialized == YES){
 		// abort is a required function
-		objc_setup.execution.abort("Cannot modify the run-time setup after it has "
+		objc_abort("Cannot modify the run-time setup after it has "
 			"been initialized");
 	}
 	
@@ -37,6 +45,11 @@ void objc_runtime_set_setup(objc_runtime_setup_struct *setup){
 
 // See header for documentation
 void objc_runtime_get_setup(objc_runtime_setup_struct *setup){
+	if (OBJC_USES_INLINE_FUNCTIONS){
+		objc_log("The run-time uses inline functions. No function pointers have been returned.");
+		return;
+	}
+	
 	if (setup != NULL){
 		*setup = objc_setup;
 	}
@@ -57,8 +70,11 @@ static int _objc_runtime_default_log(const char *format, ...){
 		objc_setup.struct_path = imp;\
 	}
 
-// See header for documentation
-void objc_runtime_init(void){
+
+/**
+ * Validates all function pointers. Aborts the program if some of the required pointers isn't set.
+ */
+static inline void _objc_runtime_validate_function_pointers(void){
 	objc_runtime_init_check_function_pointer(execution.abort)
 	objc_runtime_init_check_function_pointer(execution.exit)
 	
@@ -81,6 +97,7 @@ void objc_runtime_init(void){
 	objc_runtime_init_check_function_pointer_with_default_imp(array.append, objc_array_add)
 	objc_runtime_init_check_function_pointer_with_default_imp(array.destroyer, objc_array_destroy)
 	objc_runtime_init_check_function_pointer_with_default_imp(array.getter, objc_array_pointer_at_index)
+	objc_runtime_init_check_function_pointer_with_default_imp(array.count, objc_array_size)
 	
 	objc_runtime_init_check_function_pointer_with_default_imp(class_holder.creator, objc_class_holder_create)
 	objc_runtime_init_check_function_pointer_with_default_imp(class_holder.destroyer, objc_class_holder_destroy)
@@ -90,7 +107,27 @@ void objc_runtime_init(void){
 	objc_runtime_init_check_function_pointer_with_default_imp(class_holder.wlock, objc_class_holder_wlock)
 	objc_runtime_init_check_function_pointer_with_default_imp(class_holder.unlock, objc_class_holder_unlock)
 	
+	objc_runtime_init_check_function_pointer_with_default_imp(selector_holder.creator, _objc_selector_holder_create)
+	objc_runtime_init_check_function_pointer_with_default_imp(selector_holder.inserter, _objc_selector_holder_insert_selector)
+	objc_runtime_init_check_function_pointer_with_default_imp(selector_holder.lookup, _objc_selector_holder_lookup_selector)
+	objc_runtime_init_check_function_pointer_with_default_imp(selector_holder.rlock, _objc_selector_holder_rlock)
+	objc_runtime_init_check_function_pointer_with_default_imp(selector_holder.wlock, _objc_selector_holder_wlock)
+	objc_runtime_init_check_function_pointer_with_default_imp(selector_holder.unlock, _objc_selector_holder_unlock)
+}
+
+// See header for documentation
+void objc_runtime_init(void){
+	// Run-time has been initialized
+	objc_runtime_has_been_initialized = YES;
+	
+	// If inline functions aren't in use, check the function pointers
+	if (!OBJC_USES_INLINE_FUNCTIONS){
+		_objc_runtime_validate_function_pointers();
+	}
+	
+	// Initialize classes
 	objc_class_init();
+	objc_selector_init();
 }
 
 /********** Getters and setters. ***********/
@@ -105,13 +142,21 @@ void objc_runtime_init(void){
  */
 #define objc_runtime_create_getter_setter_function_body(type, name, struct_path)\
 	void objc_runtime_set_##name(type name){\
+		if (OBJC_USES_INLINE_FUNCTIONS){\
+			objc_log("The run-time uses inline functions. Setting the function pointers has no effect.");\
+			return;\
+		}\
 		if (objc_runtime_has_been_initialized){\
 			objc_setup.execution.abort("Cannot modify the run-time " #name " after the "\
 				 				"run-time has been initialized");\
 		}\
-	    objc_setup.struct_path = name;\
+		objc_setup.struct_path = name;\
 	}\
 	type objc_runtime_get_##name(void){ \
+		if (OBJC_USES_INLINE_FUNCTIONS){\
+			objc_log("The run-time uses inline functions. NULL pointer has been returned.");\
+			return NULL;\
+		}\
 		return objc_setup.struct_path; \
 	}
 
@@ -129,6 +174,14 @@ objc_runtime_create_getter_setter_function_body(objc_class_holder_lookup_f, clas
 objc_runtime_create_getter_setter_function_body(objc_class_holder_rlock_f, class_holder_rlock, class_holder.rlock)
 objc_runtime_create_getter_setter_function_body(objc_class_holder_wlock_f, class_holder_wlock, class_holder.wlock)
 objc_runtime_create_getter_setter_function_body(objc_class_holder_unlock_f, class_holder_unlock, class_holder.unlock)
+
+objc_runtime_create_getter_setter_function_body(objc_selector_holder_creator_f, selector_holder_creator, selector_holder.creator)
+objc_runtime_create_getter_setter_function_body(objc_selector_holder_inserter_f, selector_holder_inserter, selector_holder.inserter)
+objc_runtime_create_getter_setter_function_body(objc_selector_holder_lookup_f, selector_holder_lookup, selector_holder.lookup)
+objc_runtime_create_getter_setter_function_body(objc_selector_holder_rlock_f, selector_holder_rlock, selector_holder.rlock)
+objc_runtime_create_getter_setter_function_body(objc_selector_holder_wlock_f, selector_holder_wlock, selector_holder.wlock)
+objc_runtime_create_getter_setter_function_body(objc_selector_holder_unlock_f, selector_holder_unlock, selector_holder.unlock)
+
 objc_runtime_create_getter_setter_function_body(objc_log_f, log, logging.log)
 objc_runtime_create_getter_setter_function_body(objc_rw_lock_creator_f, rw_lock_creator, sync.rwlock.creator)
 objc_runtime_create_getter_setter_function_body(objc_rw_lock_destroyer_f, rw_lock_destroyer, sync.rwlock.destroyer)
@@ -140,3 +193,4 @@ objc_runtime_create_getter_setter_function_body(objc_array_lockable_creator_f, a
 objc_runtime_create_getter_setter_function_body(objc_array_destroyer_f, array_destroyer, array.destroyer)
 objc_runtime_create_getter_setter_function_body(objc_array_getter_f, array_getter, array.getter)
 objc_runtime_create_getter_setter_function_body(objc_array_append_f, array_append, array.append)
+objc_runtime_create_getter_setter_function_body(objc_array_count_f, array_count, array.count)

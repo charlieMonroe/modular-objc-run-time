@@ -11,6 +11,7 @@
 
 #include "types.h"
 
-Method objc_methodCreate(SEL selector, const char *types, IMP implementation);
+extern Method objc_method_create(SEL selector, const char *types, IMP implementation);
+extern IMP objc_method_get_implementation(Method method);
 
 #endif //OBJC_METHOD_H_

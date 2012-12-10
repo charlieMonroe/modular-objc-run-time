@@ -16,13 +16,22 @@
   *
   * Memory management note: the name is copied.
   */
-extern Class objc_createClass(Class superclass, const char *name);
+extern Class objc_class_create(Class superclass, const char *name);
 
-extern void objc_addClassMethod(Class cl, Method m);
-extern void objc_addClassMethods(Class cl, Method *m, unsigned int count);
-extern void objc_addMethod(Class cl, Method m);
-extern void objc_addMethods(Class cl, Method *m, unsigned int count);
-extern Class objc_getClass(const char *name);
-extern void objc_finishClass(Class cl);
+extern void objc_class_add_class_method(Class cl, Method m);
+extern void objc_class_add_class_methods(Class cl, Method *m, unsigned int count);
+extern void objc_class_add_instance_method(Class cl, Method m);
+extern void objc_class_add_instance_methods(Class cl, Method *m, unsigned int count);
+extern id objc_class_create_instance(Class cl, unsigned int extra_bytes);
+extern Class objc_class_for_name(const char *name);
+extern BOOL objc_class_in_construction(Class cl);
+extern void objc_class_finish(Class cl);
+
+extern Method objc_lookup_class_method(Class cl, SEL selector);
+extern IMP objc_lookup_class_method_impl(Class cl, SEL selector);
+extern Method objc_lookup_instance_method(id obj, SEL selector);
+extern IMP objc_lookup_instance_method_impl(id obj, SEL selector);
+
+extern IMP objc_object_lookup_impl(id obj, SEL selector);
 
 #endif //OBJC_CLASS_H_

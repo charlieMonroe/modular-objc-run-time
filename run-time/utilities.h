@@ -6,7 +6,8 @@
 #ifndef OBJC_UTILITIES_H_
 #define OBJC_UTILITIES_H_
 
-#include "runtime-private.h"
+#include "types.h" // For BOOL, NULL, ...
+#include "os.h" // For objc_alloc
 
 /*
   * Just as the regular strlen function, returns a number of non-zero characters.
@@ -19,7 +20,7 @@ static inline unsigned int objc_strlen(const char *str){
 	unsigned int counter = 0;
 	while (*str != '\0') {
 		++counter;
-		str++;
+		++str;
 	}
 	return counter;
 }
@@ -33,7 +34,7 @@ static inline char *objc_strcpy(const char *str){
 	}
 	
 	unsigned int len = objc_strlen(str);
-	char *result = objc_setup.memory.allocator(len + 1); // +1 for zero-termination
+	char *result = objc_alloc(len + 1); // +1 for zero-termination
 	char *curr_char = result;
 	
 	while (*str != '\0') {

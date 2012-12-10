@@ -51,6 +51,16 @@ typedef id(*IMP)(id target, SEL _cmd, ...);
 // Priority of this structure should be lookup speed.
 typedef void *objc_class_holder;
 
+// A definition for a selector holder - a data structure that is responsible for
+// keeping a list of selectors registered with the run-time, looking them up, etc.
+// Priority of this structure should be both lookup and insertion speed.
+typedef void *objc_selector_holder;
+
+// A definition for a cache - a data structure that is responsible for
+// keeping a list of IMPs to be found by SEL.
+// Priority of this structure should be both lookup and insertion speed.
+typedef void *objc_cache;
+
 // A definition for a dynamically growing array structure. The easiest 
 // implementation is to create a structure which includes a counter of objects,
 // size of the array, and a dynamically allocated C-array of inserted pointers.
