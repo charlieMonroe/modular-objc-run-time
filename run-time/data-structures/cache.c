@@ -15,7 +15,8 @@ typedef union {
 	Method *many;
 } one_or_many;
 
-typedef struct {
+typedef struct _objc_cache_bucket_struct {
+	
 	unsigned int count;
 	one_or_many elements;
 } _objc_cache_bucket;
@@ -37,41 +38,6 @@ static inline _objc_cache_bucket *_objc_cache_bucket_for_selector(_objc_cache ta
 		table->buckets = objc_zero_alloc(sizeof(_objc_cache_bucket) * table->bucket_count);
 	}
 	return &(table->buckets[(unsigned int)selector & (table->bucket_count - 1)]);
-}
-
-static inline void _objc_cache_grow(_objc_cache table) {
-	unsigned int new_size = (table->bucket_count * 2);
-	unsigned int old_size = table->bucket_count;
-	_objc_cache_bucket *old_buckets = table->buckets;
-	_objc_cache_bucket *new_buckets = objc_zero_alloc(new_size * sizeof(_objc_cache_bucket));
-	
-	table->buckets = new_buckets;
-	table->bucket_count = new_size;
-	
-	int i;
-	for (i = 0; i < old_size; ++i){
-		_objc_cache_bucket bucket = old_buckets[i];
-		if (bucket.count == 0){
-			continue;
-		}
-		
-		if (bucket.count == 1){
-			objc_cache_insert(table, bucket.elements.one);
-		}else{
-			// Need to go through the bucket
-			unsigned int size = bucket.count;
-			unsigned int o;
-			for (o = 0; o < size; ++o){
-				objc_cache_insert(table, bucket.elements.many[o]);
-			}
-			
-			// Free bucket elements
-			objc_dealloc(bucket.elements.many);
-		}
-	}
-	
-	// Free buckets
-	objc_dealloc(old_buckets);
 }
 
 static inline void objc_cache_clear(_objc_cache table){
@@ -109,7 +75,7 @@ static inline _objc_cache objc_cache_create_internal(){
 	cache->entry_count = 0;
 	cache->buckets = NULL;
 	cache->lock = objc_rw_lock_create();
-	cache->bucket_count = GOOD_CAPACITY(1);
+	cache->bucket_count = GOOD_CAPACITY(64); // A usual class uses ~64 methods
 	return cache;
 }
 
@@ -151,10 +117,6 @@ static inline void objc_cache_insert_method(_objc_cache cache, Method m){
 		
 		++bucket->count;
 		++cache->entry_count;
-		if (cache->entry_count > cache->bucket_count){
-			// Too many entries
-			_objc_cache_grow(cache);
-		}
 		return;
 	}
 	
@@ -173,11 +135,6 @@ static inline void objc_cache_insert_method(_objc_cache cache, Method m){
 	bucket->elements.many[bucket->count] = m;
 	bucket->count++;
 	cache->entry_count++;
-	
-	if (cache->entry_count > cache->bucket_count){
-		// Too many entries
-		_objc_cache_grow(cache);
-	}
 	
 }
 
@@ -210,7 +167,7 @@ static inline void objc_cache_rlock(_objc_cache cache){
 static inline void objc_cache_wlock(_objc_cache cache){
 	objc_rw_lock_wlock(cache->lock);
 }
-static inline void objc_hash_table_unlock(_objc_cache cache){
+static inline void objc_cache_unlock(_objc_cache cache){
 	objc_rw_lock_unlock(cache->lock);
 }
 
