@@ -14,15 +14,18 @@
 #ifndef OBJC_OS_H_
 #define OBJC_OS_H_
 
-#define OBJC_USES_INLINE_FUNCTIONS 0
+#define OBJC_USES_INLINE_FUNCTIONS 1
 
 #if OBJC_USES_INLINE_FUNCTIONS
 
 /********* INLINE FUNCTIONS *********/
+
+#include "extras/inline-sample.h"
+
 //#if TARGET_MY_OS
 	//#include "os-my-os.h"
 //#else
-	#error "This OS isn't supported at the moment."
+	//#error "This OS isn't supported at the moment."
 //#endif
 
 #else
@@ -55,6 +58,15 @@
 #define objc_rw_lock_unlock objc_setup.sync.rwlock.unlock
 #define objc_rw_lock_destroy objc_setup.sync.rwlock.destroyer
 
+// Class holder
+#define objc_class_holder_create objc_setup.class_holder.creator
+#define objc_class_holder_insert objc_setup.class_holder.inserter
+#define objc_class_holder_lookup objc_setup.class_holder.lookup
+#define objc_class_holder_rlock objc_setup.class_holder.rlock
+#define objc_class_holder_wlock objc_setup.class_holder.wlock
+#define objc_class_holder_unlock objc_setup.class_holder.unlock
+
+
 // Selector holder
 #define objc_selector_holder_create objc_setup.selector_holder.creator
 #define objc_selector_holder_insert objc_setup.selector_holder.inserter
@@ -64,8 +76,15 @@
 #define objc_selector_holder_unlock objc_setup.selector_holder.unlock
 
 // Array
+#define objc_array_create objc_setup.array.creator
+#define objc_array_append objc_setup.array.append
 #define objc_array_count objc_setup.array.count
 #define objc_array_get objc_setup.array.getter
+
+// Cache
+#define objc_cache_create objc_setup.cache.creator
+#define objc_cache_fetch objc_setup.cache.fetcher
+#define objc_cache_insert objc_setup.cache.inserter
 
 #endif
 

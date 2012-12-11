@@ -9,6 +9,9 @@
 #ifndef OBJC_HASH_TABLE_H_
 #define OBJC_HASH_TABLE_H_
 
+#include "os.h"
+#if !OBJC_USES_INLINE_FUNCTIONS
+
 #include "types.h"
 
 typedef struct _objc_hash_table_str *_objc_hash_table;
@@ -26,4 +29,5 @@ extern void objc_hash_table_wlock(_objc_hash_table table);
 extern void objc_hash_table_unlock(_objc_hash_table table);
 
 
+#endif // OBJC_USES_INLINE_FUNCTIONS
 #endif // OBJC_HASH_TABLE_H_

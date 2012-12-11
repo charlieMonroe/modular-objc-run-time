@@ -73,6 +73,12 @@ typedef struct {
 } objc_setup_array;
 
 typedef struct {
+	objc_cache_creator_f creator;
+	objc_cache_fetcher_f fetcher;
+	objc_cache_inserter_f inserter;
+} objc_setup_cache;
+
+typedef struct {
 	objc_setup_memory memory;
 	objc_setup_execution execution;
 	objc_setup_sync sync;
@@ -88,6 +94,7 @@ typedef struct {
 	objc_setup_class_holder class_holder;
 	objc_setup_selector_holder selector_holder;
 	objc_setup_array array;
+	objc_setup_cache cache;
 	
 } objc_runtime_setup_struct;
 
@@ -145,16 +152,22 @@ objc_runtime_create_getter_setter_function_decls(objc_selector_holder_wlock_f, s
 objc_runtime_create_getter_setter_function_decls(objc_selector_holder_unlock_f, selector_holder_unlock)
 
 objc_runtime_create_getter_setter_function_decls(objc_log_f, log)
+
 objc_runtime_create_getter_setter_function_decls(objc_rw_lock_creator_f, rw_lock_creator)
 objc_runtime_create_getter_setter_function_decls(objc_rw_lock_destroyer_f, rw_lock_destroyer)
 objc_runtime_create_getter_setter_function_decls(objc_rw_lock_read_lock_f, rw_lock_rlock)
 objc_runtime_create_getter_setter_function_decls(objc_rw_lock_write_lock_f, rw_lock_wlock)
 objc_runtime_create_getter_setter_function_decls(objc_rw_lock_unlock_f, rw_lock_unlock)
+
 objc_runtime_create_getter_setter_function_decls(objc_array_creator_f, array_creator)
 objc_runtime_create_getter_setter_function_decls(objc_array_lockable_creator_f, array_lockable_creator)
 objc_runtime_create_getter_setter_function_decls(objc_array_destroyer_f, array_destroyer)
 objc_runtime_create_getter_setter_function_decls(objc_array_getter_f, array_getter)
 objc_runtime_create_getter_setter_function_decls(objc_array_append_f, array_append)
 objc_runtime_create_getter_setter_function_decls(objc_array_count_f, array_count)
+
+objc_runtime_create_getter_setter_function_decls(objc_cache_creator_f, cache_creator)
+objc_runtime_create_getter_setter_function_decls(objc_cache_fetcher_f, cache_fetcher)
+objc_runtime_create_getter_setter_function_decls(objc_cache_inserter_f, cache_inserter)
 
 #endif //OBJC_RUNTIME_H_

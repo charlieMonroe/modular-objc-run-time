@@ -40,6 +40,7 @@ static void _rw_lock_destroyer(objc_rw_lock lock){
 
 static void _objc_posix_init(void) __attribute__((constructor));
 static void _objc_posix_init(void){
+	
 	objc_runtime_set_allocator(_malloc);
 	objc_runtime_set_deallocator(free);
 	objc_runtime_set_reallocator(_realloc);

@@ -8,7 +8,6 @@
 #include "utilities.h"
 #include "method-private.h"
 #include "selector.h"
-#include "cache.h"
 
 // A class holder - all classes that get registered
 // with the run-time get stored here.
@@ -59,11 +58,11 @@ Class objc_class_create(Class superclass, const char *name) {
 		objc_abort("Trying to create a class with NULL or empty name.");
 	}
 	
-	objc_setup.class_holder.wlock(objc_classes);
-	if (objc_setup.class_holder.lookup(objc_classes, name) != NULL){
+	objc_class_holder_wlock(objc_classes);
+	if (objc_class_holder_lookup(objc_classes, name) != NULL){
 		// i.e. a class with this name already exists
 		objc_log("A class with this name already exists (%s).\n", name);
-		objc_setup.class_holder.unlock(objc_classes);
+		objc_class_holder_unlock(objc_classes);
 		return NULL;
 	}
 	
@@ -87,8 +86,8 @@ Class objc_class_create(Class superclass, const char *name) {
 		newClass->extra_space = NULL;
 	}
 	
-	objc_setup.class_holder.inserter(objc_classes, newClass);
-	objc_setup.class_holder.unlock(objc_classes);
+	objc_class_holder_insert(objc_classes, newClass);
+	objc_class_holder_unlock(objc_classes);
 	
 	return newClass;
 }
@@ -99,19 +98,19 @@ static inline void _objc_initialize_method_list(objc_array *methodList){
 		return;
 	}
 	
-	*methodList = objc_setup.array.creator(1);
+	*methodList = objc_array_create(1);
 }
 
 static inline void _objc_class_add_methods(objc_array method_list, Method *m, unsigned int count){
-	objc_array new_list = objc_setup.array.creator(count);
+	objc_array new_list = objc_array_create(count);
 	
 	int i;
 	for (i = 0; i < count; ++i){
-		objc_setup.array.append(new_list, m[i]);
+		objc_array_append(new_list, m[i]);
 	}
 	
 	// TODO: check for duplicates, locking
-	objc_setup.array.append(method_list, new_list);
+	objc_array_append(method_list, new_list);
 }
 
 static inline void _objc_class_add_class_methods(Class cl, Method *m, unsigned int count){
@@ -161,9 +160,9 @@ Class objc_class_for_name(const char *name){
 		return Nil;
 	}
 	
-	objc_setup.class_holder.rlock(objc_classes);
-	Class c = objc_setup.class_holder.lookup(objc_classes, name);
-	objc_setup.class_holder.unlock(objc_classes);
+	objc_class_holder_rlock(objc_classes);
+	Class c = objc_class_holder_lookup(objc_classes, name);
+	objc_class_holder_unlock(objc_classes);
 	
 	if (c->flags.in_construction){
 		// Still in construction
@@ -330,7 +329,7 @@ IMP objc_object_lookup_impl(id obj, SEL selector){
 }
 
 void objc_class_init(void){
-	objc_classes = objc_setup.class_holder.creator();
+	objc_classes = objc_class_holder_create();
 	
 	// Cache the extension offsets
 	objc_class_extension *ext = class_extensions;

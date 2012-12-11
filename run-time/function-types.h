@@ -150,6 +150,22 @@ typedef void(*objc_selector_holder_rlock_f)(objc_selector_holder);
 typedef void(*objc_selector_holder_wlock_f)(objc_selector_holder);
 typedef void(*objc_selector_holder_unlock_f)(objc_selector_holder);
 
+/*********** objc_cache ***********/
+
+/**
+ * A structure that is essential to the run-time's speed.
+ * 
+ * It caches method implementations under selectors.
+ * The read operation should be lock-free, the write
+ * operation locks the data structure in the default
+ * implementation.
+ *
+ */
+typedef objc_cache(*objc_cache_creator_f)(void);
+typedef void(*objc_cache_inserter_f)(objc_cache, Method);
+typedef Method(*objc_cache_fetcher_f)(objc_cache, SEL);
+
+
 /*********** Synchronization ***********/
 
 /**
@@ -183,6 +199,8 @@ typedef int(*objc_rw_lock_write_lock_f)(objc_rw_lock);
  * lock implementation.
  */
 typedef int(*objc_rw_lock_unlock_f)(objc_rw_lock);
+
+
 
 
 /*********** objc_array ***********/

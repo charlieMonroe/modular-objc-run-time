@@ -17,11 +17,11 @@
 #define ITERATIONS 10000000
 static int counter = 0;
 
-static id _MyClass_alloc(id self, SEL _cmd, ...){
+id _MyClass_alloc(id self, SEL _cmd, ...){
 	return objc_class_create_instance((Class)self, 0);
 }
 
-static id _MyClass_log(id self, SEL _cmd, ...){
+id _MyClass_log(id self, SEL _cmd, ...){
 	counter++;
 	//printf("Instance method, hallelujah - self %p, _cmd %p", self, _cmd);
 	return nil;
@@ -69,9 +69,9 @@ int main(int argc, const char * argv[]){
 	clock_t c1, c2;
 	c1 = clock();
 	for (int i = 0; i < ITERATIONS; ++i){
-		IMP log_impl = objc_object_lookup_impl(instance, log_selector);
-		//printf("Got log implementation: %p - equals to %p: %s\n", log_impl, &_MyClass_log, log_impl == &_MyClass_log ? "YES" : "NO");
-		log_impl(instance, log_selector);
+		//IMP log_impl = objc_object_lookup_impl(instance, log_selector);
+		//log_impl(instance, log_selector);
+		_MyClass_log(instance, log_selector);
 	}
 	
 	c2 = clock();

@@ -9,6 +9,9 @@
 #ifndef OBJC_SELECTOR_HOLDER_H_
 #define OBJC_SELECTOR_HOLDER_H_
 
+#include "os.h"
+#if !OBJC_USES_INLINE_FUNCTIONS
+
 #include "types.h"
 
 /**
@@ -22,4 +25,5 @@ extern void _objc_selector_holder_wlock(objc_selector_holder holder);
 extern void _objc_selector_holder_unlock(objc_selector_holder holder);
 
 
+#endif // OBJC_USES_INLINE_FUNCTIONS
 #endif // OBJC_SELECTOR_HOLDER_H_
