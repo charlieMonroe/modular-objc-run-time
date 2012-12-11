@@ -35,7 +35,7 @@ struct _objc_hash_table_str {
 /**
  * Computes a hash of a key.
  */
-static inline unsigned int _objc_hash_table_hash(const char *key){
+OBJC_INLINE unsigned int _objc_hash_table_hash(const char *key){
 	register unsigned int hash = 0;
 	register unsigned char *s = (unsigned char *)key;
 	
@@ -55,11 +55,11 @@ static inline unsigned int _objc_hash_table_hash(const char *key){
 /**
  * Returns a pointer to the bucket for that key.
  */
-static inline _objc_hash_table_bucket *_objc_hash_table_bucket_for_key(_objc_hash_table table, const void *key){
+OBJC_INLINE _objc_hash_table_bucket *_objc_hash_table_bucket_for_key(_objc_hash_table table, const void *key){
+	unsigned int hash = 0;
 	if (table->buckets == NULL){
 		table->buckets = objc_zero_alloc(sizeof(_objc_hash_table_bucket) * table->bucket_count);
 	}
-	unsigned int hash = 0;
 	if (table->keyGetter == NULL){
 		// pointer only
 		hash = (unsigned int)key;
@@ -69,21 +69,21 @@ static inline _objc_hash_table_bucket *_objc_hash_table_bucket_for_key(_objc_has
 	
 	return &(table->buckets[hash & (table->bucket_count - 1)]);
 }
-static inline _objc_hash_table_bucket *_objc_hash_table_bucket_for_obj(_objc_hash_table table, void *obj){
+OBJC_INLINE _objc_hash_table_bucket *_objc_hash_table_bucket_for_obj(_objc_hash_table table, void *obj){
 	return _objc_hash_table_bucket_for_key(table, table->keyGetter == NULL ? obj : table->keyGetter(obj));
 }
 
 
-static inline void _objc_hash_table_grow(_objc_hash_table table) {
+OBJC_INLINE void _objc_hash_table_grow(_objc_hash_table table) {
 	unsigned int new_size = (table->bucket_count * 2);
 	unsigned int old_size = table->bucket_count;
 	_objc_hash_table_bucket *old_buckets = table->buckets;
 	_objc_hash_table_bucket *new_buckets = objc_zero_alloc(new_size * sizeof(_objc_hash_table_bucket));
+	int i;
 	
 	table->buckets = new_buckets;
 	table->bucket_count = new_size;
 	
-	int i;
 	for (i = 0; i < old_size; ++i){
 		_objc_hash_table_bucket bucket = old_buckets[i];
 		if (bucket.count == 0){
@@ -109,7 +109,7 @@ static inline void _objc_hash_table_grow(_objc_hash_table table) {
 	objc_dealloc(old_buckets);
 }
 
-static inline void objc_hash_table_clear(_objc_hash_table table){
+OBJC_INLINE void objc_hash_table_clear(_objc_hash_table table){
 	int i;
 	for (i = 0; i < table->bucket_count; ++i){
 		_objc_hash_table_bucket bucket = table->buckets[i];
@@ -127,7 +127,7 @@ static inline void objc_hash_table_clear(_objc_hash_table table){
 	table->buckets = NULL;
 }
 
-static inline unsigned int log2u(unsigned int x) { return (x<2) ? 0 : log2u (x>>1)+1; };
+OBJC_INLINE unsigned int log2u(unsigned int x) { return (x<2) ? 0 : log2u (x>>1)+1; }
 
 #define GOOD_CAPACITY(c) (c <= 1 ? 1 : 1 << (log2u(c-1)+1))
 
@@ -135,7 +135,7 @@ static inline unsigned int log2u(unsigned int x) { return (x<2) ? 0 : log2u (x>>
 /**
  * Allocates the buckets.
  */
-static inline void _objc_hash_table_initialize_buckets(_objc_hash_table table){
+OBJC_INLINE void _objc_hash_table_initialize_buckets(_objc_hash_table table){
 	table->buckets = objc_zero_alloc(table->bucket_count * sizeof(_objc_hash_table_bucket));
 }
 
@@ -168,12 +168,17 @@ void objc_hash_table_destroy(_objc_hash_table table){
 	objc_dealloc(table);
 }
 void objc_hash_table_insert_key_value(_objc_hash_table table, const void *key, void *obj){
+	_objc_hash_table_bucket *bucket;
+	unsigned int bucket_size;
+	void **elements;
+	unsigned int o;
+	
 	if (table->buckets == NULL){
 		_objc_hash_table_initialize_buckets(table);
 	}
 	
-	_objc_hash_table_bucket *bucket = _objc_hash_table_bucket_for_key(table, key);
-	unsigned int bucket_size = bucket->count;
+	bucket = _objc_hash_table_bucket_for_key(table, key);
+	bucket_size = bucket->count;
 	
 	if (bucket_size == 0){
 		// First item in the bucket
@@ -185,6 +190,7 @@ void objc_hash_table_insert_key_value(_objc_hash_table table, const void *key, v
 	
 	if (bucket_size == 1){
 		// Are the entries equal?
+		void **elements;
 		BOOL equals = NO;
 		if (table->equalityFunction == NULL){
 			equals = (BOOL)(bucket->elements.one == obj);
@@ -197,7 +203,7 @@ void objc_hash_table_insert_key_value(_objc_hash_table table, const void *key, v
 		}
 		
 		// No, need to become elements.many
-		void **elements = (void**)objc_zero_alloc(2 * sizeof(void*));
+		elements = (void**)objc_zero_alloc(2 * sizeof(void*));
 		elements[1] = bucket->elements.one;
 		elements[0] = obj;
 		bucket->elements.many = elements;
@@ -212,8 +218,7 @@ void objc_hash_table_insert_key_value(_objc_hash_table table, const void *key, v
 	}
 	
 	// There are more items, see if any is equal:
-	void **elements = bucket->elements.many;
-	unsigned int o;
+	elements = bucket->elements.many;
 	for (o = 0; o < bucket_size; ++o){
 		BOOL equals = NO;
 		if (table->equalityFunction == NULL){
@@ -246,6 +251,8 @@ void objc_hash_table_insert(_objc_hash_table table, void *obj){
 	
 void *objc_hash_table_get(_objc_hash_table table, const void *key) {
 	_objc_hash_table_bucket *bucket = _objc_hash_table_bucket_for_key(table, key);
+	unsigned int i;
+	
 	if (bucket->count == 0){
 		return NULL;
 	}
@@ -259,7 +266,6 @@ void *objc_hash_table_get(_objc_hash_table table, const void *key) {
 		}
 	}
 	
-	unsigned int i;
 	for (i = 0; i < bucket->count; ++i){
 		BOOL equal = NO;
 		if (table->keyGetter == NULL){

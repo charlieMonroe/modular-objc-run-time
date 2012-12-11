@@ -23,27 +23,27 @@ static BOOL _objc_class_equality_function(void *cl1, void *cl2){
 }
 
 // Just passing all the functions to a hash table
-static inline objc_class_holder objc_class_holder_create(void){
+OBJC_INLINE objc_class_holder objc_class_holder_create(void){
 	// There are likely to be many classes. Start with 64 buckets
 	_objc_hash_table table = objc_hash_table_create_lockable(64, _objc_class_holder_key_getter, _objc_class_equality_function);
 	return (objc_class_holder)table;
 }
-static inline void objc_class_holder_destroy(objc_class_holder holder){
+OBJC_INLINE void objc_class_holder_destroy(objc_class_holder holder){
 	objc_hash_table_destroy((_objc_hash_table)holder);
 }
-static inline void objc_class_holder_insert(objc_class_holder holder, Class cl){
+OBJC_INLINE void objc_class_holder_insert(objc_class_holder holder, Class cl){
 	objc_hash_table_insert((_objc_hash_table)holder, (void*)cl);
 }
-static inline Class objc_class_holder_lookup(objc_class_holder holder, const char *name){
+OBJC_INLINE Class objc_class_holder_lookup(objc_class_holder holder, const char *name){
 	return (Class)objc_hash_table_get((_objc_hash_table)holder, name);
 }
-static inline void objc_class_holder_rlock(objc_class_holder holder){
+OBJC_INLINE void objc_class_holder_rlock(objc_class_holder holder){
 	objc_hash_table_rlock((_objc_hash_table)holder);
 }
-static inline void objc_class_holder_wlock(objc_class_holder holder){
+OBJC_INLINE void objc_class_holder_wlock(objc_class_holder holder){
 	objc_hash_table_wlock((_objc_hash_table)holder);
 }
-static inline void objc_class_holder_unlock(objc_class_holder holder){
+OBJC_INLINE void objc_class_holder_unlock(objc_class_holder holder){
 	objc_hash_table_unlock((_objc_hash_table)holder);
 }
 

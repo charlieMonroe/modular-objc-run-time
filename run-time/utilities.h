@@ -12,12 +12,14 @@
 /*
   * Just as the regular strlen function, returns a number of non-zero characters.
   */
-static inline unsigned int objc_strlen(const char *str){
+OBJC_INLINE unsigned int objc_strlen(const char *str){
+	unsigned int counter;
+	
 	if (str == NULL){
 		return 0;
 	}
 	
-	unsigned int counter = 0;
+	counter = 0;
 	while (*str != '\0') {
 		++counter;
 		++str;
@@ -28,14 +30,18 @@ static inline unsigned int objc_strlen(const char *str){
 /*
  * Unlike the POSIX function, this one handles allocating the new string itself.
  */
-static inline char *objc_strcpy(const char *str){
+OBJC_INLINE char *objc_strcpy(const char *str){
+	unsigned int len;
+	char *result;
+	char *curr_char;
+	
 	if (str == NULL){
 		return NULL;
 	}
 	
-	unsigned int len = objc_strlen(str);
-	char *result = objc_alloc(len + 1); // +1 for zero-termination
-	char *curr_char = result;
+	len = objc_strlen(str);
+	result = objc_alloc(len + 1); // +1 for zero-termination
+	curr_char = result;
 	
 	while (*str != '\0') {
 		*curr_char = *str;
@@ -50,7 +56,9 @@ static inline char *objc_strcpy(const char *str){
 /*
  * Returns YES if the strings are equal.
  */
-static inline BOOL objc_strings_equal(const char *str1, const char *str2){
+OBJC_INLINE BOOL objc_strings_equal(const char *str1, const char *str2){
+	unsigned int index;
+	
 	if (str1 == NULL && str2 == NULL){
 		return YES;
 	}
@@ -60,7 +68,7 @@ static inline BOOL objc_strings_equal(const char *str1, const char *str2){
 		return NO;
 	}
 	
-	unsigned int index = 0;
+	index = 0;
 	while (YES) {
 		if (str1[index] == str2[index]){
 			if (str1[index] == '\0'){

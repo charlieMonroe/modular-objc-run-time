@@ -20,14 +20,16 @@ static id _objc_nil_receiver_function(id self, SEL _cmd, ...){
 	return nil;
 }
 
-static inline unsigned int _objc_extra_class_space_for_extensions(void){
+OBJC_INLINE unsigned int _objc_extra_class_space_for_extensions(void){
 	static unsigned int cached_class_result = 0;
+	objc_class_extension *ext;
+	
 	if (cached_class_result != 0 || class_extensions == NULL){
 		// The result has already been cached, or no extensions are installed
 		return cached_class_result;
 	}
 	
-	objc_class_extension *ext = class_extensions;
+	ext = class_extensions;
 	while (ext != NULL){
 		cached_class_result += ext->extra_class_space;
 		ext = ext->next_extension;
@@ -36,14 +38,16 @@ static inline unsigned int _objc_extra_class_space_for_extensions(void){
 	return cached_class_result;
 }
 
-static inline unsigned int _objc_extra_object_space_for_extensions(void){
+OBJC_INLINE unsigned int _objc_extra_object_space_for_extensions(void){
 	static unsigned int cached_object_result = 0;
+	objc_class_extension *ext;
+	
 	if (cached_object_result != 0 || class_extensions == NULL){
 		// The result has already been cached, or no extensions are installed
 		return cached_object_result;
 	}
 	
-	objc_class_extension *ext = class_extensions;
+	ext = class_extensions;
 	while (ext != NULL){
 		cached_object_result += ext->extra_object_space;
 		ext = ext->next_extension;
@@ -54,6 +58,9 @@ static inline unsigned int _objc_extra_object_space_for_extensions(void){
 
 // See header for documentation
 Class objc_class_create(Class superclass, const char *name) {
+	Class newClass;
+	unsigned int extra_space;
+	
 	if (name == NULL || *name == '\0'){
 		objc_abort("Trying to create a class with NULL or empty name.");
 	}
@@ -66,7 +73,7 @@ Class objc_class_create(Class superclass, const char *name) {
 		return NULL;
 	}
 	
-	Class newClass = (Class)(objc_alloc(sizeof(struct objc_class)));
+	newClass = (Class)(objc_alloc(sizeof(struct objc_class)));
 	newClass->isa = newClass; // A loop to self to detect class method calls
 	newClass->super_class = superclass;
 	newClass->name = objc_strcpy(name);
@@ -79,7 +86,7 @@ Class objc_class_create(Class superclass, const char *name) {
 	
 	newClass->flags.in_construction = YES;
 	
-	unsigned int extra_space = _objc_extra_class_space_for_extensions();
+	extra_space = _objc_extra_class_space_for_extensions();
 	if (extra_space != 0){
 		newClass->extra_space = objc_zero_alloc(extra_space);
 	}else{
@@ -92,7 +99,7 @@ Class objc_class_create(Class superclass, const char *name) {
 	return newClass;
 }
 
-static inline void _objc_initialize_method_list(objc_array *methodList){
+OBJC_INLINE void _objc_initialize_method_list(objc_array *methodList){
 	if (*methodList != NULL){
 		// Already allocated
 		return;
@@ -101,7 +108,7 @@ static inline void _objc_initialize_method_list(objc_array *methodList){
 	*methodList = objc_array_create(1);
 }
 
-static inline void _objc_class_add_methods(objc_array method_list, Method *m, unsigned int count){
+OBJC_INLINE void _objc_class_add_methods(objc_array method_list, Method *m, unsigned int count){
 	objc_array new_list = objc_array_create(count);
 	
 	int i;
@@ -113,7 +120,7 @@ static inline void _objc_class_add_methods(objc_array method_list, Method *m, un
 	objc_array_append(method_list, new_list);
 }
 
-static inline void _objc_class_add_class_methods(Class cl, Method *m, unsigned int count){
+OBJC_INLINE void _objc_class_add_class_methods(Class cl, Method *m, unsigned int count){
 	if (cl == NULL || m == NULL){
 		return;
 	}
@@ -134,7 +141,7 @@ void objc_class_add_class_methods(Class cl, Method *m, unsigned int count){
 	_objc_class_add_class_methods(cl, m, count);
 }
 
-static inline void _objc_class_add_instance_methods(Class cl, Method *m, unsigned int count){
+OBJC_INLINE void _objc_class_add_instance_methods(Class cl, Method *m, unsigned int count){
 	if (cl == NULL || m == NULL){
 		return;
 	}
@@ -156,12 +163,14 @@ void objc_class_add_instance_methods(Class cl, Method *m, unsigned int count){
 }
 
 Class objc_class_for_name(const char *name){
+	Class c;
+	
 	if (name == NULL){
 		return Nil;
 	}
 	
 	objc_class_holder_rlock(objc_classes);
-	Class c = objc_class_holder_lookup(objc_classes, name);
+	c = objc_class_holder_lookup(objc_classes, name);
 	objc_class_holder_unlock(objc_classes);
 	
 	if (c->flags.in_construction){
@@ -191,24 +200,29 @@ void objc_class_finish(Class cl){
 }
 
 id objc_class_create_instance(Class cl, unsigned int extra_bytes){
+	unsigned int size;
+	id obj;
+	
 	if (cl->flags.in_construction){
 		objc_log("Trying to create an instance of unfinished class (%s).", cl->name);
 		return nil;
 	}
 	
-	unsigned int size = cl->instance_size + _objc_extra_object_space_for_extensions() + extra_bytes;
-	id obj = (id)objc_zero_alloc(size);
+	size = cl->instance_size + _objc_extra_object_space_for_extensions() + extra_bytes;
+	obj = (id)objc_zero_alloc(size);
 	obj->isa = cl;
 	return obj;
 }
 
-static inline Method _objc_lookup_method_in_method_list(objc_array method_list, SEL selector){
+OBJC_INLINE Method _objc_lookup_method_in_method_list(objc_array method_list, SEL selector){
+	unsigned int number_of_lists;
+	unsigned int list;
+	
 	if (method_list == NULL){
 		return NULL;
 	}
 	
-	unsigned int number_of_lists = objc_array_count(method_list);
-	unsigned int list;
+	number_of_lists = objc_array_count(method_list);
 	for (list = 0; list < number_of_lists; ++list){
 		objc_array methods = objc_array_get(method_list, list);
 		unsigned int number_of_methods = objc_array_count(methods);
@@ -224,36 +238,35 @@ static inline Method _objc_lookup_method_in_method_list(objc_array method_list, 
 	return NULL;
 }
 
-static inline Method _objc_lookup_class_method(Class cl, SEL selector){
+OBJC_INLINE Method _objc_lookup_class_method(Class cl, SEL selector){
 	if (cl == Nil || selector == NULL){
 		return NULL;
 	}
 	
-	Class class = cl;
-	while (class != NULL){
-		Method m = _objc_lookup_method_in_method_list(class->class_methods, selector);
+	while (cl != NULL){
+		Method m = _objc_lookup_method_in_method_list(cl->class_methods, selector);
 		if (m != NULL){
 			return m;
 		}
-		class = class->super_class;
+		cl = cl->super_class;
 	}
 	return NULL;
 }
 
-static inline Method _objc_lookup_cached_method(objc_cache cache, SEL selector){
+OBJC_INLINE Method _objc_lookup_cached_method(objc_cache cache, SEL selector){
 	if (cache == NULL){
 		return NULL;
 	}
 	return objc_cache_fetch(cache, selector);
 }
-static inline void _objc_cache_method(objc_cache *cache, Method m){
+OBJC_INLINE void _objc_cache_method(objc_cache *cache, Method m){
 	if (*cache == NULL){
 		*cache = objc_cache_create();
 	}
 	objc_cache_insert(*cache, m);
 }
 
-static inline IMP _objc_lookup_class_method_impl(Class cl, SEL selector){
+OBJC_INLINE IMP _objc_lookup_class_method_impl(Class cl, SEL selector){
 	Method m = _objc_lookup_cached_method(cl->class_cache, selector);
 	if (m != NULL){
 		return m->implementation;
@@ -276,13 +289,14 @@ IMP objc_lookup_class_method_impl(Class cl, SEL selector){
 	return _objc_lookup_class_method_impl(cl, selector);
 }
 
-static inline Method _objc_lookup_instance_method(id obj, SEL selector){
+OBJC_INLINE Method _objc_lookup_instance_method(id obj, SEL selector){
+	Class class;
+	
 	if (obj == nil || selector == NULL){
 		return NULL;
 	}
 	
-	
-	Class class = obj->isa;
+	class = obj->isa;
 	while (class != NULL){
 		Method m = _objc_lookup_method_in_method_list(class->instance_methods, selector);
 		if (m != NULL){
@@ -293,7 +307,7 @@ static inline Method _objc_lookup_instance_method(id obj, SEL selector){
 	return NULL;
 }
 
-static inline IMP _objc_lookup_instance_method_impl(id obj, SEL selector){
+OBJC_INLINE IMP _objc_lookup_instance_method_impl(id obj, SEL selector){
 	Method m = _objc_lookup_cached_method(obj->isa->instance_cache, selector);
 	if (m != NULL){
 		return m->implementation;
@@ -329,8 +343,6 @@ IMP objc_object_lookup_impl(id obj, SEL selector){
 }
 
 void objc_class_init(void){
-	objc_classes = objc_class_holder_create();
-	
 	// Cache the extension offsets
 	objc_class_extension *ext = class_extensions;
 	unsigned int class_extra_space = 0;
@@ -342,6 +354,8 @@ void objc_class_init(void){
 		object_extra_space += ext->extra_object_space;
 		ext = ext->next_extension;
 	}
+	
+	objc_classes = objc_class_holder_create();
 }
 
 BOOL objc_class_in_construction(Class cl){

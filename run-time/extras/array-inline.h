@@ -23,7 +23,7 @@ typedef struct _objc_array {
 } *_objc_array;
 
 // Grows the array dynamically
-static inline void _objc_array_grow(_objc_array arr){
+OBJC_INLINE void _objc_array_grow(_objc_array arr){
 	// Don't be too agressive growing - adding half of the original capacity
 	// is quite enough
 	arr->_capacity += (arr->_capacity) / 2;
@@ -36,7 +36,7 @@ static inline void _objc_array_grow(_objc_array arr){
 }
 
 
-static inline objc_array objc_array_create(unsigned int capacity){
+OBJC_INLINE objc_array objc_array_create(unsigned int capacity){
 	_objc_array arr = objc_alloc(sizeof(struct _objc_array));
 	arr->_capacity = capacity == 0 ? _objc_array_default_capacity : capacity;
 	arr->_currentIndex = -1;
@@ -46,24 +46,24 @@ static inline objc_array objc_array_create(unsigned int capacity){
 	return arr;
 }
 
-static inline objc_array objc_array_create_lockable(unsigned int capacity){
+OBJC_INLINE objc_array objc_array_create_lockable(unsigned int capacity){
 	_objc_array arr = objc_array_create(capacity);
 	arr->_lock = objc_rw_lock_create();
 	return (objc_array)arr;
 }
 
-static inline void objc_array_lock_for_reading(objc_array array){
+OBJC_INLINE void objc_array_lock_for_reading(objc_array array){
 	objc_rw_lock_rlock(((_objc_array)array)->_lock);
 }
-static inline void objc_array_lock_for_writing(objc_array array){
+OBJC_INLINE void objc_array_lock_for_writing(objc_array array){
 	objc_rw_lock_wlock(((_objc_array)array)->_lock);
 }
 
-static inline void objc_array_unlock(objc_array array){
+OBJC_INLINE void objc_array_unlock(objc_array array){
 	objc_rw_lock_unlock(((_objc_array)array)->_lock);
 }
 
-static inline void objc_array_destroy(objc_array array){
+OBJC_INLINE void objc_array_destroy(objc_array array){
 	if (array == NULL){
 		return;
 	}
@@ -75,7 +75,7 @@ static inline void objc_array_destroy(objc_array array){
 	objc_dealloc(array);
 }
 
-static inline void objc_array_append(objc_array array, void *ptr){
+OBJC_INLINE void objc_array_append(objc_array array, void *ptr){
 	_objc_array arr = (_objc_array)array;
 	if (arr == NULL){
 		return;
@@ -89,11 +89,11 @@ static inline void objc_array_append(objc_array array, void *ptr){
 	arr->_array[arr->_currentIndex] = ptr;
 }
 
-static inline unsigned int objc_array_count(objc_array array){
+OBJC_INLINE unsigned int objc_array_count(objc_array array){
 	return ((_objc_array)array)->_currentIndex + 1;
 }
 
-static inline unsigned int objc_array_index_of_pointer(objc_array array, void *ptr){
+OBJC_INLINE unsigned int objc_array_index_of_pointer(objc_array array, void *ptr){
 	_objc_array arr = (_objc_array)array;
 	
 	unsigned int index = 0;
@@ -111,11 +111,11 @@ static inline unsigned int objc_array_index_of_pointer(objc_array array, void *p
 	return index;
 }
 
-static inline BOOL objc_array_contains(objc_array array, void *ptr){
+OBJC_INLINE BOOL objc_array_contains(objc_array array, void *ptr){
 	return (BOOL)(objc_array_index_of_pointer(array, ptr) != OBJC_ARRAY_NOT_FOUND);
 }
 
-static inline void *objc_array_get(objc_array array, unsigned int index){
+OBJC_INLINE void *objc_array_get(objc_array array, unsigned int index){
 	_objc_array arr = (_objc_array)array;
 	if (index > arr->_currentIndex){
 		objc_log("%s - Index out of range (%i / %i)", __FUNCTION__, index, objc_array_count(array));
@@ -125,7 +125,7 @@ static inline void *objc_array_get(objc_array array, unsigned int index){
 	return arr->_array[index];
 }
 
-static inline void objc_array_remove_at_index(objc_array array, unsigned int index){
+OBJC_INLINE void objc_array_remove_at_index(objc_array array, unsigned int index){
 	_objc_array arr = (_objc_array)array;
 	unsigned int size = objc_array_count(array);
 	if (index >= size){
@@ -149,7 +149,7 @@ static inline void objc_array_remove_at_index(objc_array array, unsigned int ind
 	--arr->_currentIndex;
 }
 
-static inline void objc_array_remove(objc_array array, void *ptr){
+OBJC_INLINE void objc_array_remove(objc_array array, void *ptr){
 	unsigned int index = objc_array_index_of_pointer(array, ptr);
 	if (index == OBJC_ARRAY_NOT_FOUND){
 		// Not found

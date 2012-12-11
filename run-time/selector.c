@@ -12,7 +12,7 @@
 
 static objc_selector_holder selector_cache;
 
-static inline SEL _objc_selector_insert_into_cache_no_lock(const char* name){
+OBJC_INLINE SEL _objc_selector_insert_into_cache_no_lock(const char* name){
 	SEL selector = objc_alloc(sizeof(struct objc_selector));
 	selector->name = objc_strcpy(name);
 	objc_selector_holder_insert(selector_cache, selector);
@@ -20,9 +20,9 @@ static inline SEL _objc_selector_insert_into_cache_no_lock(const char* name){
 }
 
 SEL objc_selector_register(const char *name){
-	objc_selector_holder_rlock(selector_cache);
+	//objc_selector_holder_rlock(selector_cache);
 	SEL selector = objc_selector_holder_lookup(selector_cache, name);
-	objc_selector_holder_unlock(selector_cache);
+	//objc_selector_holder_unlock(selector_cache);
 	
 	if (selector == NULL){
 		objc_selector_holder_wlock(selector_cache);
@@ -33,6 +33,8 @@ SEL objc_selector_register(const char *name){
 			// Still nothing, insert
 			selector = _objc_selector_insert_into_cache_no_lock(name);
 		}
+		
+		objc_selector_holder_unlock(selector_cache);
 	}
 	return selector;
 }

@@ -17,24 +17,24 @@ static const char *_objc_selector_holder_key_getter(void *selector){
 }
 
 // Just passing all the functions to a hash table
-static inline objc_selector_holder objc_selector_holder_create(void){
+OBJC_INLINE objc_selector_holder objc_selector_holder_create(void){
 	// There are likely to be many classes. Start with 64 buckets
 	_objc_hash_table table = objc_hash_table_create_lockable(64, _objc_selector_holder_key_getter, (BOOL(*)(void*,void*))objc_selectors_equal);
 	return (objc_class_holder)table;
 }
-static inline void objc_selector_holder_insert(objc_selector_holder holder, SEL selector){
+OBJC_INLINE void objc_selector_holder_insert(objc_selector_holder holder, SEL selector){
 	objc_hash_table_insert((_objc_hash_table)holder, (void*)selector);
 }
-static inline SEL objc_selector_holder_lookup(objc_selector_holder holder, const char *name){
+OBJC_INLINE SEL objc_selector_holder_lookup(objc_selector_holder holder, const char *name){
 	return (SEL)objc_hash_table_get((_objc_hash_table)holder, name);
 }
-static inline void objc_selector_holder_rlock(objc_selector_holder holder){
+OBJC_INLINE void objc_selector_holder_rlock(objc_selector_holder holder){
 	objc_hash_table_rlock((_objc_hash_table)holder);
 }
-static inline void objc_selector_holder_wlock(objc_selector_holder holder){
+OBJC_INLINE void objc_selector_holder_wlock(objc_selector_holder holder){
 	objc_hash_table_wlock((_objc_hash_table)holder);
 }
-static inline void objc_selector_holder_unlock(objc_selector_holder holder){
+OBJC_INLINE void objc_selector_holder_unlock(objc_selector_holder holder){
 	objc_hash_table_unlock((_objc_hash_table)holder);
 }
 

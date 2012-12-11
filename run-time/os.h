@@ -14,7 +14,14 @@
 #ifndef OBJC_OS_H_
 #define OBJC_OS_H_
 
-#define OBJC_USES_INLINE_FUNCTIONS 1
+#define OBJC_USES_INLINE_FUNCTIONS 0
+
+#ifdef USES_C99
+	#define OBJC_INLINE OBJC_INLINE
+#else
+	#define OBJC_INLINE static
+#endif
+
 
 #if OBJC_USES_INLINE_FUNCTIONS
 
@@ -45,11 +52,6 @@
 
 // Logging
 #define objc_log objc_setup.logging.log
-#ifdef DEBUG
-	#define objc_debug_log(format, ...) objc_log(format, __VA_ARGS__)
-#else
-	#define objc_debug_log(format, ...)
-#endif
 
 // RW lock
 #define objc_rw_lock_create objc_setup.sync.rwlock.creator

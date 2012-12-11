@@ -35,7 +35,7 @@ struct _objc_hash_table_str {
 };
 
 
-static inline BOOL objc_hashtable_strings_equal(const char *str1, const char *str2){
+OBJC_INLINE BOOL objc_hashtable_strings_equal(const char *str1, const char *str2){
 	if (str1 == NULL && str2 == NULL){
 		return YES;
 	}
@@ -64,7 +64,7 @@ static inline BOOL objc_hashtable_strings_equal(const char *str1, const char *st
 /**
  * Computes a hash of a key.
  */
-static inline unsigned int _objc_hash_table_hash(const char *key){
+OBJC_INLINE unsigned int _objc_hash_table_hash(const char *key){
 	register unsigned int hash = 0;
 	register unsigned char *s = (unsigned char *)key;
 	
@@ -84,7 +84,7 @@ static inline unsigned int _objc_hash_table_hash(const char *key){
 /**
  * Returns a pointer to the bucket for that key.
  */
-static inline _objc_hash_table_bucket *_objc_hash_table_bucket_for_key(_objc_hash_table table, const void *key){
+OBJC_INLINE _objc_hash_table_bucket *_objc_hash_table_bucket_for_key(_objc_hash_table table, const void *key){
 	if (table->buckets == NULL){
 		table->buckets = objc_zero_alloc(sizeof(_objc_hash_table_bucket) * table->bucket_count);
 	}
@@ -98,11 +98,11 @@ static inline _objc_hash_table_bucket *_objc_hash_table_bucket_for_key(_objc_has
 	
 	return &(table->buckets[hash & (table->bucket_count - 1)]);
 }
-static inline _objc_hash_table_bucket *_objc_hash_table_bucket_for_obj(_objc_hash_table table, void *obj){
+OBJC_INLINE _objc_hash_table_bucket *_objc_hash_table_bucket_for_obj(_objc_hash_table table, void *obj){
 	return _objc_hash_table_bucket_for_key(table, table->keyGetter == NULL ? obj : table->keyGetter(obj));
 }
 
-static inline void objc_hash_table_clear(_objc_hash_table table){
+OBJC_INLINE void objc_hash_table_clear(_objc_hash_table table){
 	int i;
 	for (i = 0; i < table->bucket_count; ++i){
 		_objc_hash_table_bucket bucket = table->buckets[i];
@@ -120,7 +120,7 @@ static inline void objc_hash_table_clear(_objc_hash_table table){
 	table->buckets = NULL;
 }
 
-static inline unsigned int objc_hashtable_log2u(unsigned int x) { return (x<2) ? 0 : objc_hashtable_log2u (x>>1)+1; };
+OBJC_INLINE unsigned int objc_hashtable_log2u(unsigned int x) { return (x<2) ? 0 : objc_hashtable_log2u (x>>1)+1; };
 
 #define OBJC_HASH_TABLE_GOOD_CAPACITY(c) (c <= 1 ? 1 : 1 << (objc_hashtable_log2u(c-1)+1))
 
@@ -128,13 +128,13 @@ static inline unsigned int objc_hashtable_log2u(unsigned int x) { return (x<2) ?
 /**
  * Allocates the buckets.
  */
-static inline void _objc_hash_table_initialize_buckets(_objc_hash_table table){
+OBJC_INLINE void _objc_hash_table_initialize_buckets(_objc_hash_table table){
 	table->buckets = objc_zero_alloc(table->bucket_count * sizeof(_objc_hash_table_bucket));
 }
 
 
 
-static inline _objc_hash_table objc_hash_table_create(unsigned int capacity, const char*(*keyGetter)(void*), BOOL(*equalityFunction)(void*, void*)){
+OBJC_INLINE _objc_hash_table objc_hash_table_create(unsigned int capacity, const char*(*keyGetter)(void*), BOOL(*equalityFunction)(void*, void*)){
 	_objc_hash_table table = (_objc_hash_table)(objc_alloc(sizeof(struct _objc_hash_table_str)));
 	table->entry_count = 0;
 	table->buckets = NULL;
@@ -145,17 +145,17 @@ static inline _objc_hash_table objc_hash_table_create(unsigned int capacity, con
 	return table;
 }
 
-static inline _objc_hash_table objc_hash_table_create_pointer_hashable(unsigned int capacity){
+OBJC_INLINE _objc_hash_table objc_hash_table_create_pointer_hashable(unsigned int capacity){
 	return objc_hash_table_create(capacity, NULL, NULL);
 }
 
-static inline _objc_hash_table objc_hash_table_create_lockable(unsigned int capacity, const char*(*keyGetter)(void*), BOOL(*equalityFunction)(void*, void*)){
+OBJC_INLINE _objc_hash_table objc_hash_table_create_lockable(unsigned int capacity, const char*(*keyGetter)(void*), BOOL(*equalityFunction)(void*, void*)){
 	_objc_hash_table table = objc_hash_table_create(capacity, keyGetter, equalityFunction);
 	table->lock = objc_rw_lock_create();
 	return table;
 }
 
-static inline void objc_hash_table_destroy(_objc_hash_table table){
+OBJC_INLINE void objc_hash_table_destroy(_objc_hash_table table){
 	objc_hash_table_clear(table);
 	if (table->lock != NULL){
 		objc_rw_lock_destroy(table->lock);
@@ -166,7 +166,7 @@ static inline void objc_hash_table_destroy(_objc_hash_table table){
 // Forward declaration
 static void _objc_hash_table_grow(_objc_hash_table table);
 
-static inline void objc_hash_table_insert_key_value(_objc_hash_table table, const void *key, void *obj){
+OBJC_INLINE void objc_hash_table_insert_key_value(_objc_hash_table table, const void *key, void *obj){
 	if (table->buckets == NULL){
 		_objc_hash_table_initialize_buckets(table);
 	}
@@ -239,11 +239,11 @@ static inline void objc_hash_table_insert_key_value(_objc_hash_table table, cons
 	}
 	
 }
-static inline void objc_hash_table_insert(_objc_hash_table table, void *obj){
+OBJC_INLINE void objc_hash_table_insert(_objc_hash_table table, void *obj){
 	objc_hash_table_insert_key_value(table, table->keyGetter(obj), obj);
 }
 
-static inline void *objc_hash_table_get(_objc_hash_table table, const void *key) {
+OBJC_INLINE void *objc_hash_table_get(_objc_hash_table table, const void *key) {
 	_objc_hash_table_bucket *bucket = _objc_hash_table_bucket_for_key(table, key);
 	if (bucket->count == 0){
 		return NULL;
@@ -311,13 +311,13 @@ static void _objc_hash_table_grow(_objc_hash_table table) {
 	objc_dealloc(old_buckets);
 }
 
-static inline void objc_hash_table_rlock(_objc_hash_table table){
+OBJC_INLINE void objc_hash_table_rlock(_objc_hash_table table){
 	objc_rw_lock_rlock(table->lock);
 }
-static inline void objc_hash_table_wlock(_objc_hash_table table){
+OBJC_INLINE void objc_hash_table_wlock(_objc_hash_table table){
 	objc_rw_lock_wlock(table->lock);
 }
-static inline void objc_hash_table_unlock(_objc_hash_table table){
+OBJC_INLINE void objc_hash_table_unlock(_objc_hash_table table){
 	objc_rw_lock_unlock(table->lock);
 }
 

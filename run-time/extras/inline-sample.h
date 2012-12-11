@@ -17,43 +17,43 @@
 
 #define objc_log(format, ...) printf(format, ## __VA_ARGS__)
 
-static inline void objc_abort(const char *reason){
+OBJC_INLINE void objc_abort(const char *reason){
 	printf("Aborting because of %s.", reason);
 	abort();
 }
 
-static inline void *objc_alloc(unsigned int size){
+OBJC_INLINE void *objc_alloc(unsigned int size){
 	return malloc(size);
 }
 
-static inline void *objc_realloc(void *memory, unsigned int size){
+OBJC_INLINE void *objc_realloc(void *memory, unsigned int size){
 	return realloc(memory, size);
 }
 
-static inline void *objc_zero_alloc(unsigned int size){
+OBJC_INLINE void *objc_zero_alloc(unsigned int size){
 	return calloc(1, size);
 }
-static inline void objc_dealloc(void *memory){
+OBJC_INLINE void objc_dealloc(void *memory){
 	free(memory);
 }
 
 
-static inline objc_rw_lock objc_rw_lock_create(void){
+OBJC_INLINE objc_rw_lock objc_rw_lock_create(void){
 	pthread_rwlock_t *lock = malloc(sizeof(pthread_rwlock_t));
 	pthread_rwlock_init(lock, NULL);
 	return lock;
 }
-static inline void objc_rw_lock_destroy(objc_rw_lock lock){
+OBJC_INLINE void objc_rw_lock_destroy(objc_rw_lock lock){
 	pthread_rwlock_destroy(lock);
 	free(lock);
 }
-static inline void objc_rw_lock_unlock(objc_rw_lock lock){
+OBJC_INLINE void objc_rw_lock_unlock(objc_rw_lock lock){
 	pthread_rwlock_unlock(lock);
 }
-static inline void objc_rw_lock_rlock(objc_rw_lock lock){
+OBJC_INLINE void objc_rw_lock_rlock(objc_rw_lock lock){
 	pthread_rwlock_rdlock(lock);
 }
-static inline void objc_rw_lock_wlock(objc_rw_lock lock){
+OBJC_INLINE void objc_rw_lock_wlock(objc_rw_lock lock){
 	pthread_rwlock_wrlock(lock);
 }
 

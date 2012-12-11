@@ -17,14 +17,16 @@ typedef struct _array {
 } *_array;
 
 // Grows the array dynamically
-static inline void _array_grow(_array arr){
+OBJC_INLINE void _array_grow(_array arr){
+	int i;
+	
 	// Don't be too agressive growing - adding half of the original capacity
 	// is quite enough
 	arr->_capacity += (arr->_capacity) / 2;
 	arr->_array = objc_realloc(arr->_array, sizeof(void*) * arr->_capacity);
 	
 	// Realloc doesn't zero the memory, need to do it manually
-	for (int i = arr->_currentIndex + 1; i < arr->_capacity; ++i){
+	for (i = arr->_currentIndex + 1; i < arr->_capacity; ++i){
 		arr->_array[i] = NULL;
 	}
 }
@@ -58,10 +60,11 @@ void array_unlock(objc_array array){
 }
 
 void array_destroy(objc_array array){
-	if (array == NULL){
+	_array arr = (_array)array;
+	if (arr == NULL){
 		return;
 	}
-	_array arr = (_array)array;
+	
 	objc_dealloc(arr->_array);
 	if (arr->_lock != NULL){
 		objc_rw_lock_destroy(arr->_lock);
@@ -128,6 +131,8 @@ void array_remove(objc_array array, void *ptr){
 void array_remove_at_index(objc_array array, unsigned int index){
 	_array arr = (_array)array;
 	unsigned int size = array_size(array);
+	int i;
+	
 	if (index >= size){
 		objc_log("%s - Index out of range (%i / %i)", __FUNCTION__, index, size);
 		objc_abort("Index out of bounds.");
@@ -141,7 +146,6 @@ void array_remove_at_index(objc_array array, unsigned int index){
 	}
 	
 	// Otherwise - shift everything after
-	int i;
 	for (i = index; i < size - 1; ++i){
 		arr->_array[i] = arr->_array[i + 1];
 	}
