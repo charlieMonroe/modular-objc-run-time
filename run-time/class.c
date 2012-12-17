@@ -9,12 +9,25 @@
 #include "method-private.h"
 #include "selector.h"
 
-// A class holder - all classes that get registered
-// with the run-time get stored here.
+/**
+ * A class holder - all classes that get registered
+ * with the run-time get stored here.
+ */
 objc_class_holder objc_classes;
 
-// Class extension linked list
+/**
+ * Class extension linked list.
+ */
 objc_class_extension *class_extensions;
+
+/**
+ * A lock that is used for manipulating with classes - e.g. adding a class
+ * to the run-time, etc.
+ *
+ * All actions performed with this lock locked, should be rarely performed,
+ * or at least performed seldomly.
+ */
+objc_rw_lock objc_runtime_lock;
 
 static id _objc_nil_receiver_function(id self, SEL _cmd, ...){
 	return nil;
@@ -65,11 +78,11 @@ Class objc_class_create(Class superclass, const char *name) {
 		objc_abort("Trying to create a class with NULL or empty name.");
 	}
 	
-	objc_class_holder_wlock(objc_classes);
+	objc_rw_lock_wlock(objc_runtime_lock);
 	if (objc_class_holder_lookup(objc_classes, name) != NULL){
 		// i.e. a class with this name already exists
 		objc_log("A class with this name already exists (%s).\n", name);
-		objc_class_holder_unlock(objc_classes);
+		objc_rw_lock_unlock(objc_runtime_lock);
 		return NULL;
 	}
 	
@@ -94,7 +107,7 @@ Class objc_class_create(Class superclass, const char *name) {
 	}
 	
 	objc_class_holder_insert(objc_classes, newClass);
-	objc_class_holder_unlock(objc_classes);
+	objc_rw_lock_unlock(objc_runtime_lock);
 	
 	return newClass;
 }
@@ -169,10 +182,7 @@ Class objc_class_for_name(const char *name){
 		return Nil;
 	}
 	
-	objc_class_holder_rlock(objc_classes);
 	c = objc_class_holder_lookup(objc_classes, name);
-	objc_class_holder_unlock(objc_classes);
-	
 	if (c->flags.in_construction){
 		// Still in construction
 		return Nil;
@@ -354,6 +364,8 @@ void objc_class_init(void){
 		object_extra_space += ext->extra_object_space;
 		ext = ext->next_extension;
 	}
+	
+	objc_runtime_lock = objc_rw_lock_create();
 	
 	objc_classes = objc_class_holder_create();
 }

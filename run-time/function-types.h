@@ -81,16 +81,18 @@ typedef void(*objc_memory_eraser_f)(void*, unsigned int);
 /*********** objc_class_holder ***********/
 
 /**
+ * The class holder should be a lockable structure, allowing access from
+ * multiple threads. The structure should use the locks provided by the
+ * run-time so that in case the locks are set to no-op in single-threaded
+ * environment, no locking is indeed performed.
+ */
+
+/**
  * Creates a new class holder data structure. objc_class_holder is defined in
  * types.h as simply void* and can be a pointer to virtually any data structure.
  */
 typedef objc_class_holder(*objc_class_holder_creator_f)(void);
  
-/**
- * Destroys (and frees from memory) the whole class holder data structure.
- */
-typedef void(*objc_class_holder_destroyer_f)(objc_class_holder);
-
 /**
  * Adds the class to the data structure.
  */
@@ -101,20 +103,6 @@ typedef void(*objc_class_holder_inserter_f)(objc_class_holder, Class);
  * NULL if the class isn't in the class holder.
  */
 typedef Class(*objc_class_holder_lookup_f)(objc_class_holder, const char*);
-
-/**
- * The class holder should be a lockable structure, allowing access from
- * multiple threads. The structure should use the locks provided by the
- * run-time so that in case the locks are set to no-op in single-threaded
- * environment, no locking is indeed performed.
- *
- * To speed things up, a rw lock should be used. If the structure used
- * is a lock-free structure, you can simply no-op these functions (they
- * still need to be non-NULL, though).
- */
-typedef void(*objc_class_holder_rlock_f)(objc_class_holder);
-typedef void(*objc_class_holder_wlock_f)(objc_class_holder);
-typedef void(*objc_class_holder_unlock_f)(objc_class_holder);
 
 
 /*********** objc_selector_holder ***********/

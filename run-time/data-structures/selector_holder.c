@@ -100,7 +100,7 @@ OBJC_INLINE void selector_holder_insert_selector_internal(_selector_holder holde
 	objc_rw_lock_unlock(holder->lock);
 }
 
-static SEL selector_holder_fetch_selector(_selector_holder holder, const char *name) {
+OBJC_INLINE SEL selector_holder_fetch_selector(_selector_holder holder, const char *name) {
 	unsigned int bucket_index = _selector_bucket_index_for_selector(holder, name);
 	_selector_bucket *bucket = holder->buckets[bucket_index];
 	while (bucket != NULL) {

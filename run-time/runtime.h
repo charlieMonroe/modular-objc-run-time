@@ -30,12 +30,8 @@ typedef struct {
 
 typedef struct {
 	objc_class_holder_creator_f creator;
-	objc_class_holder_destroyer_f destroyer;
 	objc_class_holder_inserter_f inserter;
 	objc_class_holder_lookup_f lookup;
-	objc_class_holder_rlock_f rlock;
-	objc_class_holder_wlock_f wlock;
-	objc_class_holder_unlock_f unlock;
 } objc_setup_class_holder;
 
 typedef struct {
@@ -136,11 +132,7 @@ objc_runtime_create_getter_setter_function_decls(objc_reallocator_f, reallocator
 objc_runtime_create_getter_setter_function_decls(objc_zero_allocator_f, zero_allocator)
 objc_runtime_create_getter_setter_function_decls(objc_memory_eraser_f, memory_eraser)
 objc_runtime_create_getter_setter_function_decls(objc_class_holder_creator_f, class_holder_creator)
-objc_runtime_create_getter_setter_function_decls(objc_class_holder_destroyer_f, class_holder_destroyer)
 objc_runtime_create_getter_setter_function_decls(objc_class_holder_lookup_f, class_holder_lookup)
-objc_runtime_create_getter_setter_function_decls(objc_class_holder_rlock_f, class_holder_rlock)
-objc_runtime_create_getter_setter_function_decls(objc_class_holder_wlock_f, class_holder_wlock)
-objc_runtime_create_getter_setter_function_decls(objc_class_holder_unlock_f, class_holder_unlock)
 
 objc_runtime_create_getter_setter_function_decls(objc_selector_holder_creator_f, selector_holder_creator)
 objc_runtime_create_getter_setter_function_decls(objc_selector_holder_lookup_f, selector_holder_lookup)

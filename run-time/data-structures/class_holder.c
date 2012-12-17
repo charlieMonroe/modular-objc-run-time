@@ -8,44 +8,123 @@
 
 #include "class_holder.h"
 #include "class-private.h"
-#include "hashtable.h"
 #include "os.h"
+#include "utilities.h"
 
 #if !OBJC_USES_INLINE_FUNCTIONS
 
-static const char *_objc_class_holder_key_getter(void *cl){
-	return ((Class)cl)->name;
+
+typedef struct _class_bucket_struct {
+	struct _class_bucket_struct *next;
+	Class class;
+} _class_bucket;
+
+typedef struct _class_holder_str {
+	objc_rw_lock lock;
+	unsigned int bucket_count;
+	_class_bucket **buckets; // Lazily allocated!
+} *_class_holder;
+
+
+/**
+ * Returns a pointer to the bucket for that key.
+ */
+OBJC_INLINE unsigned int _class_bucket_index_for_class_name(_class_holder holder, const char *name){
+	if (holder->buckets == NULL){
+		holder->buckets = objc_zero_alloc(sizeof(_class_bucket) * holder->bucket_count);
+	}
+	return objc_hash_string(name) & (holder->bucket_count - 1);
 }
 
-static BOOL _objc_class_equality_function(void *cl1, void *cl2){
-	// The equality among classes is just pointer-wise as we don't allow
-	// two classes with the same name
-	return cl1 == cl2;
+OBJC_INLINE unsigned int log2u(unsigned int x) { return (x<2) ? 0 : log2u (x>>1)+1; }
+
+#define OBJC_CACHE_GOOD_CAPACITY(c) (c <= 1 ? 1 : 1 << (log2u(c-1)+1))
+
+/**
+ * Allocates the buckets.
+ */
+OBJC_INLINE void _class_holder_initialize_buckets(_class_holder holder){
+	holder->buckets = objc_zero_alloc(holder->bucket_count * sizeof(_class_bucket));
 }
+
+OBJC_INLINE _class_holder class_holder_create_internal(){
+	_class_holder holder = (_class_holder)(objc_alloc(sizeof(struct _class_holder_str)));
+	holder->buckets = NULL;
+	holder->lock = objc_rw_lock_create();
+	holder->bucket_count = OBJC_CACHE_GOOD_CAPACITY(64); // A usual class uses ~64 methods
+	return holder;
+}
+
+OBJC_INLINE BOOL _class_holder_contains_class_in_bucket(_class_bucket *bucket, Class cl){
+	while (bucket != NULL) {
+		if (bucket->class == cl){
+			// Already there!
+			return YES;
+		}
+		
+		bucket = bucket->next;
+	}
+	return NO;
+}
+
+OBJC_INLINE void class_holder_insert_class_internal(_class_holder holder, Class cl){
+	unsigned int bucket_index;
+	_class_bucket *bucket;
+	
+	if (holder->buckets == NULL){
+		_class_holder_initialize_buckets(holder);
+	}
+	
+	bucket_index = _class_bucket_index_for_class_name(holder, cl->name);
+	if (_class_holder_contains_class_in_bucket(holder->buckets[bucket_index], cl)){
+		// Already contains
+		return;
+	}
+	
+	// Prepare the bucket before locking in order to
+	// keep the structure locked as little as possible
+	bucket = (_class_bucket*)objc_alloc(sizeof(struct _class_bucket_struct));
+	bucket->class = cl;
+	
+	// Lock the structure for insert
+	objc_rw_lock_wlock(holder->lock);
+	
+	// Someone might have inserted it between searching and locking
+	if (_class_holder_contains_class_in_bucket(holder->buckets[bucket_index], cl)){
+		objc_rw_lock_unlock(holder->lock);
+		objc_dealloc(bucket);
+		return;
+	}
+	
+	bucket->next = holder->buckets[bucket_index];
+	holder->buckets[bucket_index] = bucket;
+	
+	objc_rw_lock_unlock(holder->lock);
+}
+
+OBJC_INLINE Class class_holder_fetch_class(_class_holder holder, const char *name) {
+	unsigned int bucket_index = _class_bucket_index_for_class_name(holder, name);
+	_class_bucket *bucket = holder->buckets[bucket_index];
+	while (bucket != NULL) {
+		if (objc_strings_equal(bucket->class->name, name)){
+			return bucket->class;
+		}
+		bucket = bucket->next;
+	}
+	
+	return NULL;
+}
+
 
 // Just passing all the functions to a hash table
 objc_class_holder class_holder_create(void){
-	// There are likely to be many classes. Start with 64 buckets
-	_objc_hash_table table = objc_hash_table_create_lockable(64, _objc_class_holder_key_getter, _objc_class_equality_function);
-	return (objc_class_holder)table;
-}
-void class_holder_destroy(objc_class_holder holder){
-	objc_hash_table_destroy((_objc_hash_table)holder);
+	return (objc_class_holder)class_holder_create_internal();
 }
 void class_holder_insert_class(objc_class_holder holder, Class cl){
-	objc_hash_table_insert((_objc_hash_table)holder, (void*)cl);
+	class_holder_insert_class_internal((_class_holder)holder, (void*)cl);
 }
 Class class_holder_lookup_class(objc_class_holder holder, const char *name){
-	return (Class)objc_hash_table_get((_objc_hash_table)holder, name);
-}
-void class_holder_rlock(objc_class_holder holder){
-	objc_hash_table_rlock((_objc_hash_table)holder);
-}
-void class_holder_wlock(objc_class_holder holder){
-	objc_hash_table_wlock((_objc_hash_table)holder);
-}
-void class_holder_unlock(objc_class_holder holder){
-	objc_hash_table_unlock((_objc_hash_table)holder);
+	return class_holder_fetch_class((_class_holder)holder, name);
 }
 
 #endif // OBJC_USES_INLINE_FUNCTIONS

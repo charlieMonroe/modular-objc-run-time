@@ -64,18 +64,11 @@
 #define objc_class_holder_create objc_setup.class_holder.creator
 #define objc_class_holder_insert objc_setup.class_holder.inserter
 #define objc_class_holder_lookup objc_setup.class_holder.lookup
-#define objc_class_holder_rlock objc_setup.class_holder.rlock
-#define objc_class_holder_wlock objc_setup.class_holder.wlock
-#define objc_class_holder_unlock objc_setup.class_holder.unlock
-
 
 // Selector holder
 #define objc_selector_holder_create objc_setup.selector_holder.creator
 #define objc_selector_holder_insert objc_setup.selector_holder.inserter
 #define objc_selector_holder_lookup objc_setup.selector_holder.lookup
-#define objc_selector_holder_rlock objc_setup.selector_holder.rlock
-#define objc_selector_holder_wlock objc_setup.selector_holder.wlock
-#define objc_selector_holder_unlock objc_setup.selector_holder.unlock
 
 // Array
 #define objc_array_create objc_setup.array.creator

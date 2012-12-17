@@ -100,7 +100,7 @@ OBJC_INLINE void cache_insert_method(_cache cache, Method m){
 	objc_rw_lock_unlock(cache->lock);
 }
 
-static Method cache_fetch_method(_cache cache, SEL key) {
+OBJC_INLINE Method cache_fetch_method(_cache cache, SEL key) {
 	unsigned int bucket_index = _cache_bucket_index_for_selector(cache, key);
 	_cache_bucket *bucket = cache->buckets[bucket_index];
 	while (bucket != NULL) {
