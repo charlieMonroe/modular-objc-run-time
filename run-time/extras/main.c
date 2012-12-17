@@ -28,8 +28,19 @@ id _MyClass_log(id self, SEL _cmd, ...){
 }
 
 int main(int argc, const char * argv[]){
+	Class my_class;
+	Class my_subclass;
+	SEL alloc_selector;
+	SEL log_selector;
+	SEL second_alloc_selector;
+	Method alloc_method;
+	Method log_method;
+	IMP alloc_impl;
+	id instance;
+	clock_t c1, c2;
+	int i;
 	
-	Class my_class = objc_class_create(Nil, "MyClass");
+	my_class = objc_class_create(Nil, "MyClass");
 	printf("Created class: %p\n", my_class);
 	printf("Getting class: %p\n", objc_class_for_name("MyClass"));
 	objc_class_finish(my_class);
@@ -37,38 +48,37 @@ int main(int argc, const char * argv[]){
 	
 	(void)objc_class_create(Nil, "MyClass");
 	
-	Class my_subclass = objc_class_create(my_class, "MySubclass");
+	my_subclass = objc_class_create(my_class, "MySubclass");
 	objc_class_finish(my_subclass);
 	
-	SEL alloc_selector = objc_selector_register("alloc");
+	alloc_selector = objc_selector_register("alloc");
 	printf("Registering alloc selector - %p.\n", alloc_selector);
 	
-	SEL log_selector = objc_selector_register("log");
+	log_selector = objc_selector_register("log");
 	printf("Registering log selector - %p.\n", log_selector);
 	
-	SEL second_alloc_selector = objc_selector_register("alloc");
+	second_alloc_selector = objc_selector_register("alloc");
 	printf("Registering second alloc selector should yield in the same pointers: %s (%p x %p).\n", second_alloc_selector == alloc_selector ? "YES" : "NO", alloc_selector, second_alloc_selector);
 	
-	Method alloc_method = objc_method_create(alloc_selector, "^@:", &_MyClass_alloc);
+	alloc_method = objc_method_create(alloc_selector, "^@:", &_MyClass_alloc);
 	printf("Created alloc method %p\n", alloc_method);
 	
 	objc_class_add_class_method(my_class, alloc_method);
 	
-	Method log_method = objc_method_create(log_selector, "^@:", &_MyClass_log);
+	log_method = objc_method_create(log_selector, "^@:", &_MyClass_log);
 	printf("Created log method %p\n", log_method);
 	
 	objc_class_add_class_method(my_class, alloc_method);
 	objc_class_add_instance_method(my_class, log_method);
 	
-	IMP alloc_impl = objc_object_lookup_impl((id)my_subclass, alloc_selector);
+	alloc_impl = objc_object_lookup_impl((id)my_subclass, alloc_selector);
 	printf("Got alloc implementation: %p - equals to %p: %s\n", alloc_impl, &_MyClass_alloc, alloc_impl == &_MyClass_alloc ? "YES" : "NO");
 	
-	id instance = alloc_impl((id)my_subclass, alloc_selector);
+	instance = alloc_impl((id)my_subclass, alloc_selector);
 	printf("Created an object instance: %p\n", instance);
 	
-	clock_t c1, c2;
 	c1 = clock();
-	for (int i = 0; i < ITERATIONS; ++i){
+	for (i = 0; i < ITERATIONS; ++i){
 		IMP log_impl = objc_object_lookup_impl(instance, objc_selector_register("log"));
 		log_impl(instance, log_selector);
 		//_MyClass_log(instance, log_selector);

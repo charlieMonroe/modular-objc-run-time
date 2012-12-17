@@ -25,16 +25,12 @@ SEL objc_selector_register(const char *name){
 	//objc_selector_holder_unlock(selector_cache);
 	
 	if (selector == NULL){
-		objc_selector_holder_wlock(selector_cache);
-		
 		// Check if the selector hasn't been added yet
 		selector = (SEL)objc_selector_holder_lookup(selector_cache, name);
 		if (selector == NULL){
 			// Still nothing, insert
 			selector = _objc_selector_insert_into_cache_no_lock(name);
 		}
-		
-		objc_selector_holder_unlock(selector_cache);
 	}
 	return selector;
 }

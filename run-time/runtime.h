@@ -42,9 +42,6 @@ typedef struct {
 	objc_selector_holder_creator_f creator;
 	objc_selector_holder_inserter_f inserter;
 	objc_selector_holder_lookup_f lookup;
-	objc_selector_holder_rlock_f rlock;
-	objc_selector_holder_wlock_f wlock;
-	objc_selector_holder_unlock_f unlock;
 } objc_setup_selector_holder;
 
 typedef struct {
@@ -147,9 +144,6 @@ objc_runtime_create_getter_setter_function_decls(objc_class_holder_unlock_f, cla
 
 objc_runtime_create_getter_setter_function_decls(objc_selector_holder_creator_f, selector_holder_creator)
 objc_runtime_create_getter_setter_function_decls(objc_selector_holder_lookup_f, selector_holder_lookup)
-objc_runtime_create_getter_setter_function_decls(objc_selector_holder_rlock_f, selector_holder_rlock)
-objc_runtime_create_getter_setter_function_decls(objc_selector_holder_wlock_f, selector_holder_wlock)
-objc_runtime_create_getter_setter_function_decls(objc_selector_holder_unlock_f, selector_holder_unlock)
 
 objc_runtime_create_getter_setter_function_decls(objc_log_f, log)
 

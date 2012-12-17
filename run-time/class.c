@@ -184,7 +184,7 @@ Class objc_class_for_name(const char *name){
 void objc_class_finish(Class cl){
 	// Pass the class through all extensions
 	objc_class_extension *ext = class_extensions;
-	void *extra_space = cl->extra_space;
+	char *extra_space = (char*)cl->extra_space;
 	if (extra_space != NULL){
 		while (ext != NULL) {
 			if (ext->class_initializer != NULL){

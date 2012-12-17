@@ -84,4 +84,24 @@ OBJC_INLINE BOOL objc_strings_equal(const char *str1, const char *str2){
 	return NO;
 }
 
+/*
+ * Caches string str.
+ */
+OBJC_INLINE unsigned int objc_hash_string(const char *str){
+	register unsigned int hash = 0;
+	register unsigned char *s = (unsigned char *)str;
+	
+	for (; ; ) {
+		if (*s == '\0') break;
+		hash ^= (unsigned int)*s++;
+		if (*s == '\0') break;
+		hash ^= (unsigned int)*s++ << 8;
+		if (*s == '\0') break;
+		hash ^= (unsigned int)*s++ << 16;
+		if (*s == '\0') break;
+		hash ^= (unsigned int)*s++ << 24;
+	}
+	return hash;
+}
+
 #endif // OBJC_UTILITIES_H_

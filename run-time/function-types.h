@@ -126,7 +126,14 @@ typedef void(*objc_class_holder_unlock_f)(objc_class_holder);
 typedef objc_selector_holder(*objc_selector_holder_creator_f)(void);
 
 /**
- * Adds the class to the data structure.
+ * Adds the selector to the data structure. The selector holder should be
+ * a lockable structure, allowing access from multiple threads. The structure
+ * should use the locks provided by the run-time so that in case the locks
+ * are set to no-op in single-threaded environment, no locking is indeed 
+ * performed.
+ *
+ * To speed things up, a rw lock should be used. If the structure used
+ * is a lock-free structure, you can ignore any locking.
  */
 typedef void(*objc_selector_holder_inserter_f)(objc_selector_holder, SEL);
 
@@ -136,19 +143,6 @@ typedef void(*objc_selector_holder_inserter_f)(objc_selector_holder, SEL);
  */
 typedef SEL(*objc_selector_holder_lookup_f)(objc_selector_holder, const char*);
 
-/**
- * The selector holder should be a lockable structure, allowing access from
- * multiple threads. The structure should use the locks provided by the
- * run-time so that in case the locks are set to no-op in single-threaded
- * environment, no locking is indeed performed.
- *
- * To speed things up, a rw lock should be used. If the structure used
- * is a lock-free structure, you can simply no-op these functions (they
- * still need to be non-NULL, though).
- */
-typedef void(*objc_selector_holder_rlock_f)(objc_selector_holder);
-typedef void(*objc_selector_holder_wlock_f)(objc_selector_holder);
-typedef void(*objc_selector_holder_unlock_f)(objc_selector_holder);
 
 /*********** objc_cache ***********/
 
