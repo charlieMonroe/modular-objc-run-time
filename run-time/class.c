@@ -38,7 +38,7 @@ OBJC_INLINE unsigned int _objc_extra_class_space_for_extensions(void){
 	objc_class_extension *ext;
 	
 	if (cached_class_result != 0 || class_extensions == NULL){
-		// The result has already been cached, or no extensions are installed
+		/* The result has already been cached, or no extensions are installed */
 		return cached_class_result;
 	}
 	
@@ -183,8 +183,8 @@ Class objc_class_for_name(const char *name){
 	}
 	
 	c = objc_class_holder_lookup(objc_classes, name);
-	if (c->flags.in_construction){
-		// Still in construction
+	if (c == NULL || c->flags.in_construction){
+		/* NULL, or still in construction */
 		return Nil;
 	}
 	

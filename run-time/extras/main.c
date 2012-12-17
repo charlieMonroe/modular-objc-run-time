@@ -79,7 +79,7 @@ int main(int argc, const char * argv[]){
 	
 	c1 = clock();
 	for (i = 0; i < ITERATIONS; ++i){
-		IMP log_impl = objc_object_lookup_impl(instance, objc_selector_register("log"));
+		IMP log_impl = objc_object_lookup_impl(instance, log_selector);
 		log_impl(instance, log_selector);
 		//_MyClass_log(instance, log_selector);
 	}
