@@ -231,6 +231,7 @@ void objc_class_finish(Class cl){
 id objc_class_create_instance(Class cl, unsigned int extra_bytes){
 	unsigned int size;
 	id obj;
+	objc_class_extension *ext;
 	
 	if (cl->flags.in_construction){
 		objc_log("Trying to create an instance of unfinished class (%s).", cl->name);
@@ -240,7 +241,26 @@ id objc_class_create_instance(Class cl, unsigned int extra_bytes){
 	size = cl->instance_size + _objc_extra_object_space_for_extensions() + extra_bytes;
 	obj = (id)objc_zero_alloc(size);
 	obj->isa = cl;
+	
+	ext = class_extensions;
+	while (ext != NULL){
+		ext->object_initializer(obj, (char*)obj + ext->object_extra_space_offset);
+		ext = ext->next_extension;
+	}
+	
 	return obj;
+}
+
+void objc_class_deallocate_instance(id obj){
+	objc_class_extension *ext;
+	
+	ext = class_extensions;
+	while (ext != NULL){
+		ext->object_deallocator(obj, (char*)obj + ext->object_extra_space_offset);
+		ext = ext->next_extension;
+	}
+	
+	objc_dealloc(obj);
 }
 
 OBJC_INLINE Method _objc_lookup_method_in_method_list(objc_array method_list, SEL selector){

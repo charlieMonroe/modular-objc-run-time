@@ -90,7 +90,7 @@ static void object_creation_test(void){
 	c1 = clock();
 	for (i = 0; i < ALLOCATION_ITERATIONS; ++i){
 		id instance = objc_class_create_instance(my_class, 0);
-		// TODO destroy
+		objc_class_deallocate_instance(instance);
 	}
 	
 	c2 = clock();
