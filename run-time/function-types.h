@@ -188,31 +188,29 @@ typedef int(*objc_rw_lock_unlock_f)(objc_rw_lock);
 /*********** objc_array ***********/
 
 /**
- * Two creators for an array - one is lockable (i.e. a rw/lock is
- * initialized), the other not. The argument is initial capacity of 
- * the array.
+ * Two creators for an array. An array is used
+ * to keep method lists. It should be hence protected
+ * by some R/W lock when adding methods. Reading
+ * should be lock-free if possible.
+ *
+ * The run-time itself never destroys this structure,
+ * hence a function type for destryoing it isn't defined.
  */
-typedef objc_array(*objc_array_creator_f)(unsigned int);
-typedef objc_array(*objc_array_lockable_creator_f)(unsigned int);
+typedef objc_array(*objc_array_creator_f)(void);
 
 /**
- * Function that frees the array memory.
+ * Returns an enumerator.
  */
-typedef void(*objc_array_destroyer_f)(objc_array);
+typedef objc_array_enumerator(*objc_array_enumerator_getter_f)(objc_array);
 
 /**
- * Returns a pointer at index.
- */
-typedef void*(*objc_array_getter_f)(objc_array, unsigned int);
-
-/**
- * Adds an item at the end of the array;
+ * Adds an item at the end of the array.
+ *
+ * Note that it is necessary that the item
+ * is really appended and not prepended,
+ * unless you return a backward enumerator.
  */
 typedef void(*objc_array_append_f)(objc_array, void*);
 
-/**
- * Returns number of elements in the array;
- */
-typedef unsigned int (*objc_array_count_f)(objc_array);
 
 #endif //OBJC_FUNCTION_TYPES_H_

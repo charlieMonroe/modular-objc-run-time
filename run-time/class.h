@@ -22,7 +22,9 @@ extern void objc_class_add_class_method(Class cl, Method m);
 extern void objc_class_add_class_methods(Class cl, Method *m, unsigned int count);
 extern void objc_class_add_instance_method(Class cl, Method m);
 extern void objc_class_add_instance_methods(Class cl, Method *m, unsigned int count);
+
 extern id objc_class_create_instance(Class cl, unsigned int extra_bytes);
+
 extern Class objc_class_for_name(const char *name);
 extern BOOL objc_class_in_construction(Class cl);
 extern void objc_class_finish(Class cl);

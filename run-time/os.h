@@ -73,8 +73,7 @@
 // Array
 #define objc_array_create objc_setup.array.creator
 #define objc_array_append objc_setup.array.append
-#define objc_array_count objc_setup.array.count
-#define objc_array_get objc_setup.array.getter
+#define objc_array_get_enumerator objc_setup.array.enum_getter
 
 // Cache
 #define objc_cache_create objc_setup.cache.creator

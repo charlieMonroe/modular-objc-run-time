@@ -5,7 +5,7 @@
 #ifndef OBJC_TYPES_H_
 #define OBJC_TYPES_H_
 
-// A boolean type.
+/* A boolean type. */
 typedef signed char BOOL;
 #define YES ((BOOL)1)
 #define NO ((BOOL)0)
@@ -67,6 +67,14 @@ typedef void *objc_cache;
 // It is used to keep arrays of methods, protocols, etc. on a class.
 // This run-time provides a default implementation of such an array.
 typedef void *objc_array;
+
+/**
+ * An enumerator structure returned by the array.
+ */
+typedef struct _objc_array_enumerator {
+	struct _objc_array_enumerator *next;
+	void *item;
+} *objc_array_enumerator;
 
 // A definition for a read/write lock.
 typedef void *objc_rw_lock;

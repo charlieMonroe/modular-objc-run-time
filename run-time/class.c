@@ -112,25 +112,36 @@ Class objc_class_create(Class superclass, const char *name) {
 	return newClass;
 }
 
-OBJC_INLINE void _objc_initialize_method_list(objc_array *methodList){
-	if (*methodList != NULL){
+OBJC_INLINE void _objc_initialize_method_list(objc_array *method_list){
+	if (*method_list != NULL){
 		// Already allocated
 		return;
 	}
 	
-	*methodList = objc_array_create(1);
+	*method_list = objc_array_create();
 }
 
 OBJC_INLINE void _objc_class_add_methods(objc_array method_list, Method *m, unsigned int count){
-	objc_array new_list = objc_array_create(count);
-	
+	/*
+	 * +1 is for the NULL termination.
+	 */
+	Method *methods_copy = objc_alloc((count + 1) * sizeof(Method));
 	int i;
 	for (i = 0; i < count; ++i){
-		objc_array_append(new_list, m[i]);
+		methods_copy[i] = m[i];
 	}
+	methods_copy[i] = NULL;
 	
-	// TODO: check for duplicates, locking
-	objc_array_append(method_list, new_list);
+	/*
+	 * Just like Apple's run-time, we do not check for duplicates.
+	 * As the method list gets appended at the end, a duplicated 
+	 * method would simply be ignored by the run-time as the
+	 * original would be found before that in the method lookup.
+	 * This mechanism allows to override a function of a superclass,
+	 * however.
+	 */
+	
+	objc_array_append(method_list, methods_copy);
 }
 
 OBJC_INLINE void _objc_class_add_class_methods(Class cl, Method *m, unsigned int count){
@@ -225,26 +236,23 @@ id objc_class_create_instance(Class cl, unsigned int extra_bytes){
 }
 
 OBJC_INLINE Method _objc_lookup_method_in_method_list(objc_array method_list, SEL selector){
-	unsigned int number_of_lists;
-	unsigned int list;
+	objc_array_enumerator en;
 	
 	if (method_list == NULL){
 		return NULL;
 	}
 	
-	number_of_lists = objc_array_count(method_list);
-	for (list = 0; list < number_of_lists; ++list){
-		objc_array methods = objc_array_get(method_list, list);
-		unsigned int number_of_methods = objc_array_count(methods);
-		unsigned int m;
-		for (m = 0; m < number_of_methods; ++m){
-			Method method = (Method)objc_array_get(methods, m);
-			if (objc_selectors_equal(selector, method->selector)){
-				return method;
+	en = objc_array_get_enumerator(method_list);
+	do {
+		Method *methods = en->item;
+		while (*methods != NULL){
+			if (objc_selectors_equal(selector, (*methods)->selector)){
+				return *methods;
 			}
+			++methods;
 		}
-	}
-	
+	} while (en->next != NULL);
+		
 	return NULL;
 }
 

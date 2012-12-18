@@ -58,11 +58,8 @@ typedef struct {
 
 typedef struct {
 	objc_array_creator_f creator;
-	objc_array_lockable_creator_f lockable_creator;
-	objc_array_destroyer_f destroyer;
-	objc_array_getter_f getter;
+	objc_array_enumerator_getter_f enum_getter;
 	objc_array_append_f append;
-	objc_array_count_f count;
 } objc_setup_array;
 
 typedef struct {
@@ -146,11 +143,8 @@ objc_runtime_create_getter_setter_function_decls(objc_rw_lock_write_lock_f, rw_l
 objc_runtime_create_getter_setter_function_decls(objc_rw_lock_unlock_f, rw_lock_unlock)
 
 objc_runtime_create_getter_setter_function_decls(objc_array_creator_f, array_creator)
-objc_runtime_create_getter_setter_function_decls(objc_array_lockable_creator_f, array_lockable_creator)
-objc_runtime_create_getter_setter_function_decls(objc_array_destroyer_f, array_destroyer)
-objc_runtime_create_getter_setter_function_decls(objc_array_getter_f, array_getter)
+objc_runtime_create_getter_setter_function_decls(objc_array_enumerator_getter_f, array_enumerator_getter)
 objc_runtime_create_getter_setter_function_decls(objc_array_append_f, array_append)
-objc_runtime_create_getter_setter_function_decls(objc_array_count_f, array_count)
 
 objc_runtime_create_getter_setter_function_decls(objc_cache_creator_f, cache_creator)
 objc_runtime_create_getter_setter_function_decls(objc_cache_fetcher_f, cache_fetcher)
