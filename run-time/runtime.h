@@ -6,7 +6,7 @@
 #ifndef OBJC_RUNTIME_H_
 #define OBJC_RUNTIME_H_
 
-#include "function-types.h" // For function types in the struct
+#include "function-types.h" /* For function types in the struct */
 
 /**
  * Structures that defines the run-time setup. This means all functions that
@@ -73,14 +73,18 @@ typedef struct {
 	objc_setup_execution execution;
 	objc_setup_sync sync;
 	
-	// Logging is optional. If the logging function
-	// is not available, the run-time will simply not log anything
+	/**
+	 * Logging is optional. If the logging function
+	 * is not available, the run-time will simply not log anything.
+	 */
 	objc_setup_logging logging;
 	
-	// The following pointers are to be set optionally
-	// as this run-time provides a default implementation.
-	// If, however, you modify one pointer of the set,
-	// all other pointers need to be modified as well...
+	/**
+	 * The following pointers are to be set optionally
+	 * as this run-time provides a default implementation.
+	 * If, however, you modify one pointer of the set,
+	 * all other pointers need to be modified as well...
+	 */
 	objc_setup_class_holder class_holder;
 	objc_setup_selector_holder selector_holder;
 	objc_setup_array array;
@@ -116,7 +120,7 @@ extern void objc_runtime_init(void);
  * within the setup structure.
  */
 
-// A macro for creating function declarations
+/* A macro for creating function declarations */
 #define objc_runtime_create_getter_setter_function_decls(type, name)\
 	 extern void objc_runtime_set_##name(type name);\
 	 extern type objc_runtime_get_##name(void);
@@ -150,4 +154,4 @@ objc_runtime_create_getter_setter_function_decls(objc_cache_creator_f, cache_cre
 objc_runtime_create_getter_setter_function_decls(objc_cache_fetcher_f, cache_fetcher)
 objc_runtime_create_getter_setter_function_decls(objc_cache_inserter_f, cache_inserter)
 
-#endif //OBJC_RUNTIME_H_
+#endif /* OBJC_RUNTIME_H_ */

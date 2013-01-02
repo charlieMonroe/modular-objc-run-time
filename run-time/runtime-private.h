@@ -5,7 +5,7 @@
 #ifndef OBJC_RUNTIME_PRIVATE_H_
 #define OBJC_RUNTIME_PRIVATE_H_
 	 
-// Need to include the public header for the objc_runtime_setup struct def.
+/* Need to include the public header for the objc_runtime_setup struct def. */
 #include "runtime.h"
 
 /**
@@ -14,5 +14,5 @@
  */
 extern objc_runtime_setup_struct objc_setup;
  
-#endif // OBJC_RUNTIME_PRIVATE_H_
+#endif /* OBJC_RUNTIME_PRIVATE_H_ */
  

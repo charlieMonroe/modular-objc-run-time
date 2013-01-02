@@ -2,49 +2,53 @@
  * This file implements initialization and setup functions of the run-time.
  */
 
-#include "runtime-private.h" // The public header is included here
-#include "array.h" // For default array implementation
-#include "class_holder.h" // For default class holder imp
-#include "selector_holder.h" // For default selector holder imp
-#include "cache.h" // Default cache imp
-#include "class-private.h" // For class_init
-#include "selector-private.h" // For selector_init
-#include "os.h" // To figure out if the run-time is using inline functions or function pointers
+#include "runtime-private.h" /* The public header is included here */
+#include "array.h" /* For default array implementation */
+#include "class_holder.h" /* For default class holder imp */
+#include "selector_holder.h" /* For default selector holder imp */
+#include "cache.h" /* Default cache imp */
+#include "class-private.h" /* For class_init */
+#include "selector-private.h" /* For selector_init */
+#include "os.h" /* To figure out if the run-time is using inline functions or function pointers */
 
-// This is marked during objc_init() as YES. After that point, no modifications
-// to the setup may be made.
+/**
+ * This is marked during objc_init() as YES. After that point, no modifications
+ * to the setup may be made.
+ */
 static BOOL objc_runtime_has_been_initialized = NO;
 
-// The exported runtime setup structure. Private for internal use only, though.
+/* The exported runtime setup structure. Private for internal use only, though. */
 objc_runtime_setup_struct objc_setup;
 
-// See header for documentation
+/* See header for documentation */
 void objc_runtime_set_setup(objc_runtime_setup_struct *setup){
 	if (OBJC_USES_INLINE_FUNCTIONS){
 		objc_log("The run-time uses inline functions. Setting the function pointers has no effect.\n");
 		return;
 	}
 	
-	// Check if either setup is NULL or the run-time has been already 
-	// initialized - if so, we need to abort
+	/**
+	 * Check if either setup is NULL or the run-time has been already
+	 * initialized - if so, we need to abort
+	 */
 	if (setup == NULL) {
-		// At this point, the abort function doesn't have to be set.
+		/* At this point, the abort function doesn't have to be set. */
 		if (objc_abort != NULL){
 			objc_abort("Cannot pass NULL setup!");
 		}else{
 			return;
 		}
 	}else if (objc_runtime_has_been_initialized == YES){
-		// abort is a required function
+		/* abort is a required function */
 		objc_abort("Cannot modify the run-time setup after it has "
 			"been initialized");
 	}
 	
-	// Copy over everything
+	/* Copy over everything */
 	objc_setup = *setup;
 }
 
-// See header for documentation
+/* See header for documentation */
 void objc_runtime_get_setup(objc_runtime_setup_struct *setup){
 	if (OBJC_USES_INLINE_FUNCTIONS){
 		objc_log("The run-time uses inline functions. No function pointers have been returned.\n");
@@ -111,20 +115,20 @@ static void _objc_runtime_validate_function_pointers(void){
 	objc_runtime_init_check_function_pointer_with_default_imp(cache.fetcher, cache_fetch)
 	objc_runtime_init_check_function_pointer_with_default_imp(cache.inserter, cache_insert)
 	
-#endif // OBJC_USES_INLINE_FUNCTIONS
+#endif /* OBJC_USES_INLINE_FUNCTIONS */
 }
 
-// See header for documentation
+/* See header for documentation */
 void objc_runtime_init(void){
-	// Run-time has been initialized
+	/* Run-time has been initialized */
 	objc_runtime_has_been_initialized = YES;
 	
-	// If inline functions aren't in use, check the function pointers
+	/* If inline functions aren't in use, check the function pointers */
 	if (!OBJC_USES_INLINE_FUNCTIONS){
 		_objc_runtime_validate_function_pointers();
 	}
 	
-	// Initialize classes
+	/* Initialize classes */
 	objc_class_init();
 	objc_selector_init();
 }

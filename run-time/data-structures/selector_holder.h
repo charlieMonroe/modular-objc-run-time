@@ -1,10 +1,3 @@
-//
-//  selector_holder.h
-//  modular_runtime
-//
-//  Created by Charlie Monroe on 12/9/12.
-//  Copyright (c) 2012 Fuel Collective, LLC. All rights reserved.
-//
 
 #ifndef OBJC_SELECTOR_HOLDER_H_
 #define OBJC_SELECTOR_HOLDER_H_
@@ -22,5 +15,5 @@ extern void selector_holder_insert_selector(objc_selector_holder holder, SEL sel
 extern SEL selector_holder_lookup_selector(objc_selector_holder holder, const char *name);
 
 
-#endif // OBJC_USES_INLINE_FUNCTIONS
-#endif // OBJC_SELECTOR_HOLDER_H_
+#endif /* OBJC_USES_INLINE_FUNCTIONS */
+#endif /* OBJC_SELECTOR_HOLDER_H_ */

@@ -1,11 +1,3 @@
-//
-//  main.c
-//  modular_runtime
-//
-//  Created by Charlie Monroe on 11/24/12.
-//  Copyright (c) 2012 Fuel Collective, LLC. All rights reserved.
-//
-
 #include <stdio.h>
 #include <time.h>
 
@@ -25,7 +17,6 @@ id _MyClass_alloc(id self, SEL _cmd, ...){
 
 id _MyClass_log(id self, SEL _cmd, ...){
 	counter++;
-	//printf("Instance method, hallelujah - self %p, _cmd %p", self, _cmd);
 	return nil;
 }
 
@@ -86,7 +77,7 @@ static void method_dispatch_test(void){
 	for (i = 0; i < DISPATCH_ITERATIONS; ++i){
 		IMP log_impl = objc_object_lookup_impl(instance, log_selector);
 		log_impl(instance, log_selector);
-		//_MyClass_log(instance, log_selector);
+		/* _MyClass_log(instance, log_selector); */
 	}
 	
 	c2 = clock();

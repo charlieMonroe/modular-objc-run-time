@@ -33,7 +33,7 @@ OBJC_INLINE unsigned int _cache_bucket_index_for_selector(_objc_cache table, con
 	return (unsigned int)selector & (table->bucket_count - 1);
 }
 
-OBJC_INLINE unsigned int _objc_cache_log2u(unsigned int x) { return (x<2) ? 0 : _objc_cache_log2u (x>>1)+1; };
+OBJC_INLINE unsigned int _objc_cache_log2u(unsigned int x) { return (x<2) ? 0 : _objc_cache_log2u (x>>1)+1; }
 
 #define GOOD_CAPACITY(c) (c <= 1 ? 1 : 1 << (_objc_cache_log2u(c-1)+1))
 

@@ -15,7 +15,7 @@
 #include <string.h>
 #include "../types.h"
 
-#define objc_log(format, ...) printf(format, ## __VA_ARGS__)
+#define objc_log printf
 
 OBJC_INLINE void objc_abort(const char *reason){
 	printf("Aborting because of %s.", reason);

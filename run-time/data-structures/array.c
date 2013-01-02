@@ -66,4 +66,4 @@ objc_array_enumerator array_get_enumerator(objc_array array){
 	return ((_array)array)->first;
 }
 
-#endif // OBJC_USES_INLINE_FUNCTIONS
+#endif /* OBJC_USES_INLINE_FUNCTIONS */

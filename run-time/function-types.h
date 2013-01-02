@@ -6,7 +6,7 @@
 #ifndef OBJC_FUNCTION_TYPES_H_
 #define OBJC_FUNCTION_TYPES_H_
 
-#include "types.h" // For objc_class, etc.
+#include "types.h" /* For objc_class, etc. */
 
 /*********** Execution ***********/
 
@@ -46,8 +46,8 @@ typedef int(*objc_log_f)(const char*, ...);
  * parameter - size of the memory that should be allocated. Generally should
  * work just like malloc.
  */
-// TODO: change to size_t or similar, though allocating more than 4GB of memory
-// at once is quite unusual... Fixme?
+/* TODO: change to size_t or similar, though allocating more than 4GB of memory
+	at once is quite unusual... Fixme? */
 typedef void*(*objc_allocator_f)(unsigned int);
  
 /**
@@ -213,4 +213,4 @@ typedef objc_array_enumerator(*objc_array_enumerator_getter_f)(objc_array);
 typedef void(*objc_array_append_f)(objc_array, void*);
 
 
-#endif //OBJC_FUNCTION_TYPES_H_
+#endif /* OBJC_FUNCTION_TYPES_H_ */

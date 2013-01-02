@@ -29,11 +29,13 @@
 
 #include "extras/inline-sample.h"
 
-//#if TARGET_MY_OS
-	//#include "os-my-os.h"
-//#else
-	//#error "This OS isn't supported at the moment."
-//#endif
+/*
+#if TARGET_MY_OS
+	#include "os-my-os.h"
+#else
+	#error "This OS isn't supported at the moment."
+#endif
+ */
 
 #else
 
