@@ -14,12 +14,11 @@ struct objc_class {
 	char *name;
 	
 	/*
-	 * Both class and instance methods are actually
-	 * arrays of arrays - each item of this array is an array
-	 * representing a set of methods, implemented by e.g.
-	 * a category.
+	 * Both class and instance methods and ivars are actually
+	 * arrays of arrays - each item of this objc_array is a pointer
+	 * to a C array of methods/ivars.
 	 *
-	 * WARNING: Both are lazily created -> may be NULL!
+	 * WARNING: All of them are lazily created -> may be NULL!
 	 */
 	objc_array class_methods;
 	objc_array instance_methods;
@@ -28,7 +27,6 @@ struct objc_class {
 	/* Cache */
 	objc_cache class_cache;
 	objc_cache instance_cache;
-	
 	
 	unsigned int instance_size; /* Doesn't include class extensions */
 	struct {

@@ -46,6 +46,10 @@ BOOL objc_selectors_equal(SEL selector1, SEL selector2){
 	return selector1 == selector2 || objc_strings_equal(selector1->name, selector2->name);
 }
 
+const char *objc_selector_get_name(SEL selector){
+	return selector->name;
+}
+
 void objc_selector_init(void){
 	selector_cache = objc_selector_holder_create();
 }

@@ -1,10 +1,3 @@
-//
-//  posix.c
-//  modular_runtime
-//
-//  Created by Charlie Monroe on 11/27/12.
-//  Copyright (c) 2012 Fuel Collective, LLC. All rights reserved.
-//
 
 #include <stdio.h>
 #include <stdlib.h>

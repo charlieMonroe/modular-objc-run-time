@@ -9,6 +9,14 @@
 #include "types.h" /* For Class, BOOL, Method, ... definitions. */
 
 /**
+ * Two simple macros that determine whether the object is
+ * a class or not. As the class->isa pointer creates a loop to
+ * itself, the detection is very easy.
+ */
+#define OBJC_OBJ_IS_CLASS(obj) ((BOOL)(obj->isa == (Class)obj))
+#define OBJC_OBJ_IS_INSTANCE(obj) ((BOOL)(obj->isa != (Class)obj))
+
+/**
   * Creates a new class with name that is a subclass of superclass.
   * 
   * The returned class isn't registered with the run-time yet,
@@ -67,7 +75,7 @@ extern void objc_class_complete_object(id instance);
  * objects, use the function below so that the class
  * extension object_deallocator functions are called.
  */
-extern void objc_class_deallocate_object(id instance);
+extern void objc_object_deallocate(id obj);
 
 /**
  * If, for whatever reason, you do not use the run-time function
@@ -151,6 +159,22 @@ extern IMP objc_lookup_instance_method_impl(id obj, SEL selector);
  * and handles the situation depending on that.
  */
 extern IMP objc_object_lookup_impl(id obj, SEL selector);
+
+
+/**** INFORMATION GETTERS ****/
+
+/**
+ * Returns the name of the class.
+ */
+extern const char *objc_class_get_name(Class cl);
+
+/**
+ * Returns the superclass of cl, or Nil if it's a root class.
+ */
+extern Class objc_class_get_superclass(Class cl);
+
+
+/**** CACHE-RELATED ****/
 
 /**
  * These cache-related functions flush the caches of a class,

@@ -29,6 +29,11 @@ id _MyClass_log(id self, SEL _cmd, ...){
 	return nil;
 }
 
+BOOL _MyClass_forward(id self, SEL _cmd, SEL selector){
+	printf("Class %s supports forwarding - trying to forward selector %s.\n", objc_class_get_name(self->isa), objc_selector_get_name(selector));
+	return YES;
+}
+
 static Class my_class;
 static Class my_subclass;
 static SEL alloc_selector;
@@ -36,6 +41,8 @@ static SEL log_selector;
 static Method alloc_method;
 static Method log_method;
 static IMP alloc_impl;
+static Method forwarding_method;
+static SEL forwarding_selector;
 
 static void create_classes(void){
 	SEL second_alloc_selector;
@@ -49,13 +56,18 @@ static void create_classes(void){
 	
 	alloc_selector = objc_selector_register("alloc");
 	log_selector = objc_selector_register("log");
+	forwarding_selector = objc_selector_register("forwardMessage:");
+	
 	second_alloc_selector = objc_selector_register("alloc");
 	alloc_method = objc_method_create(alloc_selector, "^@:", &_MyClass_alloc);
 	objc_class_add_class_method(my_class, alloc_method);
 	log_method = objc_method_create(log_selector, "^@:", &_MyClass_log);
 	
+	forwarding_method = objc_method_create(forwarding_selector, "^@::", (IMP)_MyClass_forward);
+	
 	objc_class_add_class_method(my_class, alloc_method);
 	objc_class_add_instance_method(my_class, log_method);
+	objc_class_add_instance_method(my_class, forwarding_method);
 	
 	alloc_impl = objc_object_lookup_impl((id)my_subclass, alloc_selector);
 	
@@ -67,6 +79,8 @@ static void method_dispatch_test(void){
 	int i;
 	
 	instance = alloc_impl((id)my_subclass, alloc_selector);
+	
+	objc_object_lookup_impl(instance, objc_selector_register("some_selector"))(instance, objc_selector_register("some_selector"));
 	
 	c1 = clock();
 	for (i = 0; i < DISPATCH_ITERATIONS; ++i){
@@ -90,7 +104,7 @@ static void object_creation_test(void){
 	c1 = clock();
 	for (i = 0; i < ALLOCATION_ITERATIONS; ++i){
 		id instance = objc_class_create_instance(my_class, 0);
-		objc_class_deallocate_instance(instance);
+		objc_object_deallocate(instance);
 	}
 	
 	c2 = clock();
