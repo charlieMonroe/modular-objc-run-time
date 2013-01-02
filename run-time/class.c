@@ -56,7 +56,7 @@ OBJC_INLINE unsigned int _objc_extra_object_space_for_extensions(void){
 	objc_class_extension *ext;
 	
 	if (cached_object_result != 0 || class_extensions == NULL){
-		// The result has already been cached, or no extensions are installed
+		/* The result has already been cached, or no extensions are installed. */
 		return cached_object_result;
 	}
 	
@@ -69,7 +69,11 @@ OBJC_INLINE unsigned int _objc_extra_object_space_for_extensions(void){
 	return cached_object_result;
 }
 
-// See header for documentation
+OBJC_INLINE unsigned int _class_instance_size(Class cl){
+	return cl->instance_size + _objc_extra_object_space_for_extensions();
+}
+
+/* See header for documentation */
 Class objc_class_create(Class superclass, const char *name) {
 	Class newClass;
 	unsigned int extra_space;
@@ -80,21 +84,23 @@ Class objc_class_create(Class superclass, const char *name) {
 	
 	objc_rw_lock_wlock(objc_runtime_lock);
 	if (objc_class_holder_lookup(objc_classes, name) != NULL){
-		// i.e. a class with this name already exists
+		/* i.e. a class with this name already exists */
 		objc_log("A class with this name already exists (%s).\n", name);
 		objc_rw_lock_unlock(objc_runtime_lock);
 		return NULL;
 	}
 	
 	newClass = (Class)(objc_alloc(sizeof(struct objc_class)));
-	newClass->isa = newClass; // A loop to self to detect class method calls
+	newClass->isa = newClass; /* A loop to self to detect class method calls. */
 	newClass->super_class = superclass;
 	newClass->name = objc_strcpy(name);
-	newClass->class_methods = NULL; // Lazy-loading
-	newClass->instance_methods = NULL; // Lazy-loading
+	newClass->class_methods = NULL; /* Lazy-loading */
+	newClass->instance_methods = NULL; /* Lazy-loading */
 	
-	// Right now sizeof(Class) as the object always includes pointer to its class.
-	// Adding or removing ivars changes the value. Doesn't include extra space.
+	/*
+	 * Right now sizeof(Class) as the object always includes pointer to its class.
+	 * Adding or removing ivars changes the value. Doesn't include extra space.
+	 */
 	newClass->instance_size = sizeof(Class);
 	
 	newClass->flags.in_construction = YES;
@@ -114,7 +120,7 @@ Class objc_class_create(Class superclass, const char *name) {
 
 OBJC_INLINE void _objc_initialize_method_list(objc_array *method_list){
 	if (*method_list != NULL){
-		// Already allocated
+		/* Already allocated */
 		return;
 	}
 	
@@ -211,7 +217,7 @@ void objc_class_finish(Class cl){
 		return;
 	}
 	
-	// Pass the class through all extensions
+	/* Pass the class through all extensions */
 	ext = class_extensions;
 	extra_space = (char*)cl->extra_space;
 	if (extra_space != NULL){
@@ -224,12 +230,11 @@ void objc_class_finish(Class cl){
 		}
 	}
 	
-	// That's it! Just mark it as not in construction
+	/* That's it! Just mark it as not in construction */
 	cl->flags.in_construction = NO;
 }
 
 id objc_class_create_instance(Class cl, unsigned int extra_bytes){
-	unsigned int size;
 	id obj;
 	objc_class_extension *ext;
 	
@@ -238,8 +243,7 @@ id objc_class_create_instance(Class cl, unsigned int extra_bytes){
 		return nil;
 	}
 	
-	size = cl->instance_size + _objc_extra_object_space_for_extensions() + extra_bytes;
-	obj = (id)objc_zero_alloc(size);
+	obj = (id)objc_zero_alloc(_class_instance_size(cl) + extra_bytes);
 	obj->isa = cl;
 	
 	ext = class_extensions;
@@ -335,6 +339,10 @@ IMP objc_lookup_class_method_impl(Class cl, SEL selector){
 	return _objc_lookup_class_method_impl(cl, selector);
 }
 
+unsigned int objc_class_instance_size(Class cl){
+	return _class_instance_size(cl);
+}
+
 OBJC_INLINE Method _objc_lookup_instance_method(id obj, SEL selector){
 	Class class;
 	
@@ -382,14 +390,14 @@ IMP objc_object_lookup_impl(id obj, SEL selector){
 	}
 	
 	if ((Class)obj == obj->isa){
-		// Class method
+		/* Class method */
 		return _objc_lookup_class_method_impl((Class)obj, selector);
 	}
 	return _objc_lookup_instance_method_impl(obj, selector);
 }
 
 void objc_class_init(void){
-	// Cache the extension offsets
+	/* Cache the extension offsets */
 	objc_class_extension *ext = class_extensions;
 	unsigned int class_extra_space = 0;
 	unsigned int object_extra_space = 0;
@@ -419,7 +427,7 @@ void objc_class_add_extension(objc_class_extension *extension){
 	if (class_extensions == NULL){
 		class_extensions = extension;
 	}else{
-		// Prepend the extension
+		/* Prepend the extension */
 		extension->next_extension = class_extensions;
 		class_extensions = extension;
 	}
