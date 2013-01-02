@@ -1,5 +1,5 @@
 /*
- * This header file contains the definition of a class as well as declarations
+ * This header file contains declarations
  * of functions that deal with the class structure.
  */
 
@@ -126,6 +126,19 @@ extern void objc_class_finish(Class cl);
  * If, for example, a class extension changes in a way that the lookup would
  * result in a different method implementation, it is responsible to clear
  * the class caches (see the cache-related functions below).
+ *
+ * NOTE: The functions looking up method *implementation* NEVER
+ * return NULL! If cl or obj are Nil (or nil), a no-op function is returned.
+ * If the method is not found, the class is then searched for a selector
+ * -(BOOL)forwardMessage:(SEL)selector; and the class or the object is 
+ * then called with this method. If the class doesn't implement 
+ * the forwardMessage: method, or the method returns NO, 
+ * the program is aborted. If it returns YES, a no-op function pointer
+ * is returned.
+ *
+ * This is a simplified forwarding mechanism with less overhead. In case
+ * the forwarding mechanism used by Apple and others is needed for
+ * compatibility reasons, it can be easily implemented within this method.
  */
 extern Method objc_lookup_class_method(Class cl, SEL selector);
 extern IMP objc_lookup_class_method_impl(Class cl, SEL selector);
