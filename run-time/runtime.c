@@ -112,6 +112,7 @@ static void _objc_runtime_validate_function_pointers(void){
 	objc_runtime_init_check_function_pointer_with_default_imp(selector_holder.lookup, selector_holder_lookup_selector)
 
 	objc_runtime_init_check_function_pointer_with_default_imp(cache.creator, cache_create)
+	objc_runtime_init_check_function_pointer_with_default_imp(cache.destroyer, cache_destroy)
 	objc_runtime_init_check_function_pointer_with_default_imp(cache.fetcher, cache_fetch)
 	objc_runtime_init_check_function_pointer_with_default_imp(cache.inserter, cache_insert)
 	
@@ -191,6 +192,7 @@ objc_runtime_create_getter_setter_function_body(objc_array_enumerator_getter_f, 
 objc_runtime_create_getter_setter_function_body(objc_array_append_f, array_append, array.append)
 
 objc_runtime_create_getter_setter_function_body(objc_cache_creator_f, cache_creator, cache.creator)
+objc_runtime_create_getter_setter_function_body(objc_cache_destroyer_f, cache_destroyer, cache.destroyer)
 objc_runtime_create_getter_setter_function_body(objc_cache_fetcher_f, cache_fetcher, cache.fetcher)
 objc_runtime_create_getter_setter_function_body(objc_cache_inserter_f, cache_inserter, cache.inserter)
 

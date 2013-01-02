@@ -39,6 +39,10 @@ typedef struct _bucket_struct {
  *		  can save memory for classes that aren't used by the program
  *		  so that their cache doesn't get allocated unless needed.
  * key_offset_in_object - offset of the key within the obj structure.
+ * readers - how many readers are reading from the structure.
+ * dealloc_mark - if the structure is marked to be deallocated. If the mark
+ *				is YES the structure gets deallocated once readers is
+ *				decreased to 0.
  * pointer_equality - whether to simply compare pointers to determine
  *				equality. Implies pointer hash, instead of key hash
  *				as well.
@@ -46,6 +50,8 @@ typedef struct _bucket_struct {
 typedef struct _holder_str {
 	objc_rw_lock lock;
 	unsigned int key_offset_in_object;
+	unsigned int readers;
+	BOOL dealloc_mark;
 	BOOL pointer_equality;
 	_bucket **buckets;
 } *_holder;
@@ -74,6 +80,30 @@ OBJC_INLINE void *_holder_object_in_bucket(_holder holder, _bucket *bucket, void
 
 OBJC_INLINE BOOL _holder_contains_object_in_bucket(_holder holder, _bucket *bucket, void *obj){
 	return (BOOL)(_holder_object_in_bucket(holder, bucket, obj) != NULL);
+}
+
+void _holder_deallocate_bucket(_bucket *bucket){
+	if (bucket->next != NULL){
+		_holder_deallocate_bucket(bucket->next);
+	}
+	objc_dealloc(bucket);
+}
+
+OBJC_INLINE void _holder_deallocate(_holder holder){
+	unsigned int index = 0;
+	
+	/* Make sure no one is writing. */
+	objc_rw_lock_wlock(holder->lock);
+	
+	for (index = 0; index < HOLDER_BUCKET_COUNT; ++index){
+		if (holder->buckets[index] != NULL){
+			_holder_deallocate_bucket(holder->buckets[index]);
+		}
+	}
+	
+	objc_dealloc(holder->buckets);
+	objc_rw_lock_unlock(holder->lock);
+	objc_rw_lock_destroy(holder->lock);
 }
 
 OBJC_INLINE void *_holder_object_in_bucket_for_key(_holder holder, _bucket *bucket, const void *key){
@@ -130,23 +160,49 @@ OBJC_INLINE void holder_insert_object_internal(_holder holder, void *obj){
 }
 
 OBJC_INLINE void *holder_fetch_object(_holder holder, const void *key) {
-	unsigned int bucket_index;
 	_bucket *bucket;
+	void *result;
+	unsigned int bucket_index;
 	
 	if (holder->buckets == NULL){
 		/* No buckets */
 		return NULL;
 	}
 	
+	++holder->readers;
+	
+	/* Check the dealloc mark one more time. */
+	if (holder->dealloc_mark){
+		_holder_deallocate(holder);
+		return NULL;
+	}
+	
 	bucket_index = _bucket_index_for_key(holder, key);
 	bucket = holder->buckets[bucket_index];
-	return _holder_object_in_bucket_for_key(holder, bucket, key);
+	result = _holder_object_in_bucket_for_key(holder, bucket, key);
+	--holder->readers;
+	
+	if (holder->dealloc_mark && holder->readers == 0){
+		_holder_deallocate(holder);
+	}
+	
+	
+	return result;
+}
+
+OBJC_INLINE void holder_mark_to_deallocate(_holder holder){
+	holder->dealloc_mark = YES;
+	if (holder->readers == 0){
+		_holder_deallocate(holder);
+	}
 }
 
 OBJC_INLINE _holder holder_create_internal(holder_type type){
 	_holder holder = (_holder)(objc_alloc(sizeof(struct _holder_str)));
 	holder->buckets = NULL;
 	holder->lock = objc_rw_lock_create();
+	holder->readers = 0;
+	holder->dealloc_mark = NO;
 	holder->pointer_equality = NO;
 	switch (type) {
 		case holder_type_class:
@@ -195,6 +251,9 @@ objc_cache cache_create(void){
 }
 Method cache_fetch(objc_cache cache, SEL selector){
 	return holder_fetch_object((_holder)cache, selector);
+}
+void cache_destroy(objc_cache cache){
+	holder_mark_to_deallocate((_holder)cache);
 }
 void cache_insert(objc_cache cache, Method method){
 	holder_insert_object_internal((_holder)cache, method);

@@ -41,6 +41,8 @@ static id _objc_nil_receiver_function(id self, SEL _cmd, ...){
 	return nil;
 }
 
+/***** PRIVATE FUNCTIONS *****/
+
 /**
  * Returns the extra space needed in the class structure by
  * the class extensions.
@@ -362,6 +364,44 @@ OBJC_INLINE BOOL _forward_method_invocation(id obj, SEL selector){
 	}
 }
 
+/**
+ * Calls class extension object_initializer functions.
+ */
+OBJC_INLINE void _complete_object(id obj){
+	objc_class_extension *ext = class_extensions;
+	while (ext != NULL){
+		ext->object_initializer(obj, (char*)obj + ext->object_extra_space_offset);
+		ext = ext->next_extension;
+	}
+}
+
+/**
+ * Calls class extension object_deallocator functions.
+ */
+OBJC_INLINE void _finalize_object(id obj){
+	objc_class_extension *ext;
+	
+	ext = class_extensions;
+	while (ext != NULL){
+		ext->object_deallocator(obj, (char*)obj + ext->object_extra_space_offset);
+		ext = ext->next_extension;
+	}
+}
+
+OBJC_INLINE void _flush_cache(objc_cache *cache){
+	if (cache == NULL){
+		/* This is wrong. *cache may be NULL, cache no. */
+		objc_abort("Cache == NULL in _flush_cache!");
+	}
+	
+	if (*cache != NULL){
+		objc_cache old_cache = *cache;
+		*cache = NULL;
+		objc_cache_destroy(old_cache);
+	}
+}
+
+
 /***** PUBLIC FUNCTIONS *****/
 
 void objc_class_add_class_method(Class cl, Method m){
@@ -427,9 +467,11 @@ Class objc_class_create(Class superclass, const char *name) {
 	
 	return newClass;
 }
+void objc_complete_object(id instance){
+	_complete_object(instance);
+}
 id objc_class_create_instance(Class cl, unsigned int extra_bytes){
 	id obj;
-	objc_class_extension *ext;
 	
 	if (cl->flags.in_construction){
 		objc_log("Trying to create an instance of unfinished class (%s).", cl->name);
@@ -439,11 +481,7 @@ id objc_class_create_instance(Class cl, unsigned int extra_bytes){
 	obj = (id)objc_zero_alloc(_instance_size(cl) + extra_bytes);
 	obj->isa = cl;
 	
-	ext = class_extensions;
-	while (ext != NULL){
-		ext->object_initializer(obj, (char*)obj + ext->object_extra_space_offset);
-		ext = ext->next_extension;
-	}
+	_complete_object(obj);
 	
 	return obj;
 }
@@ -487,6 +525,9 @@ Class objc_class_for_name(const char *name){
 	
 	return c;
 }
+void objc_finalize_object(id instance){
+	_finalize_object(instance);
+}
 unsigned int objc_class_instance_size(Class cl){
 	return _instance_size(cl);
 }
@@ -525,14 +566,7 @@ IMP objc_lookup_instance_method_impl(id obj, SEL selector){
 	return implementation;
 }
 void objc_object_deallocate(id obj){
-	objc_class_extension *ext;
-	
-	ext = class_extensions;
-	while (ext != NULL){
-		ext->object_deallocator(obj, (char*)obj + ext->object_extra_space_offset);
-		ext = ext->next_extension;
-	}
-	
+	_finalize_object(obj);
 	objc_dealloc(obj);
 }
 IMP objc_object_lookup_impl(id obj, SEL selector){
@@ -588,6 +622,44 @@ void objc_class_add_extension(objc_class_extension *extension){
 		extension->next_extension = class_extensions;
 		class_extensions = extension;
 	}
+}
+
+/**** CACHE-RELATED ****/
+
+/**
+ * Flushing caches is a little tricky. As the structure is
+ * read-lock-free, there can be multiple readers present.
+ *
+ * To solve this, the structure must handle this. The default
+ * implementation solves this by simply marking the structure
+ * as 'to be deallocated'. At the beginning of each read from
+ * the cache, reader count is increased, at the end decreased.
+ * 
+ * Once the reader count is zero and the structure is marked
+ * as to be deallocated, it is actually deallocated. This can be
+ * done simply because the cache structure is marked to be
+ * deleted *after* a new one has been created and placed instead.
+ */
+
+void objc_class_flush_caches(Class cl){
+	if (cl == Nil){
+		return;
+	}
+	
+	_flush_cache(&cl->class_cache);
+	_flush_cache(&cl->instance_cache);
+}
+void objc_class_flush_instance_cache(Class cl){
+	if (cl == Nil){
+		return;
+	}
+	_flush_cache(&cl->instance_cache);
+}
+void objc_class_flush_class_cache(Class cl){
+	if (cl == Nil){
+		return;
+	}
+	_flush_cache(&cl->class_cache);
 }
 
 /***** INITIALIZATION *****/

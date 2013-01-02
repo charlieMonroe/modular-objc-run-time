@@ -64,7 +64,7 @@ extern id objc_class_create_instance(Class cl, unsigned int extra_bytes);
  * in order for class extensions to work. This function just calls
  * the object initializers of class extensions.
  */
-extern void objc_class_complete_object(id instance);
+extern void objc_complete_object(id instance);
 
 /**
  * Deallocates an instance and calls all object_deallocator
@@ -83,7 +83,7 @@ extern void objc_object_deallocate(id obj);
  * all class extensions can deallocate anything they might have 
  * allocated.
  */
-extern void objc_class_finalize_object(id instance);
+extern void objc_finalize_object(id instance);
 
 /**
  * Returns size of an instance of a class. This size does include
@@ -99,13 +99,6 @@ extern unsigned int objc_class_instance_size(Class cl);
  * Nil is returned anyway.
  */
 extern Class objc_class_for_name(const char *name);
-
-/**
- * Returns YES if the class is currently in construction.
- * This generally means that objc_class_finish hasn't been
- * called with this class yet.
- */
-extern BOOL objc_class_in_construction(Class cl);
 
 /**
  * This function marks the class as finished (i.e. not in construction)
@@ -162,6 +155,13 @@ extern IMP objc_object_lookup_impl(id obj, SEL selector);
 
 
 /**** INFORMATION GETTERS ****/
+
+/**
+ * Returns YES if the class is currently in construction.
+ * This generally means that objc_class_finish hasn't been
+ * called with this class yet.
+ */
+extern BOOL objc_class_in_construction(Class cl);
 
 /**
  * Returns the name of the class.

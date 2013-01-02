@@ -142,8 +142,22 @@ typedef SEL(*objc_selector_holder_lookup_f)(objc_selector_holder, const char*);
  * operation locks the data structure in the default
  * implementation.
  *
+ * The destroying is a little tricky. The cache can be 
+ * read from multiple threads at once, hence it cannot
+ * be deallocated at that very moment.
+ *
+ * The default
+ * implementation solves this by simply marking the structure
+ * as 'to be deallocated'. At the beginning of each read from
+ * the cache, reader count is increased, at the end decreased.
+ *
+ * Once the reader count is zero and the structure is marked
+ * as to be deallocated, it is actually deallocated. This can be
+ * done simply because the cache structure is marked to be
+ * deleted *after* a new one has been created and placed instead.
  */
 typedef objc_cache(*objc_cache_creator_f)(void);
+typedef void(*objc_cache_destroyer_f)(objc_cache);
 typedef void(*objc_cache_inserter_f)(objc_cache, Method);
 typedef Method(*objc_cache_fetcher_f)(objc_cache, SEL);
 

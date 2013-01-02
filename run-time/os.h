@@ -79,6 +79,7 @@
 
 /* Cache */
 #define objc_cache_create objc_setup.cache.creator
+#define objc_cache_destroy objc_setup.cache.destroyer
 #define objc_cache_fetch objc_setup.cache.fetcher
 #define objc_cache_insert objc_setup.cache.inserter
 

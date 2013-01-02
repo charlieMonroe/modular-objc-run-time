@@ -64,6 +64,7 @@ typedef struct {
 
 typedef struct {
 	objc_cache_creator_f creator;
+	objc_cache_destroyer_f destroyer;
 	objc_cache_fetcher_f fetcher;
 	objc_cache_inserter_f inserter;
 } objc_setup_cache;
@@ -151,6 +152,7 @@ objc_runtime_create_getter_setter_function_decls(objc_array_enumerator_getter_f,
 objc_runtime_create_getter_setter_function_decls(objc_array_append_f, array_append)
 
 objc_runtime_create_getter_setter_function_decls(objc_cache_creator_f, cache_creator)
+objc_runtime_create_getter_setter_function_decls(objc_cache_destroyer_f, cache_destroyer)
 objc_runtime_create_getter_setter_function_decls(objc_cache_fetcher_f, cache_fetcher)
 objc_runtime_create_getter_setter_function_decls(objc_cache_inserter_f, cache_inserter)
 
