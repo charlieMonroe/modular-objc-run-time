@@ -66,6 +66,7 @@
 #define objc_class_holder_create objc_setup.class_holder.creator
 #define objc_class_holder_insert objc_setup.class_holder.inserter
 #define objc_class_holder_lookup objc_setup.class_holder.lookup
+#define objc_class_holder_flatten objc_setup.class_holder.flatten
 
 /* Selector holder */
 #define objc_selector_holder_create objc_setup.selector_holder.creator

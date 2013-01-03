@@ -6,7 +6,6 @@
 #include "class-extension.h"
 #include "os.h"
 #include "utilities.h"
-#include "method-private.h"
 #include "selector.h"
 
 /**
@@ -388,6 +387,9 @@ OBJC_INLINE void _finalize_object(id obj){
 	}
 }
 
+/**
+ * Flushes *cache by destroying it and creating a new one.
+ */
 OBJC_INLINE void _flush_cache(objc_cache *cache){
 	if (cache == NULL){
 		/* This is wrong. *cache may be NULL, cache no. */
@@ -401,6 +403,140 @@ OBJC_INLINE void _flush_cache(objc_cache *cache){
 	}
 }
 
+OBJC_INLINE Ivar _ivar_named_in_ivar_list(objc_array ivar_list, const char *name){
+	objc_array_enumerator en;
+	
+	if (ivar_list == NULL){
+		return NULL;
+	}
+	
+	en = objc_array_get_enumerator(ivar_list);
+	while (en != NULL) {
+		Ivar *ivars = en->item;
+		while (*ivars != NULL){
+			if (objc_strings_equal(name, (*ivars)->name)){
+				return *ivars;
+			}
+			++ivars;
+		}
+		en = en->next;
+	}
+	
+	return NULL;
+}
+
+/**
+ * Finds an Ivar in class with name.
+ */
+OBJC_INLINE Ivar _ivar_named(Class cl, const char *name){
+	if (name == NULL){
+		return NULL;
+	}
+	
+	while (cl != Nil){
+		Ivar var = _ivar_named_in_ivar_list(cl->ivars, name);
+		if (var != NULL){
+			return var;
+		}
+		cl = cl->super_class;
+	}
+	return NULL;
+}
+
+OBJC_INLINE unsigned int _ivar_count(Class cl){
+	unsigned int count = 0;
+	objc_array_enumerator en;
+	objc_array ivar_list = cl->ivars;
+	if (ivar_list == NULL){
+		return count;
+	}
+	
+	en = objc_array_get_enumerator(ivar_list);
+	while (en != NULL) {
+		Ivar *ivars = en->item;
+		while (*ivars != NULL) {
+			++count;
+			++ivars;
+		}
+		en = en->next;
+	}
+	return count;
+}
+
+OBJC_INLINE void _ivars_copy_to_list(Class cl, Ivar *list, unsigned int max_count){
+	unsigned int counter = 0;
+	objc_array ivar_list = cl->ivars;
+	objc_array_enumerator en;
+	if (ivar_list == NULL){
+		/* NULL-termination */
+		list[0] = NULL;
+		return;
+	}
+	
+	en = objc_array_get_enumerator(ivar_list);
+	while (en != NULL && counter < max_count) {
+		Ivar *ivars = en->item;
+		while (*ivars != NULL && counter < max_count) {
+			list[counter] = *ivars;
+			++counter;
+			++ivars;
+		}
+		en = en->next;
+	}
+	
+	/* NULL termination */
+	list[max_count] = NULL;
+}
+
+OBJC_INLINE unsigned int _method_count_in_method_list(objc_array list){
+	unsigned int count = 0;
+	objc_array_enumerator en;
+	
+	if (list == NULL){
+		return count;
+	}
+	
+	en = objc_array_get_enumerator(list);
+	while (en != NULL) {
+		Method *methods = en->item;
+		while (*methods != NULL){
+			++count;
+			++methods;
+		}
+		en = en->next;
+	}
+	return count;
+}
+
+OBJC_INLINE void _methods_copy_to_list(objc_array method_list, Method *list, unsigned int max_count){
+	unsigned int count = 0;
+	objc_array_enumerator en;
+	
+	if (method_list == NULL){
+		return;
+	}
+	
+	en = objc_array_get_enumerator(method_list);
+	while (en != NULL) {
+		Method *methods = en->item;
+		while (*methods != NULL){
+			list[count] = *methods;
+			++count;
+			++methods;
+		}
+		en = en->next;
+	}
+	
+	/* NULL termination */
+	list[max_count] = NULL;
+}
+
+OBJC_INLINE Method *_method_list_flatten(objc_array list){
+	unsigned int number_of_methods = _method_count_in_method_list(list);
+	Method *methods = objc_alloc(sizeof(Method) * (number_of_methods + 1));
+	_methods_copy_to_list(list, methods, number_of_methods);
+	return methods;
+}
 
 /***** PUBLIC FUNCTIONS *****/
 
@@ -423,6 +559,18 @@ void objc_class_add_instance_method(Class cl, Method m){
 }
 void objc_class_add_instance_methods(Class cl, Method *m, unsigned int count){
 	_add_instance_methods(cl, m, count);
+}
+Method *objc_class_get_instance_method_list(Class cl){
+	if (cl == Nil){
+		return NULL;
+	}
+	return _method_list_flatten(cl->instance_methods);
+}
+Method *objc_class_get_class_method_list(Class cl){
+	if (cl == Nil){
+		return NULL;
+	}
+	return _method_list_flatten(cl->class_methods);
 }
 Class objc_class_create(Class superclass, const char *name) {
 	Class newClass;
@@ -466,6 +614,9 @@ Class objc_class_create(Class superclass, const char *name) {
 	objc_rw_lock_unlock(objc_runtime_lock);
 	
 	return newClass;
+}
+Class *objc_class_get_list(void){
+	return objc_class_holder_flatten(objc_classes);
 }
 void objc_complete_object(id instance){
 	_complete_object(instance);
@@ -607,6 +758,46 @@ const char *objc_class_get_name(Class cl){
 Class objc_class_get_superclass(Class cl){
 	return cl->super_class;
 }
+
+/***** IVAR-RELATED *****/
+
+Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigned int alignment, const char *types){
+	Ivar variable;
+	
+	if (cls == Nil || name == NULL || size == 0 || types == NULL){
+		return NULL;
+	}
+	
+	if (_ivar_named(cls, name) != NULL){
+		return NULL;
+	}
+	
+	variable = (Ivar)objc_alloc(sizeof(struct objc_ivar));
+	variable->name = objc_strcpy(name);
+	variable->type = objc_strcpy(types);
+	variable->size = size;
+	
+	/* The offset is the aligned end of the instance size. */
+	variable->offset = cls->instance_size;
+	if (alignment != 0){
+		variable->offset = (variable->offset + (alignment - 1)) & ~(alignment - 1);
+	}
+	
+	cls->instance_size = variable->offset + size;
+	
+	
+	return variable;
+}
+Ivar objc_class_get_ivar(Class cls, const char *name){
+	return _ivar_named(cls, name);
+}
+Ivar *objc_class_get_ivar_list(Class cl){
+	unsigned int number_of_ivars = _ivar_count(cl);
+	Ivar *ivars = objc_alloc(sizeof(Ivar) * (number_of_ivars + 1));
+	_ivars_copy_to_list(cl, ivars, number_of_ivars);
+	return ivars;
+}
+
 
 /***** EXTENSION-RELATED *****/
 void objc_class_add_extension(objc_class_extension *extension){

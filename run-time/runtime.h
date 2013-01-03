@@ -32,6 +32,7 @@ typedef struct {
 	objc_class_holder_creator_f creator;
 	objc_class_holder_inserter_f inserter;
 	objc_class_holder_lookup_f lookup;
+	objc_class_holder_flatten_f flatten;
 } objc_setup_class_holder;
 
 typedef struct {
@@ -135,6 +136,7 @@ objc_runtime_create_getter_setter_function_decls(objc_zero_allocator_f, zero_all
 objc_runtime_create_getter_setter_function_decls(objc_memory_eraser_f, memory_eraser)
 objc_runtime_create_getter_setter_function_decls(objc_class_holder_creator_f, class_holder_creator)
 objc_runtime_create_getter_setter_function_decls(objc_class_holder_lookup_f, class_holder_lookup)
+objc_runtime_create_getter_setter_function_decls(objc_class_holder_flatten_f, class_holder_flatten)
 
 objc_runtime_create_getter_setter_function_decls(objc_selector_holder_creator_f, selector_holder_creator)
 objc_runtime_create_getter_setter_function_decls(objc_selector_holder_lookup_f, selector_holder_lookup)

@@ -1,5 +1,4 @@
 #include "method.h"
-#include "method-private.h"
 #include "os.h" /* For objc_alloc. */
 #include "utilities.h" /* For objc_strcpy */
 

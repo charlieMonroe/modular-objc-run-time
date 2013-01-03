@@ -64,6 +64,36 @@ static void create_classes(void){
 	
 }
 
+static void print_method_list(Method *methods){
+	while (*methods != NULL){
+		printf("\t%s - %p\n", (*methods)->selector->name, (*methods)->implementation);
+		++methods;
+	}
+}
+static void print_ivar_list(Ivar *ivars){
+	while (*ivars != NULL){
+		printf("\t%s - %s - size: %d offset: %d\n", (*ivars)->name, (*ivars)->type, (*ivars)->size, (*ivars)->offset);
+		++ivars;
+	}
+}
+static void print_class(Class cl){
+	printf("******** Class %s ********\n", objc_class_get_name(cl));
+	printf("**** Class methods:\n");
+	print_method_list(objc_class_get_class_method_list(cl));
+	printf("**** Instance methods:\n");
+	print_method_list(objc_class_get_instance_method_list(cl));
+	printf("**** Ivars:\n");
+	print_ivar_list(objc_class_get_ivar_list(cl));
+	
+	printf("\n\n");
+}
+static void list_classes(void){
+	Class *classes = objc_class_get_list();
+	while (*classes != NULL){
+		print_class(*classes);
+		++classes;
+	}
+}
 static void method_dispatch_test(void){
 	id instance;
 	clock_t c1, c2;
@@ -105,6 +135,8 @@ static void object_creation_test(void){
 
 int main(int argc, const char * argv[]){
 	create_classes();
+	list_classes();
+	
 	method_dispatch_test();
 	object_creation_test();
 	

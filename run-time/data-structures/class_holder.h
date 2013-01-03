@@ -13,6 +13,7 @@
 extern objc_class_holder class_holder_create(void);
 extern void class_holder_insert_class(objc_class_holder holder, Class cl);
 extern Class class_holder_lookup_class(objc_class_holder holder, const char *name);
+extern Class *class_holder_flatten(objc_class_holder holder);
 
 #endif /* OBJC_USES_INLINE_FUNCTIONS */
 #endif /* OBJC_CLASS_HOLDER_H_ */

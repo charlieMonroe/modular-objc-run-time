@@ -26,6 +26,8 @@
   */
 extern Class objc_class_create(Class superclass, const char *name);
 
+extern Class *objc_class_get_list(void);
+
 /**
  * The following functions add methods or a single method to the class.
  *
@@ -43,6 +45,9 @@ extern void objc_class_add_class_method(Class cl, Method m);
 extern void objc_class_add_class_methods(Class cl, Method *m, unsigned int count);
 extern void objc_class_add_instance_method(Class cl, Method m);
 extern void objc_class_add_instance_methods(Class cl, Method *m, unsigned int count);
+
+extern Method *objc_class_get_instance_method_list(Class cl);
+extern Method *objc_class_get_class_method_list(Class cl);
 
 /**
  * This function allocates enough space to contain an instance
@@ -152,6 +157,13 @@ extern IMP objc_lookup_instance_method_impl(id obj, SEL selector);
  * and handles the situation depending on that.
  */
 extern IMP objc_object_lookup_impl(id obj, SEL selector);
+
+
+/**** IVAR-RELATED ****/
+
+extern Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigned int alignment, const char *types);
+extern Ivar objc_class_get_ivar(Class cls, const char *name);
+extern Ivar *objc_class_get_ivar_list(Class cl);
 
 
 /**** INFORMATION GETTERS ****/

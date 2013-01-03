@@ -104,6 +104,12 @@ typedef void(*objc_class_holder_inserter_f)(objc_class_holder, Class);
  */
 typedef Class(*objc_class_holder_lookup_f)(objc_class_holder, const char*);
 
+/**
+ * A function that copies over all Class entries into a new NULL-terminated
+ * array;
+ */
+typedef Class*(*objc_class_holder_flatten_f)(objc_class_holder);
+
 
 /*********** objc_selector_holder ***********/
 
