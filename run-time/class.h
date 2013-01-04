@@ -49,6 +49,12 @@ extern void objc_class_add_instance_methods(Class cl, Method *m, unsigned int co
 extern Method *objc_class_get_instance_method_list(Class cl);
 extern Method *objc_class_get_class_method_list(Class cl);
 
+extern IMP objc_class_replace_instance_method_implementation(Class cls, SEL name, IMP imp, const char *types);
+extern IMP objc_class_replace_class_method_implementation(Class cls, SEL name, IMP imp, const char *types);
+
+extern BOOL objc_class_responds_to_instance_selector(Class cl, SEL selector);
+extern BOOL objc_class_responds_to_class_selector(Class cl, SEL selector);
+
 /**
  * This function allocates enough space to contain an instance
  * of the class, including the space required by class extensions,
@@ -157,6 +163,7 @@ extern IMP objc_lookup_instance_method_impl(id obj, SEL selector);
  * and handles the situation depending on that.
  */
 extern IMP objc_object_lookup_impl(id obj, SEL selector);
+extern IMP objc_object_lookup_impl_super(objc_super *sup, SEL selector);
 
 
 /**** IVAR-RELATED ****/
@@ -164,6 +171,16 @@ extern IMP objc_object_lookup_impl(id obj, SEL selector);
 extern Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigned int alignment, const char *types);
 extern Ivar objc_class_get_ivar(Class cls, const char *name);
 extern Ivar *objc_class_get_ivar_list(Class cl);
+
+/**** OBJECT-RELATED ****/
+extern id objc_object_copy(id obj);
+extern Class objc_object_get_class(id obj);
+extern Class objc_object_set_class(id obj, Class new_class);
+
+extern Ivar objc_object_get_variable_named(id obj, const char *name, void **out_value);
+extern Ivar objc_object_set_variable_named(id obj, const char *name, void *value);
+extern void objc_object_set_variable(id obj, Ivar ivar, void *value);
+extern void *objc_object_get_variable(id object, Ivar ivar);
 
 
 /**** INFORMATION GETTERS ****/

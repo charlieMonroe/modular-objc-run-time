@@ -36,6 +36,15 @@ typedef struct objc_object {
 	Class isa;
 } *id;
 
+/**
+ * Definition of super. As the super calls may
+ * be chained, this is quite necessary.
+ */
+typedef struct {
+	id receiver;
+	Class class;
+} objc_super;
+
 /* A definition of a method implementation function pointer. */
 typedef id(*IMP)(id target, SEL _cmd, ...);
 

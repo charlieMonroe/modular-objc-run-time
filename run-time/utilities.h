@@ -104,4 +104,20 @@ OBJC_INLINE unsigned int objc_hash_string(const char *str){
 	return hash;
 }
 
+/*
+ * Copies memory from source to destination.
+ */
+OBJC_INLINE void objc_copy_memory(void *src, void *dst, unsigned int size){
+	const char *src_ptr;
+	char *dest_ptr;
+	unsigned int i;
+	
+	src_ptr = (const char*)src;
+	dest_ptr = (char*)dst;
+	
+	for (i = 0; i < size; ++i){
+		dest_ptr[i] = src_ptr[i];
+	}
+}
+
 #endif /* OBJC_UTILITIES_H_ */

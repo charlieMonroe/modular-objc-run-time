@@ -42,15 +42,11 @@ typedef struct _objc_class_extension {
 	
 	
 	/**
-	 * This is a function that allows to modify the method
+	 * These are functions that allows to modify the method
 	 * implementation lookup. 
-	 *
-	 * It is used both for class and instance methods. To
-	 * distinguish between these two scenarios, use the
-	 * OBJC_OBJ_IS_CLASS and OBJC_OBJ_IS_INSTANCE
-	 * macros defined in class.h.
 	 */
-	Method(*lookup_function)(id, SEL);
+	Method(*instance_lookup_function)(Class, SEL);
+	Method(*class_lookup_function)(Class, SEL);
 	
 	/**
 	 * Extra space in the class and object structures requested.

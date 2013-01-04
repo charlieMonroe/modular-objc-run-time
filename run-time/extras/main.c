@@ -9,14 +9,42 @@
 #define DISPATCH_ITERATIONS 10000000
 #define ALLOCATION_ITERATIONS 10000000
 
-static int counter = 0;
+typedef struct {
+	Class isa;
+	int i;
+} MyClass;
 
 id _MyClass_alloc(id self, SEL _cmd, ...){
 	return objc_class_create_instance((Class)self, 0);
 }
 
-id _MyClass_log(id self, SEL _cmd, ...){
-	counter++;
+id _MyClass_log(MyClass *self, SEL _cmd, ...){
+	++self->i;
+	return nil;
+}
+
+id _MySubclass_log(MyClass *self, SEL _cmd, ...){
+	/* i.e. [super _cmd]; */
+	objc_super super;
+	IMP super_imp;
+	super.receiver = (id)self;
+	super.class = objc_class_get_superclass(self->isa);
+	super_imp = objc_object_lookup_impl_super(&super, _cmd);
+	super_imp((id)self, _cmd);
+	
+	++self->i;
+	
+	return nil;
+}
+
+id _MyClass_increase_via_setters_and_getters(MyClass *self, SEL _cmd, ...){
+	int *old_value_ptr;
+	int new_value;
+	Ivar i_ivar = objc_class_get_ivar(objc_object_get_class((id)self), "i");
+	
+	old_value_ptr = objc_object_get_variable((id)self, i_ivar);
+	new_value = *old_value_ptr + 1;
+	objc_object_set_variable((id)self, i_ivar, &new_value);
 	return nil;
 }
 
@@ -27,37 +55,54 @@ BOOL _MyClass_forward(id self, SEL _cmd, SEL selector){
 
 static Class my_class;
 static Class my_subclass;
+
 static SEL alloc_selector;
 static SEL log_selector;
+static SEL increase_via_gs_selector;
+static SEL forwarding_selector;
+
 static Method alloc_method;
 static Method log_method;
-static IMP alloc_impl;
+static Method increase_via_gs_method;
 static Method forwarding_method;
-static SEL forwarding_selector;
+
+static IMP alloc_impl;
+
 
 static void create_classes(void){
 	SEL second_alloc_selector;
 	
+	alloc_selector = objc_selector_register("alloc");
+	log_selector = objc_selector_register("log");
+	increase_via_gs_selector = objc_selector_register("increaseViaGS");
+	forwarding_selector = objc_selector_register("forwardMessage:");
+	second_alloc_selector = objc_selector_register("alloc");
+	if (second_alloc_selector != alloc_selector){
+		printf("alloc selector (%p) != second_alloc_selector (%p)!", alloc_selector, second_alloc_selector);
+		
+		/* Force-crash */
+		((IMP)(NULL))(nil, NULL);
+	}
+	
 	my_class = objc_class_create(Nil, "MyClass");
+	objc_class_add_ivar(my_class, "i", sizeof(int), __alignof(int), "i");
 	objc_class_finish(my_class);
 	(void)objc_class_create(Nil, "MyClass");
 	
 	my_subclass = objc_class_create(my_class, "MySubclass");
 	objc_class_finish(my_subclass);
 	
-	alloc_selector = objc_selector_register("alloc");
-	log_selector = objc_selector_register("log");
-	forwarding_selector = objc_selector_register("forwardMessage:");
 	
-	second_alloc_selector = objc_selector_register("alloc");
 	alloc_method = objc_method_create(alloc_selector, "^@:", &_MyClass_alloc);
 	objc_class_add_class_method(my_class, alloc_method);
-	log_method = objc_method_create(log_selector, "^@:", &_MyClass_log);
+	
+	log_method = objc_method_create(log_selector, "^@:", (IMP)&_MyClass_log);
+	objc_class_add_instance_method(my_class, log_method);
+	
+	increase_via_gs_method = objc_method_create(increase_via_gs_selector, "^@:", (IMP)&_MyClass_increase_via_setters_and_getters);
+	objc_class_add_instance_method(my_class, increase_via_gs_method);
 	
 	forwarding_method = objc_method_create(forwarding_selector, "^@::", (IMP)_MyClass_forward);
-	
-	objc_class_add_class_method(my_class, alloc_method);
-	objc_class_add_instance_method(my_class, log_method);
 	objc_class_add_instance_method(my_class, forwarding_method);
 	
 	alloc_impl = objc_object_lookup_impl((id)my_subclass, alloc_selector);
@@ -95,28 +140,90 @@ static void list_classes(void){
 	}
 }
 static void method_dispatch_test(void){
-	id instance;
+	MyClass *instance;
 	clock_t c1, c2;
 	int i;
+	int *result;
+	Ivar i_ivar;
 	
-	instance = alloc_impl((id)my_subclass, alloc_selector);
+	instance = (MyClass*)alloc_impl((id)my_subclass, alloc_selector);
 	
-	objc_object_lookup_impl(instance, objc_selector_register("some_selector"))(instance, objc_selector_register("some_selector"));
+	objc_object_lookup_impl((id)instance, objc_selector_register("some_selector"))((id)instance, objc_selector_register("some_selector"));
 	
 	c1 = clock();
 	for (i = 0; i < DISPATCH_ITERATIONS; ++i){
-		IMP log_impl = objc_object_lookup_impl(instance, log_selector);
-		log_impl(instance, log_selector);
+		IMP log_impl = objc_object_lookup_impl((id)instance, log_selector);
+		log_impl((id)instance, log_selector);
 		/* _MyClass_log(instance, log_selector); */
 	}
 	
 	c2 = clock();
 	
-	if (counter != DISPATCH_ITERATIONS){
-		printf("counter != ITERATIONS (%d != %d)\n", counter, DISPATCH_ITERATIONS);
+	i_ivar = objc_class_get_ivar(my_class, "i");
+	result = (int*)objc_object_get_variable((id)instance, i_ivar);
+	if (*result != DISPATCH_ITERATIONS){
+		printf("counter != ITERATIONS (%d != %d)\n", *result, DISPATCH_ITERATIONS);
 	}
 	
 	printf("Method dispatch test took %f seconds.\n", ((double)c2 - (double)c1)/ (double)CLOCKS_PER_SEC);
+}
+static void super_method_dispatch_test(void){
+	MyClass *instance;
+	clock_t c1, c2;
+	int i;
+	int *result;
+	Ivar i_ivar;
+	
+	/** Adds a new method to the subclass. */
+	objc_class_replace_instance_method_implementation(my_subclass, log_selector, (IMP)&_MySubclass_log, "^@:");
+	
+	instance = (MyClass*)alloc_impl((id)my_subclass, alloc_selector);
+	
+	objc_object_lookup_impl((id)instance, objc_selector_register("some_selector"))((id)instance, objc_selector_register("some_selector"));
+	
+	c1 = clock();
+	for (i = 0; i < DISPATCH_ITERATIONS; ++i){
+		IMP log_impl = objc_object_lookup_impl((id)instance, log_selector);
+		log_impl((id)instance, log_selector);
+		/* _MyClass_log(instance, log_selector); */
+	}
+	
+	c2 = clock();
+	
+	i_ivar = objc_class_get_ivar(my_class, "i");
+	result = (int*)objc_object_get_variable((id)instance, i_ivar);
+	if (*result != 2 * DISPATCH_ITERATIONS){
+		printf("counter != ITERATIONS (%d != %d)\n", *result, 2 * DISPATCH_ITERATIONS);
+	}
+	
+	printf("Super method dispatch test took %f seconds.\n", ((double)c2 - (double)c1)/ (double)CLOCKS_PER_SEC);
+}
+static void method_dispatch_test_via_ivar_setters(void){
+	MyClass *instance;
+	clock_t c1, c2;
+	int i;
+	int *result;
+	Ivar i_ivar;
+	
+	instance = (MyClass*)alloc_impl((id)my_subclass, alloc_selector);
+	
+	objc_object_lookup_impl((id)instance, objc_selector_register("some_selector"))((id)instance, objc_selector_register("some_selector"));
+	
+	c1 = clock();
+	for (i = 0; i < DISPATCH_ITERATIONS; ++i){
+		IMP log_impl = objc_object_lookup_impl((id)instance, increase_via_gs_selector);
+		log_impl((id)instance, increase_via_gs_selector);
+	}
+	
+	c2 = clock();
+	
+	i_ivar = objc_class_get_ivar(my_class, "i");
+	result = (int*)objc_object_get_variable((id)instance, i_ivar);
+	if (*result != DISPATCH_ITERATIONS){
+		printf("counter != ITERATIONS (%d != %d)\n", *result, DISPATCH_ITERATIONS);
+	}
+	
+	printf("Method dispatch test via ivar setters took %f seconds.\n", ((double)c2 - (double)c1)/ (double)CLOCKS_PER_SEC);
 }
 static void object_creation_test(void){
 	clock_t c1, c2;
@@ -138,7 +245,9 @@ int main(int argc, const char * argv[]){
 	list_classes();
 	
 	method_dispatch_test();
+	method_dispatch_test_via_ivar_setters();
 	object_creation_test();
+	super_method_dispatch_test();
 	
 	return 0;
 }
