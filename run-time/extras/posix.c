@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#include "ao-ext.h"
 #include "../runtime.h"
 
 static void *_malloc(unsigned int size){
@@ -50,6 +51,8 @@ static void _objc_posix_init(void){
 	objc_runtime_set_rw_lock_rlock((objc_rw_lock_read_lock_f)pthread_rwlock_rdlock);
 	objc_runtime_set_rw_lock_wlock((objc_rw_lock_write_lock_f)pthread_rwlock_wrlock);
 	objc_runtime_set_rw_lock_unlock((objc_rw_lock_unlock_f)pthread_rwlock_unlock);
+	
+	objc_associated_object_register_extension();
 	
 	objc_runtime_init();
 }

@@ -23,7 +23,7 @@ typedef struct _objc_class_extension {
 	 * is a pointer to the extra space within the class
 	 * structure.
 	 */
-	void(*class_initializer)(Class, void*);
+	void(*class_initializer)(Class, void**);
 	
 	/**
 	 * This function is responsible for initializing
@@ -31,14 +31,14 @@ typedef struct _objc_class_extension {
 	 * is a pointer to the extra space within the object
 	 * structure.
 	 */
-	void(*object_initializer)(id, void*);
+	void(*object_initializer)(id, void**);
 	
 	/**
 	 * This function is responsible for deallocating
 	 * any dynamically allocated space within the object
 	 * extra space.
 	 */
-	void(*object_deallocator)(id, void*);
+	void(*object_deallocator)(id, void**);
 	
 	
 	/**
@@ -58,12 +58,15 @@ typedef struct _objc_class_extension {
 	unsigned int extra_object_space;
 	
 	/**
-	 * When the run-time is initialized, each extensions
+	 * When the run-time is initialized, each extension's
 	 * structure gets a pre-computed offsets from the extra
 	 * space part of the object or class. This is merely a convenience
 	 * so that the class extension list doens't need to be iterated
 	 * every time an extension needs to access the object's extra
 	 * space.
+	 *
+	 * Note though, that this is the offset *after* the end of the
+	 * object variables.
 	 */
 	unsigned int class_extra_space_offset;
 	unsigned int object_extra_space_offset;
@@ -71,6 +74,9 @@ typedef struct _objc_class_extension {
 
 /* Caller is responsible for keeping the structure in memory. */
 extern void objc_class_add_extension(objc_class_extension *extension);
+
+extern void *objc_class_extensions_beginning(Class cl);
+extern void *objc_object_extensions_beginning(id obj);
 
 
 #endif /* OBJC_CLASS_EXTENSION_H_ */

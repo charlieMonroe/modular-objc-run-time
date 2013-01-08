@@ -6,6 +6,8 @@
 #include "method.h"
 #include "selector.h"
 
+#include "ao-ext.h"
+
 #define DISPATCH_ITERATIONS 10000000
 #define ALLOCATION_ITERATIONS 10000000
 
@@ -48,6 +50,12 @@ id _MyClass_increase_via_setters_and_getters(MyClass *self, SEL _cmd, ...){
 	return nil;
 }
 
+id _MyClass_increase_via_ao(MyClass *self, SEL _cmd, ...){
+	unsigned int old_value = (unsigned int)objc_object_get_associated_object((id)self, (void*)_cmd);
+	objc_object_set_associated_object((id)self, (void*)_cmd, (id)(old_value + 1));
+	return nil;
+}
+
 BOOL _MyClass_forward(id self, SEL _cmd, SEL selector){
 	printf("Class %s supports forwarding - trying to forward selector %s.\n", objc_class_get_name(self->isa), objc_selector_get_name(selector));
 	return YES;
@@ -59,11 +67,13 @@ static Class my_subclass;
 static SEL alloc_selector;
 static SEL log_selector;
 static SEL increase_via_gs_selector;
+static SEL increase_via_ao_selector;
 static SEL forwarding_selector;
 
 static Method alloc_method;
 static Method log_method;
 static Method increase_via_gs_method;
+static Method increase_via_ao_method;
 static Method forwarding_method;
 
 static IMP alloc_impl;
@@ -75,6 +85,7 @@ static void create_classes(void){
 	alloc_selector = objc_selector_register("alloc");
 	log_selector = objc_selector_register("log");
 	increase_via_gs_selector = objc_selector_register("increaseViaGS");
+	increase_via_ao_selector = objc_selector_register("increaseViaAO");
 	forwarding_selector = objc_selector_register("forwardMessage:");
 	second_alloc_selector = objc_selector_register("alloc");
 	if (second_alloc_selector != alloc_selector){
@@ -101,6 +112,9 @@ static void create_classes(void){
 	
 	increase_via_gs_method = objc_method_create(increase_via_gs_selector, "^@:", (IMP)&_MyClass_increase_via_setters_and_getters);
 	objc_class_add_instance_method(my_class, increase_via_gs_method);
+	
+	increase_via_ao_method = objc_method_create(increase_via_ao_selector, "^@:", (IMP)&_MyClass_increase_via_ao);
+	objc_class_add_instance_method(my_class, increase_via_ao_method);
 	
 	forwarding_method = objc_method_create(forwarding_selector, "^@::", (IMP)_MyClass_forward);
 	objc_class_add_instance_method(my_class, forwarding_method);
@@ -225,6 +239,31 @@ static void method_dispatch_test_via_ivar_setters(void){
 	
 	printf("Method dispatch test via ivar setters took %f seconds.\n", ((double)c2 - (double)c1)/ (double)CLOCKS_PER_SEC);
 }
+static void method_dispatch_test_via_ao(void){
+	MyClass *instance;
+	clock_t c1, c2;
+	int i;
+	int result;
+	Ivar i_ivar;
+	
+	instance = (MyClass*)alloc_impl((id)my_subclass, alloc_selector);
+	
+	c1 = clock();
+	for (i = 0; i < DISPATCH_ITERATIONS; ++i){
+		IMP log_impl = objc_object_lookup_impl((id)instance, increase_via_ao_selector);
+		log_impl((id)instance, increase_via_ao_selector);
+	}
+	
+	c2 = clock();
+	
+	i_ivar = objc_class_get_ivar(my_class, "i");
+	result = (unsigned int)objc_object_get_associated_object((id)instance, (void*)increase_via_ao_selector);
+	if (result != DISPATCH_ITERATIONS){
+		printf("counter != ITERATIONS (%d != %d)\n", result, DISPATCH_ITERATIONS);
+	}
+	
+	printf("Method dispatch test via AO took %f seconds.\n", ((double)c2 - (double)c1)/ (double)CLOCKS_PER_SEC);
+}
 static void object_creation_test(void){
 	clock_t c1, c2;
 	int i;
@@ -246,6 +285,7 @@ int main(int argc, const char * argv[]){
 	
 	method_dispatch_test();
 	method_dispatch_test_via_ivar_setters();
+	method_dispatch_test_via_ao();
 	object_creation_test();
 	super_method_dispatch_test();
 	

@@ -88,6 +88,30 @@ But even so, the principe is the same - the run-time needs to look up the object
 \item every class consists of two classes - a class pair - one regular of which you create objects and one meta - which typically (unless you manually craft another one) has only one instance: a receiver for class methods (static methods).
 \end{itemize}
 
+\paragraph{Calls to super}
+
+Objective-C, as most object-oriented languages, allows calls of the method implementations of a superclass using the keyword \verb=super=. For example, the \verb=-init= method usually starts with \verb=if ((self = [super init]) != nil)=. This is done using special structure \verb=objc_super=, which is passed by reference to a special function \verb=objc_msgSendSuper= (or its relatives) in case of Apple run-time, or \verb=objc_msg_lookup_super= in case of GCC run-time.
+
+\subparagraph{Example}
+
+\begin{verbatim}
+-(void)someMethod:(void*)firstArgument{
+  [super someMethod:firstArgument];
+}
+
+Is equivalent to:
+
+-(void)someMethod:(void*)firstArgument{
+  struct objc_super super = { 
+      self, 
+      class_getSuperclass(objc_getClass("SomeSubclass")) 
+  };
+  objc_msgSendSuper(&super, 
+                    sel_registerName("someMethod:"), 
+                    firstArgument);
+}
+\end{verbatim}
+
 \subsection{Object Model}
 
 As Objective-C is heavily influenced by Smalltalk, let's examine the Smalltalk object model first\footnote{All copyright for this image goes to Andrew P. Black St\'{e}phane Ducasse, Oscar Nierstrasz Damien Pollet and Damien Cassou and Marcus Denker - http://pharo.gforge.inria.fr/PBE1/PBE1.html}:
