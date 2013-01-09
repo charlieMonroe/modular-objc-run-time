@@ -23,7 +23,7 @@ typedef struct _objc_class_extension {
 	 * is a pointer to the extra space within the class
 	 * structure.
 	 */
-	void(*class_initializer)(Class, void**);
+	void(*class_initializer)(Class, void*);
 	
 	/**
 	 * This function is responsible for initializing
@@ -31,14 +31,14 @@ typedef struct _objc_class_extension {
 	 * is a pointer to the extra space within the object
 	 * structure.
 	 */
-	void(*object_initializer)(id, void**);
+	void(*object_initializer)(id, void*);
 	
 	/**
 	 * This function is responsible for deallocating
 	 * any dynamically allocated space within the object
 	 * extra space.
 	 */
-	void(*object_deallocator)(id, void**);
+	void(*object_deallocator)(id, void*);
 	
 	
 	/**

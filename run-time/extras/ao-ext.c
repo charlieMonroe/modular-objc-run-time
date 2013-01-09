@@ -16,6 +16,10 @@ typedef struct _ao_bucket {
 	id object;
 } ao_bucket;
 
+typedef struct {
+	ao_bucket **buckets;
+} ao_extension_object_part;
+
 static void _deallocate_ao_bucket(ao_bucket *bucket){
 	if (bucket->next == NULL){
 		return;
@@ -25,9 +29,9 @@ static void _deallocate_ao_bucket(ao_bucket *bucket){
 	objc_dealloc(bucket);
 }
 
-static void _associated_object_deallocate(id obj, void **ptr){
-	char *obj_as_str = (char*)objc_object_extensions_beginning(obj);
-	ao_bucket **hash_map = *((ao_bucket***)(obj_as_str + ao_extension.object_extra_space_offset));
+static void _associated_object_deallocate(id obj, void *ptr){
+	ao_extension_object_part *ext = (ao_extension_object_part*)ptr;
+	ao_bucket **hash_map = ext->buckets;
 	unsigned int i;
 	
 	if (hash_map == NULL){
@@ -45,7 +49,7 @@ void objc_associated_object_register_extension(void){
 	ao_extension.class_initializer = NULL;
 	ao_extension.class_lookup_function = NULL;
 	ao_extension.extra_class_space = 0;
-	ao_extension.extra_object_space = sizeof(void*);
+	ao_extension.extra_object_space = sizeof(ao_extension_object_part);
 	ao_extension.instance_lookup_function = NULL;
 	ao_extension.object_deallocator = _associated_object_deallocate;
 	ao_extension.object_initializer = NULL; /* Lazy allocation */
@@ -58,7 +62,8 @@ void objc_associated_object_register_extension(void){
  */
 id objc_object_get_associated_object(id obj, void *key){
 	char *obj_as_str = (char*)objc_object_extensions_beginning(obj);
-	ao_bucket **hash_map = *((ao_bucket***)(obj_as_str + ao_extension.object_extra_space_offset));
+	ao_extension_object_part *ext = (ao_extension_object_part*)(obj_as_str + ao_extension.object_extra_space_offset);
+	ao_bucket **hash_map = ext->buckets;
 	if (hash_map == NULL){
 		return nil;
 	}else{
@@ -90,13 +95,14 @@ OBJC_INLINE ao_bucket *_create_bucket_with_key_and_value(void *key, id value){
  */
 void objc_object_set_associated_object(id obj, void *key, id value){
 	char *obj_as_str = (char*)objc_object_extensions_beginning(obj);
-	ao_bucket **hash_map = *((ao_bucket***)(obj_as_str + ao_extension.object_extra_space_offset));
+	ao_extension_object_part *ext = (ao_extension_object_part*)(obj_as_str + ao_extension.object_extra_space_offset);
+	ao_bucket **hash_map = ext->buckets;
 	unsigned int bucket_index;
 	ao_bucket *bucket;
 	
 	if (hash_map == NULL){
 		hash_map = objc_zero_alloc(sizeof(ao_bucket *) * AO_HASH_MAP_BUCKET_COUNT);
-		*((ao_bucket***)(obj_as_str + ao_extension.object_extra_space_offset)) = hash_map;
+		ext->buckets = hash_map;
 	}
 	
 	bucket_index = ((unsigned int)key & (AO_HASH_MAP_BUCKET_COUNT - 1));

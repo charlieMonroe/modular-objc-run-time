@@ -500,10 +500,8 @@ OBJC_INLINE void _complete_object(id obj){
 	objc_class_extension *ext = class_extensions;
 	void *obj_ext_beginning = objc_object_extensions_beginning(obj);
 	while (ext != NULL){
-		if (ext->object_initializer == NULL){
-			*((void**)((char*)obj_ext_beginning + ext->object_extra_space_offset)) = NULL;
-		}else{
-			ext->object_initializer(obj, (void**)((char*)obj + ext->object_extra_space_offset));
+		if (ext->object_initializer != NULL){
+			ext->object_initializer(obj, (void*)((char*)obj_ext_beginning + ext->object_extra_space_offset));
 		}
 		ext = ext->next_extension;
 	}
@@ -514,11 +512,11 @@ OBJC_INLINE void _complete_object(id obj){
  */
 OBJC_INLINE void _finalize_object(id obj){
 	objc_class_extension *ext;
-	
+	void *obj_ext_beginning = objc_object_extensions_beginning(obj);
 	ext = class_extensions;
 	while (ext != NULL){
 		if (ext->object_deallocator != NULL){
-			ext->object_deallocator(obj, (void**)((char*)obj + ext->object_extra_space_offset));
+			ext->object_deallocator(obj, (void*)((char*)obj_ext_beginning + ext->object_extra_space_offset));
 		}
 		ext = ext->next_extension;
 	}
@@ -844,7 +842,7 @@ void objc_class_finish(Class cl){
 	if (extra_space != NULL){
 		while (ext != NULL) {
 			if (ext->class_initializer != NULL){
-				ext->class_initializer(cl, (void**)extra_space);
+				ext->class_initializer(cl, (void*)extra_space);
 			}
 			extra_space += ext->extra_class_space;
 			ext = ext->next_extension;

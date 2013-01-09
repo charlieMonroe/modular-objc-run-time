@@ -193,8 +193,6 @@ static void super_method_dispatch_test(void){
 	
 	instance = (MyClass*)alloc_impl((id)my_subclass, alloc_selector);
 	
-	objc_object_lookup_impl((id)instance, objc_selector_register("some_selector"))((id)instance, objc_selector_register("some_selector"));
-	
 	c1 = clock();
 	for (i = 0; i < DISPATCH_ITERATIONS; ++i){
 		IMP log_impl = objc_object_lookup_impl((id)instance, log_selector);
@@ -220,8 +218,6 @@ static void method_dispatch_test_via_ivar_setters(void){
 	Ivar i_ivar;
 	
 	instance = (MyClass*)alloc_impl((id)my_subclass, alloc_selector);
-	
-	objc_object_lookup_impl((id)instance, objc_selector_register("some_selector"))((id)instance, objc_selector_register("some_selector"));
 	
 	c1 = clock();
 	for (i = 0; i < DISPATCH_ITERATIONS; ++i){
