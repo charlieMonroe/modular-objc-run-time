@@ -1,6 +1,6 @@
 #include "selector.h"
 #include "os.h" /* For run-time functions */
-#include "utilities.h" /* For strcpy */
+#include "utils.h" /* For strcpy */
 
 static objc_selector_holder selector_cache;
 

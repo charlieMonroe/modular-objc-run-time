@@ -1,6 +1,6 @@
 #include "method.h"
 #include "os.h" /* For objc_alloc. */
-#include "utilities.h" /* For objc_strcpy */
+#include "utils.h" /* For objc_strcpy */
 
 Method objc_method_create(SEL selector, const char *types, IMP implementation){
 	Method m = objc_alloc(sizeof(struct objc_method));

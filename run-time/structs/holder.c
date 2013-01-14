@@ -1,6 +1,6 @@
 
 #include "../os.h"
-#include "../utilities.h"
+#include "../utils.h"
 #include "../private.h"
 
 #if !OBJC_USES_INLINE_FUNCTIONS

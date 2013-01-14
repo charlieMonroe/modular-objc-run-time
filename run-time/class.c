@@ -5,7 +5,7 @@
 #include "private.h"
 #include "classext.h"
 #include "os.h"
-#include "utilities.h"
+#include "utils.h"
 #include "selector.h"
 #include "method.h"
 
@@ -569,11 +569,7 @@ OBJC_INLINE unsigned int _ivar_count(Class cl){
 	
 	en = objc_array_get_enumerator(ivar_list);
 	while (en != NULL) {
-		Ivar *ivars = en->item;
-		while (*ivars != NULL) {
-			++count;
-			++ivars;
-		}
+		++count;
 		en = en->next;
 	}
 	return count;
@@ -625,6 +621,8 @@ OBJC_INLINE void _methods_copy_to_list(objc_array method_list, Method *list, uns
 	objc_array_enumerator en;
 	
 	if (method_list == NULL){
+		/* NULL-terminate, even when NULL */
+		list[0] = NULL;
 		return;
 	}
 	
@@ -760,6 +758,7 @@ Class objc_class_create(Class superclass, const char *name) {
 	newClass->instance_methods = NULL; /* Lazy-loading */
 	newClass->instance_cache = NULL;
 	newClass->class_cache = NULL;
+	newClass->ivars = NULL;
 	
 	/*
 	 * Right now sizeof(id) as the object always includes pointer to its class.
