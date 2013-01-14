@@ -1,8 +1,17 @@
+/*
+ * This file contains declarations of symbols private to the run-time.
+ */
 
-#ifndef OBJC_CLASS_PRIVATE_H_
-#define OBJC_CLASS_PRIVATE_H_
+#ifndef OBJC_PRIVATE_H_
+#define OBJC_PRIVATE_H_
 
-#include "class.h"
+#include "runtime.h" /* Needed for objc_runtime_setup_struct. */
+#include "class.h" /* Needed for Class. */
+
+/**
+ * Initializes structures necessary for selector registration.
+ */
+extern void objc_selector_init(void);
 
 /* A pointer to a structure containing all classes */
 extern objc_class_holder objc_classes;
@@ -38,4 +47,10 @@ struct objc_class {
 
 void objc_class_init(void);
 
-#endif /* OBJC_CLASS_PRIVATE_H_ */
+/**
+ * An external run-time setup structure. This structure shouldn't be modified
+ * from anywhere after the run-time is started.
+ */
+extern objc_runtime_setup_struct objc_setup;
+
+#endif /* OBJC_PRIVATE_H_ */

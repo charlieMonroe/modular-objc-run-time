@@ -2,14 +2,13 @@
  * This file implements initialization and setup functions of the run-time.
  */
 
-#include "runtime-private.h" /* The public header is included here */
-#include "array.h" /* For default array implementation */
-#include "class_holder.h" /* For default class holder imp */
-#include "selector_holder.h" /* For default selector holder imp */
-#include "cache.h" /* Default cache imp */
-#include "class-private.h" /* For class_init */
-#include "selector-private.h" /* For selector_init */
+#include "private.h" /* For *_inits - the public header is included here as well. */
 #include "os.h" /* To figure out if the run-time is using inline functions or function pointers */
+
+#include "structs/array.h" /* For default array implementation */
+#include "structs/classhol.h" /* For default class holder imp */
+#include "structs/selechol.h" /* For default selector holder imp */
+#include "structs/cache.h" /* Default cache imp */
 
 /**
  * This is marked during objc_init() as YES. After that point, no modifications

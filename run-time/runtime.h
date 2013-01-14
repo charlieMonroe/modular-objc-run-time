@@ -6,7 +6,7 @@
 #ifndef OBJC_RUNTIME_H_
 #define OBJC_RUNTIME_H_
 
-#include "function-types.h" /* For function types in the struct */
+#include "ftypes.h"
 
 /**
  * Structures that defines the run-time setup. This means all functions that

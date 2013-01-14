@@ -2,8 +2,8 @@
  * Implementation of the class-related functions.
  */
 
-#include "class-private.h"
-#include "class-extension.h"
+#include "private.h"
+#include "classext.h"
 #include "os.h"
 #include "utilities.h"
 #include "selector.h"

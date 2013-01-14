@@ -2,10 +2,10 @@
 #ifndef OBJC_CLASS_HOLDER_H_
 #define OBJC_CLASS_HOLDER_H_
 
-#include "os.h"
+#include "../os.h"
 #if !OBJC_USES_INLINE_FUNCTIONS
 
-#include "types.h"
+#include "../types.h"
 
 /**
  * Functions compatible with declares in function-types.h, section objc_class_holder.

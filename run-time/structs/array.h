@@ -5,10 +5,10 @@
 #ifndef OBJC_ARRAY_H_
 #define OBJC_ARRAY_H_
 
-#include "os.h"
+#include "../os.h"
 #if !OBJC_USES_INLINE_FUNCTIONS
 
-#include "types.h"
+#include "../types.h"
 
 /* Creates a new objc_array object. */
 extern objc_array array_create(void);

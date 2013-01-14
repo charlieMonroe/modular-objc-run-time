@@ -1,9 +1,7 @@
 
-#include "os.h"
-#include "utilities.h"
-
-#include "selector-private.h"
-#include "class-private.h"
+#include "../os.h"
+#include "../utilities.h"
+#include "../private.h"
 
 #if !OBJC_USES_INLINE_FUNCTIONS
 

@@ -6,7 +6,7 @@
 #include "method.h"
 #include "selector.h"
 
-#include "ao-ext.h"
+#include "extras/ao-ext.h"
 
 #define DISPATCH_ITERATIONS 10000000
 #define ALLOCATION_ITERATIONS 10000000

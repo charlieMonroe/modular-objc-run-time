@@ -1,12 +1,9 @@
 
 
 #include "array.h"
-#include "os.h"
+#include "../os.h"
 
 #if !OBJC_USES_INLINE_FUNCTIONS
-
-
-
 
 /* Internal representation of objc_array */
 typedef struct _array {

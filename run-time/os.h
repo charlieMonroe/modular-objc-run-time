@@ -41,7 +41,7 @@
 
 /********* FUNCTION POINTERS *********/
 
-#include "runtime-private.h"
+#include "private.h"
 
 /* Memory */
 #define objc_alloc objc_setup.memory.allocator

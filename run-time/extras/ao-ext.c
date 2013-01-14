@@ -3,7 +3,7 @@
  */
 
 #include "ao-ext.h"
-#include "../class-extension.h"
+#include "../classext.h"
 
 objc_class_extension ao_extension;
 
