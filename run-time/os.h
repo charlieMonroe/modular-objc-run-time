@@ -45,7 +45,6 @@
 
 /* Memory */
 #define objc_alloc objc_setup.memory.allocator
-#define objc_realloc objc_setup.memory.reallocator
 #define objc_zero_alloc objc_setup.memory.zero_allocator
 #define objc_dealloc objc_setup.memory.deallocator
 
@@ -66,7 +65,6 @@
 #define objc_class_holder_create objc_setup.class_holder.creator
 #define objc_class_holder_insert objc_setup.class_holder.inserter
 #define objc_class_holder_lookup objc_setup.class_holder.lookup
-#define objc_class_holder_flatten objc_setup.class_holder.flatten
 
 /* Selector holder */
 #define objc_selector_holder_create objc_setup.selector_holder.creator

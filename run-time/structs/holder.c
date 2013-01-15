@@ -242,36 +242,6 @@ void class_holder_insert_class(objc_class_holder holder, Class cl){
 Class class_holder_lookup_class(objc_class_holder holder, const char *name){
 	return (Class)holder_fetch_object((_holder)holder, name);
 }
-Class *class_holder_flatten(objc_class_holder holder){
-	_holder h = (_holder)holder;
-	unsigned int class_count = 0;
-	unsigned int counter = 0;
-	Class *classes;
-	unsigned int i;
-	
-	for (i = 0; i < HOLDER_BUCKET_COUNT; ++i){
-		_bucket *buck = h->buckets[i];
-		while (buck != NULL) {
-			++class_count;
-			buck = buck->next;
-		}
-	}
-	
-	classes = objc_alloc(sizeof(Class) * (class_count + 1));
-	for (i = 0; i < HOLDER_BUCKET_COUNT; ++i){
-		_bucket *buck = h->buckets[i];
-		while (buck != NULL && counter < class_count) {
-			classes[counter] = buck->obj;
-			++counter;
-			buck = buck->next;
-		}
-	}
-	
-	/* NULL termination */
-	classes[class_count] = NULL;
-	
-	return classes;
-}
 
 objc_cache cache_create(void){
 	return (objc_cache)holder_create_internal(holder_type_cache);

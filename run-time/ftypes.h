@@ -20,12 +20,6 @@
  */
 typedef void(*objc_abort_f)(const char*);
  
-/**
- * A function pointer to an exit function. The exit function should terminate
- * the program peacefully, just like the POSIX function.
- */
-typedef void(*objc_exit_f)(int);
-
 
 /*********** Logging ***********/
 
@@ -56,26 +50,13 @@ typedef void*(*objc_allocator_f)(unsigned int);
  * work just like free().
  */
 typedef void(*objc_deallocator_f)(void*);
- 
-/**
- * A function pointer to a reallocator. The reallocator should try to change 
- * the size of the memory to the specific size. Generally should behave just
- * like realloc().
- */
-typedef void*(*objc_reallocator_f)(void*, unsigned int);
- 
+  
 /**
  * A function pointer to a zero-allocator. Unlike the regular calloc() function,
  * this function takes only one argument, just like objc_allocator indicating 
  * the size of memory requested. It should be equivalent to calloc(1, size).
  */
 typedef void*(*objc_zero_allocator_f)(unsigned int);
-
-/**
- * A function pointer to zero-out a chunk of memory. Functionality should
- * be the same as bzero.
- */
-typedef void(*objc_memory_eraser_f)(void*, unsigned int);
  
  
 /*********** objc_class_holder ***********/
@@ -103,12 +84,6 @@ typedef void(*objc_class_holder_inserter_f)(objc_class_holder, Class);
  * NULL if the class isn't in the class holder.
  */
 typedef Class(*objc_class_holder_lookup_f)(objc_class_holder, const char*);
-
-/**
- * A function that copies over all Class entries into a new NULL-terminated
- * array;
- */
-typedef Class*(*objc_class_holder_flatten_f)(objc_class_holder);
 
 
 /*********** objc_selector_holder ***********/

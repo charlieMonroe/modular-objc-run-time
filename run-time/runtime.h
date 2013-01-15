@@ -18,21 +18,17 @@
 typedef struct {
 	objc_allocator_f allocator;
 	objc_deallocator_f deallocator;
-	objc_reallocator_f reallocator;
 	objc_zero_allocator_f zero_allocator;
-	objc_memory_eraser_f memory_eraser;
 } objc_setup_memory;
 
 typedef struct {
 	objc_abort_f abort;
-	objc_exit_f exit;
 } objc_setup_execution;
 
 typedef struct {
 	objc_class_holder_creator_f creator;
 	objc_class_holder_inserter_f inserter;
 	objc_class_holder_lookup_f lookup;
-	objc_class_holder_flatten_f flatten;
 } objc_setup_class_holder;
 
 typedef struct {
@@ -128,15 +124,11 @@ extern void objc_runtime_init(void);
 	 extern type objc_runtime_get_##name(void);
 
 objc_runtime_create_getter_setter_function_decls(objc_abort_f, abort)
-objc_runtime_create_getter_setter_function_decls(objc_exit_f, exit)
 objc_runtime_create_getter_setter_function_decls(objc_allocator_f, allocator)
 objc_runtime_create_getter_setter_function_decls(objc_deallocator_f, deallocator)
-objc_runtime_create_getter_setter_function_decls(objc_reallocator_f, reallocator)
 objc_runtime_create_getter_setter_function_decls(objc_zero_allocator_f, zero_allocator)
-objc_runtime_create_getter_setter_function_decls(objc_memory_eraser_f, memory_eraser)
 objc_runtime_create_getter_setter_function_decls(objc_class_holder_creator_f, class_holder_creator)
 objc_runtime_create_getter_setter_function_decls(objc_class_holder_lookup_f, class_holder_lookup)
-objc_runtime_create_getter_setter_function_decls(objc_class_holder_flatten_f, class_holder_flatten)
 
 objc_runtime_create_getter_setter_function_decls(objc_selector_holder_creator_f, selector_holder_creator)
 objc_runtime_create_getter_setter_function_decls(objc_selector_holder_lookup_f, selector_holder_lookup)

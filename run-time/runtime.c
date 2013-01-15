@@ -82,13 +82,10 @@ static void _objc_runtime_validate_function_pointers(void){
 #if !OBJC_USES_INLINE_FUNCTIONS
 	
 	objc_runtime_init_check_function_pointer(execution.abort)
-	objc_runtime_init_check_function_pointer(execution.exit)
 	
 	objc_runtime_init_check_function_pointer(memory.allocator)
 	objc_runtime_init_check_function_pointer(memory.deallocator)
-	objc_runtime_init_check_function_pointer(memory.reallocator)
 	objc_runtime_init_check_function_pointer(memory.zero_allocator)
-	objc_runtime_init_check_function_pointer(memory.memory_eraser)
 	
 	objc_runtime_init_check_function_pointer(sync.rwlock.creator)
 	objc_runtime_init_check_function_pointer(sync.rwlock.destroyer)
@@ -105,7 +102,6 @@ static void _objc_runtime_validate_function_pointers(void){
 	objc_runtime_init_check_function_pointer_with_default_imp(class_holder.creator, class_holder_create)
 	objc_runtime_init_check_function_pointer_with_default_imp(class_holder.inserter, class_holder_insert_class)
 	objc_runtime_init_check_function_pointer_with_default_imp(class_holder.lookup, class_holder_lookup_class)
-	objc_runtime_init_check_function_pointer_with_default_imp(class_holder.flatten, class_holder_flatten)
 	
 	objc_runtime_init_check_function_pointer_with_default_imp(selector_holder.creator, selector_holder_create)
 	objc_runtime_init_check_function_pointer_with_default_imp(selector_holder.inserter, selector_holder_insert_selector)
@@ -165,16 +161,12 @@ void objc_runtime_init(void){
 	}
 
 objc_runtime_create_getter_setter_function_body(objc_abort_f, abort, execution.abort)
-objc_runtime_create_getter_setter_function_body(objc_exit_f, exit, execution.exit)
 objc_runtime_create_getter_setter_function_body(objc_allocator_f, allocator, memory.allocator)
 objc_runtime_create_getter_setter_function_body(objc_deallocator_f, deallocator, memory.deallocator)
-objc_runtime_create_getter_setter_function_body(objc_reallocator_f, reallocator, memory.reallocator)
 objc_runtime_create_getter_setter_function_body(objc_zero_allocator_f, zero_allocator, memory.zero_allocator)
-objc_runtime_create_getter_setter_function_body(objc_memory_eraser_f, memory_eraser, memory.memory_eraser)
 objc_runtime_create_getter_setter_function_body(objc_class_holder_creator_f, class_holder_creator, class_holder.creator)
 objc_runtime_create_getter_setter_function_body(objc_class_holder_inserter_f, class_holder_inserter, class_holder.inserter)
 objc_runtime_create_getter_setter_function_body(objc_class_holder_lookup_f, class_holder_lookup, class_holder.lookup)
-objc_runtime_create_getter_setter_function_body(objc_class_holder_flatten_f, class_holder_flatten, class_holder.flatten)
 
 objc_runtime_create_getter_setter_function_body(objc_selector_holder_creator_f, selector_holder_creator, selector_holder.creator)
 objc_runtime_create_getter_setter_function_body(objc_selector_holder_inserter_f, selector_holder_inserter, selector_holder.inserter)

@@ -9,14 +9,8 @@
 static void *_malloc(unsigned int size){
 	return malloc(size);
 }
-static void *_realloc(void *mem, unsigned int size){
-	return realloc(mem, size);
-}
 static void *_zero_alloc(unsigned int size){
 	return calloc(1, size);
-}
-static void _bzero(void *s, unsigned int size){
-	bzero(s, size);
 }
 static void _abort(const char *reason){
 	printf("__OBJC_ABORT__ - %s", reason);
@@ -37,12 +31,9 @@ static void _objc_posix_init(void){
 	
 	objc_runtime_set_allocator(_malloc);
 	objc_runtime_set_deallocator(free);
-	objc_runtime_set_reallocator(_realloc);
 	objc_runtime_set_zero_allocator(_zero_alloc);
-	objc_runtime_set_memory_eraser(_bzero);
 	
 	objc_runtime_set_abort(_abort);
-	objc_runtime_set_exit(exit);
 	
 	objc_runtime_set_log(printf);
 	
