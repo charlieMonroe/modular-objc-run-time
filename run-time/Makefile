@@ -1,5 +1,5 @@
 
-CFLAGS=-std=c99 -O3 -Winline -DUSES_C99=1 -DHAS_ALWAYS_INLINE_ATTRIBUTE=1
+CFLAGS=-std=c99 -O0 -Winline -DUSES_C99=1 -DHAS_ALWAYS_INLINE_ATTRIBUTE=1 -DOBJC_USES_INLINE_FUNCTIONS=0
 LINKER=`x=\`uname\`; \
 		if [ $${x} = Darwin ]; then \
 		  	echo ld; \

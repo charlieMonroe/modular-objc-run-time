@@ -44,7 +44,7 @@ static void _associated_object_deallocate(id obj, void *ptr){
 	objc_dealloc(hash_map);
 }
 
-
+void objc_associated_object_register_extension(void) __attribute__((constructor));
 void objc_associated_object_register_extension(void){
 	ao_extension.class_initializer = NULL;
 	ao_extension.class_lookup_function = NULL;

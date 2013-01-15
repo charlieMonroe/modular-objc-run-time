@@ -14,9 +14,6 @@
 #ifndef OBJC_OS_H_
 #define OBJC_OS_H_
 
-#define OBJC_USES_INLINE_FUNCTIONS 1
-
-
 #if defined(USES_C99)
 	#define OBJC_INLINE static inline
 #else
@@ -29,6 +26,10 @@
 	#define OBJC_ALWAYS_INLINE
 #endif
 
+/* Fallback to false. */
+#if !defined(OBJC_USES_INLINE_FUNCTIONS)
+	#define OBJC_USES_INLINE_FUNCTIONS 0
+#endif
 
 #if OBJC_USES_INLINE_FUNCTIONS
 
