@@ -14,12 +14,19 @@
 #ifndef OBJC_OS_H_
 #define OBJC_OS_H_
 
-#define OBJC_USES_INLINE_FUNCTIONS 0
+#define OBJC_USES_INLINE_FUNCTIONS 1
 
-#ifdef USES_C99
-	#define OBJC_INLINE OBJC_INLINE
+
+#if defined(USES_C99)
+	#define OBJC_INLINE static inline
 #else
 	#define OBJC_INLINE static
+#endif
+
+#if defined(HAS_ALWAYS_INLINE_ATTRIBUTE)
+	#define OBJC_ALWAYS_INLINE __attribute__((always_inline))
+#else
+	#define OBJC_ALWAYS_INLINE
 #endif
 
 
@@ -27,7 +34,7 @@
 
 /********* INLINE FUNCTIONS *********/
 
-#include "extras/inline-sample.h"
+#include "extras/inline.h"
 
 /*
 #if TARGET_MY_OS

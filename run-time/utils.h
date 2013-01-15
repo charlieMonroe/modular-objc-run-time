@@ -12,6 +12,7 @@
 /*
   * Just as the regular strlen function, returns a number of non-zero characters.
   */
+OBJC_INLINE unsigned int objc_strlen(const char *str) OBJC_ALWAYS_INLINE;
 OBJC_INLINE unsigned int objc_strlen(const char *str){
 	unsigned int counter;
 	
@@ -30,6 +31,7 @@ OBJC_INLINE unsigned int objc_strlen(const char *str){
 /*
  * Unlike the POSIX function, this one handles allocating the new string itself.
  */
+OBJC_INLINE char *objc_strcpy(const char *str) OBJC_ALWAYS_INLINE;
 OBJC_INLINE char *objc_strcpy(const char *str){
 	unsigned int len;
 	char *result;
@@ -56,6 +58,7 @@ OBJC_INLINE char *objc_strcpy(const char *str){
 /*
  * Returns YES if the strings are equal.
  */
+OBJC_INLINE BOOL objc_strings_equal(const char *str1, const char *str2) OBJC_ALWAYS_INLINE;
 OBJC_INLINE BOOL objc_strings_equal(const char *str1, const char *str2){
 	unsigned int index;
 	
@@ -87,6 +90,7 @@ OBJC_INLINE BOOL objc_strings_equal(const char *str1, const char *str2){
 /*
  * Caches string str.
  */
+OBJC_INLINE unsigned int objc_hash_string(const char *str) OBJC_ALWAYS_INLINE;
 OBJC_INLINE unsigned int objc_hash_string(const char *str){
 	register unsigned int hash = 0;
 	register unsigned char *s = (unsigned char *)str;
@@ -107,6 +111,7 @@ OBJC_INLINE unsigned int objc_hash_string(const char *str){
 /*
  * Copies memory from source to destination.
  */
+OBJC_INLINE void objc_copy_memory(void *src, void *dst, unsigned int size) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void objc_copy_memory(void *src, void *dst, unsigned int size){
 	const char *src_ptr;
 	char *dest_ptr;

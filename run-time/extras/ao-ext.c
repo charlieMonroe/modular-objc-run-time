@@ -81,6 +81,7 @@ id objc_object_get_associated_object(id obj, void *key){
 	}
 }
 
+OBJC_INLINE ao_bucket *_create_bucket_with_key_and_value(void *key, id value) OBJC_ALWAYS_INLINE;
 OBJC_INLINE ao_bucket *_create_bucket_with_key_and_value(void *key, id value){
 	ao_bucket *new_bucket = objc_alloc(sizeof(struct _ao_bucket));
 	new_bucket->next = NULL;

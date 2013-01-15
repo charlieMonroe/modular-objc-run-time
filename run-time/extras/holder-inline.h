@@ -1,9 +1,10 @@
 
+#ifndef _INLINE_FUNCTIONS_SAMPLE_INLINE_HOLDER_H_
+#define _INLINE_FUNCTIONS_SAMPLE_INLINE_HOLDER_H_
+
 #include "../os.h"
 #include "../utils.h"
 #include "../private.h"
-
-#if !OBJC_USES_INLINE_FUNCTIONS
 
 typedef enum {
 	holder_type_selector,
@@ -83,8 +84,8 @@ OBJC_INLINE BOOL _holder_contains_object_in_bucket(_holder holder, _bucket *buck
 	return (BOOL)(_holder_object_in_bucket(holder, bucket, obj) != NULL);
 }
 
-OBJC_INLINE void _holder_deallocate_bucket(_bucket *bucket) OBJC_ALWAYS_INLINE;
-OBJC_INLINE void _holder_deallocate_bucket(_bucket *bucket){
+OBJC_INLINE void _inline_holder_deallocate_bucket(_bucket *bucket) OBJC_ALWAYS_INLINE;
+OBJC_INLINE void _inline_holder_deallocate_bucket(_bucket *bucket){
 	_bucket *next_bucket = bucket;
 	while (next_bucket != NULL){
 		_bucket *current_bucket = next_bucket;
@@ -103,7 +104,7 @@ OBJC_INLINE void _holder_deallocate(_holder holder){
 	
 	for (index = 0; index < HOLDER_BUCKET_COUNT; ++index){
 		if (holder->buckets[index] != NULL){
-			_holder_deallocate_bucket(holder->buckets[index]);
+			_inline_holder_deallocate_bucket(holder->buckets[index]);
 		}
 	}
 	
@@ -168,7 +169,7 @@ OBJC_INLINE void holder_insert_object_internal(_holder holder, void *obj){
 }
 
 OBJC_INLINE void *holder_fetch_object(_holder holder, const void *key) OBJC_ALWAYS_INLINE;
-OBJC_INLINE void *holder_fetch_object(_holder holder, const void *key) {
+OBJC_INLINE void *holder_fetch_object(_holder holder, const void *key){
 	_bucket *bucket;
 	void *result;
 	unsigned int bucket_index;
@@ -235,38 +236,46 @@ OBJC_INLINE _holder holder_create_internal(holder_type type){
 }
 
 
-
-objc_selector_holder selector_holder_create(void){
+OBJC_INLINE objc_selector_holder objc_selector_holder_create(void) OBJC_ALWAYS_INLINE;
+OBJC_INLINE objc_selector_holder objc_selector_holder_create(void){
 	return (objc_selector_holder)holder_create_internal(holder_type_selector);
 }
-void selector_holder_insert_selector(objc_selector_holder holder, SEL selector){
+OBJC_INLINE void objc_selector_holder_insert(objc_selector_holder holder, SEL selector) OBJC_ALWAYS_INLINE;
+OBJC_INLINE void objc_selector_holder_insert(objc_selector_holder holder, SEL selector){
 	holder_insert_object_internal((_holder)holder, selector);
 }
-SEL selector_holder_lookup_selector(objc_selector_holder holder, const char *name){
+OBJC_INLINE SEL objc_selector_holder_lookup(objc_selector_holder holder, const char *name) OBJC_ALWAYS_INLINE;
+OBJC_INLINE SEL objc_selector_holder_lookup(objc_selector_holder holder, const char *name){
 	return (SEL)holder_fetch_object((_holder)holder, name);
 }
 
-
-objc_class_holder class_holder_create(void){
+OBJC_INLINE objc_class_holder objc_class_holder_create(void) OBJC_ALWAYS_INLINE;
+OBJC_INLINE objc_class_holder objc_class_holder_create(void){
 	return (objc_class_holder)holder_create_internal(holder_type_class);
 }
-void class_holder_insert_class(objc_class_holder holder, Class cl){
+OBJC_INLINE void objc_class_holder_insert(objc_class_holder holder, Class cl) OBJC_ALWAYS_INLINE;
+OBJC_INLINE void objc_class_holder_insert(objc_class_holder holder, Class cl){
 	holder_insert_object_internal((_holder)holder, cl);
 }
-Class class_holder_lookup_class(objc_class_holder holder, const char *name){
+OBJC_INLINE Class objc_class_holder_lookup(objc_class_holder holder, const char *name) OBJC_ALWAYS_INLINE;
+OBJC_INLINE Class objc_class_holder_lookup(objc_class_holder holder, const char *name){
 	return (Class)holder_fetch_object((_holder)holder, name);
 }
 
-objc_cache cache_create(void){
+OBJC_INLINE objc_cache objc_cache_create(void) OBJC_ALWAYS_INLINE;
+OBJC_INLINE objc_cache objc_cache_create(void){
 	return (objc_cache)holder_create_internal(holder_type_cache);
 }
-Method cache_fetch(objc_cache cache, SEL selector){
+OBJC_INLINE Method objc_cache_fetch(objc_cache cache, SEL selector) OBJC_ALWAYS_INLINE;
+OBJC_INLINE Method objc_cache_fetch(objc_cache cache, SEL selector){
 	return holder_fetch_object((_holder)cache, selector);
 }
-void cache_destroy(objc_cache cache){
+OBJC_INLINE void objc_cache_destroy(objc_cache cache) OBJC_ALWAYS_INLINE;
+OBJC_INLINE void objc_cache_destroy(objc_cache cache){
 	holder_mark_to_deallocate((_holder)cache);
 }
-void cache_insert(objc_cache cache, Method method){
+OBJC_INLINE void objc_cache_insert(objc_cache cache, Method method) OBJC_ALWAYS_INLINE;
+OBJC_INLINE void objc_cache_insert(objc_cache cache, Method method){
 	holder_insert_object_internal((_holder)cache, method);
 }
 

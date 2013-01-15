@@ -52,6 +52,7 @@ static id _objc_nil_receiver_function(id self, SEL _cmd, ...){
  * Returns the extra space needed in the class structure by
  * the class extensions.
  */
+OBJC_INLINE unsigned int _extra_class_space_for_extensions(void) OBJC_ALWAYS_INLINE;
 OBJC_INLINE unsigned int _extra_class_space_for_extensions(void){
 	static unsigned int cached_class_result = 0;
 	objc_class_extension *ext;
@@ -74,6 +75,7 @@ OBJC_INLINE unsigned int _extra_class_space_for_extensions(void){
  * Returns the extra space needed in each object structure by
  * the class extensions.
  */
+OBJC_INLINE unsigned int _extra_object_space_for_extensions(void) OBJC_ALWAYS_INLINE;
 OBJC_INLINE unsigned int _extra_object_space_for_extensions(void){
 	static unsigned int cached_object_result = 0;
 	objc_class_extension *ext;
@@ -96,6 +98,7 @@ OBJC_INLINE unsigned int _extra_object_space_for_extensions(void){
  * Returns the size required for instances of class 'cl'. This
  * includes the extra space required by extensions.
  */
+OBJC_INLINE unsigned int _instance_size(Class cl) OBJC_ALWAYS_INLINE;
 OBJC_INLINE unsigned int _instance_size(Class cl){
 	return cl->instance_size + _extra_object_space_for_extensions();
 }
@@ -104,6 +107,7 @@ OBJC_INLINE unsigned int _instance_size(Class cl){
  * Creates a new objc_array in place of *method_list unless it's already 
  * created. In that case, it is a no-op function.
  */
+OBJC_INLINE void _initialize_method_list(objc_array *method_list) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _initialize_method_list(objc_array *method_list){
 	if (*method_list != NULL){
 		/* Already allocated */
@@ -117,6 +121,7 @@ OBJC_INLINE void _initialize_method_list(objc_array *method_list){
  * Searches for a method in a method list and returns it, or NULL 
  * if it hasn't been found.
  */
+OBJC_INLINE Method _lookup_method_in_method_list(objc_array method_list, SEL selector) OBJC_ALWAYS_INLINE;
 OBJC_INLINE Method _lookup_method_in_method_list(objc_array method_list, SEL selector){
 	objc_array_enumerator en;
 	
@@ -142,6 +147,7 @@ OBJC_INLINE Method _lookup_method_in_method_list(objc_array method_list, SEL sel
 /**
  * Searches for an instance method among class extensions.
  */
+OBJC_INLINE Method _lookup_extension_instance_method(Class cl, SEL selector) OBJC_ALWAYS_INLINE;
 OBJC_INLINE Method _lookup_extension_instance_method(Class cl, SEL selector){
 	Method m = NULL;
 	objc_class_extension *ext;
@@ -164,6 +170,7 @@ OBJC_INLINE Method _lookup_extension_instance_method(Class cl, SEL selector){
 /**
  * Searches for a class method among class extensions.
  */
+OBJC_INLINE Method _lookup_extension_class_method(Class cl, SEL selector) OBJC_ALWAYS_INLINE;
 OBJC_INLINE Method _lookup_extension_class_method(Class cl, SEL selector){
 	Method m = NULL;
 	objc_class_extension *ext;
@@ -186,6 +193,7 @@ OBJC_INLINE Method _lookup_extension_class_method(Class cl, SEL selector){
 /**
  * Looks up a method for a selector in a cache.
  */
+OBJC_INLINE Method _lookup_cached_method(objc_cache cache, SEL selector) OBJC_ALWAYS_INLINE;
 OBJC_INLINE Method _lookup_cached_method(objc_cache cache, SEL selector){
 	if (cache == NULL){
 		return NULL;
@@ -196,6 +204,7 @@ OBJC_INLINE Method _lookup_cached_method(objc_cache cache, SEL selector){
 /**
  * Adds a method to a cache. If *cache == NULL, it gets created.
  */
+OBJC_INLINE void _cache_method(objc_cache *cache, Method m) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _cache_method(objc_cache *cache, Method m){
 	if (*cache == NULL){
 		*cache = objc_cache_create();
@@ -206,6 +215,7 @@ OBJC_INLINE void _cache_method(objc_cache *cache, Method m){
 /**
  * Searches for a class method for a selector.
  */
+OBJC_INLINE Method _lookup_class_method(Class cl, SEL selector) OBJC_ALWAYS_INLINE;
 OBJC_INLINE Method _lookup_class_method(Class cl, SEL selector){
 	Method m;
 	
@@ -234,6 +244,7 @@ OBJC_INLINE Method _lookup_class_method(Class cl, SEL selector){
  * NULL if it hasn't been found, yet no-op function in case
  * the receiver is nil.
  */
+OBJC_INLINE IMP _lookup_class_method_impl(Class cl, SEL selector) OBJC_ALWAYS_INLINE;
 OBJC_INLINE IMP _lookup_class_method_impl(Class cl, SEL selector){
 	Method m = _lookup_cached_method(cl->class_cache, selector);
 	if (m != NULL){
@@ -252,6 +263,7 @@ OBJC_INLINE IMP _lookup_class_method_impl(Class cl, SEL selector){
 /**
  * Searches for an instance method for a selector.
  */
+OBJC_INLINE Method _lookup_instance_method(Class class, SEL selector) OBJC_ALWAYS_INLINE;
 OBJC_INLINE Method _lookup_instance_method(Class class, SEL selector){
 	Method m;
 	
@@ -280,6 +292,7 @@ OBJC_INLINE Method _lookup_instance_method(Class class, SEL selector){
  * NULL if it hasn't been found, yet no-op function in case
  * the receiver is nil.
  */
+OBJC_INLINE IMP _lookup_instance_method_impl(Class cl, SEL selector) OBJC_ALWAYS_INLINE;
 OBJC_INLINE IMP _lookup_instance_method_impl(Class cl, SEL selector){
 	Method m = _lookup_cached_method(cl->instance_cache, selector);
 	if (m != NULL){
@@ -295,6 +308,7 @@ OBJC_INLINE IMP _lookup_instance_method_impl(Class cl, SEL selector){
 	return m->implementation;
 }
 
+OBJC_INLINE BOOL _class_is_subclass_of_class(Class cl, Class superclass_candidate) OBJC_ALWAYS_INLINE;
 OBJC_INLINE BOOL _class_is_subclass_of_class(Class cl, Class superclass_candidate){
 	while (cl != Nil) {
 		if (cl->super_class == superclass_candidate){
@@ -308,6 +322,7 @@ OBJC_INLINE BOOL _class_is_subclass_of_class(Class cl, Class superclass_candidat
 /**
  * Flushes *cache by destroying it and creating a new one.
  */
+OBJC_INLINE void _flush_cache(objc_cache *cache) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _flush_cache(objc_cache *cache){
 	if (cache == NULL){
 		/* This is wrong. *cache may be NULL, cache no. */
@@ -328,6 +343,7 @@ OBJC_INLINE void _flush_cache(objc_cache *cache){
  * The m array is copied over to be NULL-terminated, but the Method 'objects'
  * are not.
  */
+OBJC_INLINE void _add_methods_to_method_list(objc_array method_list, Method *m, unsigned int count) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _add_methods_to_method_list(objc_array method_list, Method *m, unsigned int count){
 	/*
 	 * +1 is for the NULL termination.
@@ -356,6 +372,7 @@ OBJC_INLINE void _add_methods_to_method_list(objc_array method_list, Method *m, 
  *
  * class_methods indicates, whether to flush class-method cache, or instance-method cache.
  */
+OBJC_INLINE void _flush_caches_of_subclasses_of_class(Class cl, BOOL class_methods) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _flush_caches_of_subclasses_of_class(Class cl, BOOL class_methods){
 	objc_array_enumerator en = objc_array_get_enumerator(objc_classes_array);
 	while (en != NULL){
@@ -379,6 +396,7 @@ OBJC_INLINE void _flush_caches_of_subclasses_of_class(Class cl, BOOL class_metho
  * Goes through the methods and checks if it has been implemented by any
  * of the superclasses.
  */
+OBJC_INLINE BOOL _any_method_implemented_by_superclasses(Method *m, unsigned int count, Class cl, BOOL class_methods) OBJC_ALWAYS_INLINE;
 OBJC_INLINE BOOL _any_method_implemented_by_superclasses(Method *m, unsigned int count, Class cl, BOOL class_methods){
 	unsigned int i;
 	
@@ -400,6 +418,7 @@ OBJC_INLINE BOOL _any_method_implemented_by_superclasses(Method *m, unsigned int
 /**
  * Adds class methods to class cl.
  */
+OBJC_INLINE void _add_class_methods(Class cl, Method *m, unsigned int count) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _add_class_methods(Class cl, Method *m, unsigned int count){
 	if (cl == NULL || m == NULL){
 		return;
@@ -428,6 +447,7 @@ OBJC_INLINE void _add_class_methods(Class cl, Method *m, unsigned int count){
 /**
  * Adds instance methods to class cl.
  */
+OBJC_INLINE void _add_instance_methods(Class cl, Method *m, unsigned int count) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _add_instance_methods(Class cl, Method *m, unsigned int count){
 	if (cl == NULL || m == NULL){
 		return;
@@ -456,6 +476,7 @@ OBJC_INLINE void _add_instance_methods(Class cl, Method *m, unsigned int count){
 /**
  * Crashes the program because forwarding isn't supported by the class of the object.
  */
+OBJC_INLINE void _forwarding_not_supported_abort(id obj, SEL selector) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _forwarding_not_supported_abort(id obj, SEL selector){
 	/* i.e. the object doesn't respond to the
 	 forwarding selector either. */
@@ -467,6 +488,7 @@ OBJC_INLINE void _forwarding_not_supported_abort(id obj, SEL selector){
  * Forwards the method invocation by calling forwardMessage: method on obj
  * be it a class or an instance.
  */
+OBJC_INLINE BOOL _forward_method_invocation(id obj, SEL selector) OBJC_ALWAYS_INLINE;
 OBJC_INLINE BOOL _forward_method_invocation(id obj, SEL selector){
 	if (objc_selectors_equal(selector, objc_forwarding_selector)){
 		/* Make sure the app really crashes. */
@@ -496,6 +518,7 @@ OBJC_INLINE BOOL _forward_method_invocation(id obj, SEL selector){
 /**
  * Calls class extension object_initializer functions.
  */
+OBJC_INLINE void _complete_object(id obj) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _complete_object(id obj){
 	objc_class_extension *ext = class_extensions;
 	void *obj_ext_beginning = objc_object_extensions_beginning(obj);
@@ -510,6 +533,7 @@ OBJC_INLINE void _complete_object(id obj){
 /**
  * Calls class extension object_deallocator functions.
  */
+OBJC_INLINE void _finalize_object(id obj) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _finalize_object(id obj){
 	objc_class_extension *ext;
 	void *obj_ext_beginning = objc_object_extensions_beginning(obj);
@@ -522,6 +546,7 @@ OBJC_INLINE void _finalize_object(id obj){
 	}
 }
 
+OBJC_INLINE Ivar _ivar_named_in_ivar_list(objc_array ivar_list, const char *name) OBJC_ALWAYS_INLINE;
 OBJC_INLINE Ivar _ivar_named_in_ivar_list(objc_array ivar_list, const char *name){
 	objc_array_enumerator en;
 	
@@ -544,6 +569,7 @@ OBJC_INLINE Ivar _ivar_named_in_ivar_list(objc_array ivar_list, const char *name
 /**
  * Finds an Ivar in class with name.
  */
+OBJC_INLINE Ivar _ivar_named(Class cl, const char *name) OBJC_ALWAYS_INLINE;
 OBJC_INLINE Ivar _ivar_named(Class cl, const char *name){
 	if (name == NULL){
 		return NULL;
@@ -559,6 +585,7 @@ OBJC_INLINE Ivar _ivar_named(Class cl, const char *name){
 	return NULL;
 }
 
+OBJC_INLINE unsigned int _ivar_count(Class cl) OBJC_ALWAYS_INLINE;
 OBJC_INLINE unsigned int _ivar_count(Class cl){
 	unsigned int count = 0;
 	objc_array_enumerator en;
@@ -575,6 +602,7 @@ OBJC_INLINE unsigned int _ivar_count(Class cl){
 	return count;
 }
 
+OBJC_INLINE void _ivars_copy_to_list(Class cl, Ivar *list, unsigned int max_count) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _ivars_copy_to_list(Class cl, Ivar *list, unsigned int max_count){
 	unsigned int counter = 0;
 	objc_array ivar_list = cl->ivars;
@@ -596,6 +624,7 @@ OBJC_INLINE void _ivars_copy_to_list(Class cl, Ivar *list, unsigned int max_coun
 	list[max_count] = NULL;
 }
 
+OBJC_INLINE unsigned int _method_count_in_method_list(objc_array list) OBJC_ALWAYS_INLINE;
 OBJC_INLINE unsigned int _method_count_in_method_list(objc_array list){
 	unsigned int count = 0;
 	objc_array_enumerator en;
@@ -616,6 +645,7 @@ OBJC_INLINE unsigned int _method_count_in_method_list(objc_array list){
 	return count;
 }
 
+OBJC_INLINE void _methods_copy_to_list(objc_array method_list, Method *list, unsigned int max_count) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _methods_copy_to_list(objc_array method_list, Method *list, unsigned int max_count){
 	unsigned int count = 0;
 	objc_array_enumerator en;
@@ -641,6 +671,7 @@ OBJC_INLINE void _methods_copy_to_list(objc_array method_list, Method *list, uns
 	list[max_count] = NULL;
 }
 
+OBJC_INLINE Method *_method_list_flatten(objc_array list) OBJC_ALWAYS_INLINE;
 OBJC_INLINE Method *_method_list_flatten(objc_array list){
 	unsigned int number_of_methods = _method_count_in_method_list(list);
 	Method *methods = objc_alloc(sizeof(Method) * (number_of_methods + 1));

@@ -240,7 +240,6 @@ static void method_dispatch_test_via_ao(void){
 	clock_t c1, c2;
 	int i;
 	int result;
-	Ivar i_ivar;
 	
 	instance = (MyClass*)alloc_impl((id)my_subclass, alloc_selector);
 	
@@ -252,7 +251,6 @@ static void method_dispatch_test_via_ao(void){
 	
 	c2 = clock();
 	
-	i_ivar = objc_class_get_ivar(my_class, "i");
 	result = (unsigned int)objc_object_get_associated_object((id)instance, (void*)increase_via_ao_selector);
 	if (result != DISPATCH_ITERATIONS){
 		printf("counter != ITERATIONS (%d != %d)\n", result, DISPATCH_ITERATIONS);

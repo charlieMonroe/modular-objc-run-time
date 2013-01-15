@@ -30,3 +30,4 @@ run-time/*.o
 run-time/*.a
 run-time/objc_test_no_lto
 run-time/objc_test_with_lto
+run-time/objc_test_cocoa

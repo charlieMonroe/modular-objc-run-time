@@ -1,5 +1,5 @@
 
-CFLAGS="-Os"
+CFLAGS=-std=c99 -O3 -Winline -DUSES_C99=1 -DHAS_ALWAYS_INLINE_ATTRIBUTE=1
 LINKER=`x=\`uname\`; \
 		if [ $${x} = Darwin ]; then \
 		  	echo ld; \
@@ -10,8 +10,11 @@ LFLAGS=`x=\`uname\`; \
 		fi`
 
 
-all : test-no-lto test-with-lto
+all : test-no-lto test-with-lto test-cocoa
 	echo "Done."
+
+test-cocoa : main.m
+	cc -lobjc main.m -o objc_test_cocoa
 
 test-no-lto : static
 	cc -L/usr/lib/ -L. -lobjc-runtime main.c -o objc_test_no_lto
@@ -43,5 +46,5 @@ posix.o : extras/posix.c
 	cc $(CFLAGS) -c extras/posix.c -o posix.o
 
 clean: 
-	rm *.o *.a objc_test_no_lto objc_test_with_lto
+	rm *.o *.a objc_test_no_lto objc_test_with_lto objc_test_cocoa
 
