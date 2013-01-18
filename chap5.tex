@@ -88,7 +88,7 @@ Again, several options emerge:
   
   This, again, poses a question when to call \verb=objc_runtime_init=. And the answer is simple. The run-time places a check in the \verb=objc_class_create= function and if the run-time hasn't been initialized, it gets initialized. So what if you call another function before the initialization? The program is likely to crash since it doesn't make much sense to call any other function without having registered at least one class.
   
-  If, for whatever reason, you need to init the run-time at another time, just call the \verb=objc_runtime_init= function. It can be called multiple times, however, only calling it the first time does anything. Note that registering an initializer after the runtime has been initialized aborts the program.
+  Note though that this is only to support systems with absolutely no support of anything described above, where the user himself would otherwise need to call the \verb=objc_runtime_init= function at the beginning of \verb=main= - which he still can, but it it redundant. If, however, for whatever reason, it is required to init the run-time at another time, it is possible to just call the \verb=objc_runtime_init= function manually. It can be called multiple times, however, only calling it the first time does anything. Note that registering an initializer after the runtime has been initialized aborts the program, though.
 \end{itemize}
 
 \subsection{Implementation}
@@ -261,7 +261,7 @@ There is an example bundled with the run-time: associated objects (see \verb=ext
 
 \subsection{Associated Objects}
 
-Since OS X 10.6, Apple's run-time allows to simulate addition of variables to an object using associated objects\footnote{http://developer.apple.com/library/ios/#documentation/cocoa/conceptual/objectivec/chapters/ocAssociativeReferences.html}. It allows you to specify an object for a key (which is \verb=void*=). Simply said, each object has a hash map, where it stores objects.
+Since OS X 10.6, Apple's run-time allows to simulate addition of variables to an object using associated objects\footnote{http://developer.apple.com/library/ios/#documentation/cocoa/conceptual/objectivec/ chapters/ocAssociativeReferences.html}. It allows you to specify an object for a key (which is \verb=void*=). Simply said, each object has a hash map, where it stores objects.
 
 With the class and object extensions, it is fairly easy to achieve. The class itself doesn't need to be modified at all, hence the \verb=class_initializer= may be \verb=NULL= or a no-op function and \verb=extra_class_space= should be set to 0.
 
