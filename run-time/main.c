@@ -82,6 +82,8 @@ static IMP alloc_impl;
 static void create_classes(void){
 	SEL second_alloc_selector;
 	
+	my_class = objc_class_create(Nil, "MyClass");
+	
 	alloc_selector = objc_selector_register("alloc");
 	log_selector = objc_selector_register("log");
 	increase_via_gs_selector = objc_selector_register("increaseViaGS");
@@ -95,7 +97,6 @@ static void create_classes(void){
 		((IMP)(NULL))(nil, NULL);
 	}
 	
-	my_class = objc_class_create(Nil, "MyClass");
 	objc_class_add_ivar(my_class, "i", sizeof(int), __alignof(int), "i");
 	objc_class_finish(my_class);
 	(void)objc_class_create(Nil, "MyClass");

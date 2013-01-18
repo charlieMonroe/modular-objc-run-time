@@ -31,6 +31,9 @@ BOOL objc_selectors_equal(SEL selector1, SEL selector2){
 }
 
 const char *objc_selector_get_name(SEL selector){
+	if (selector == NULL){
+		return "((null))";
+	}
 	return selector->name;
 }
 

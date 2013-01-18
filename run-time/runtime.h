@@ -105,6 +105,18 @@ extern void objc_runtime_set_setup(objc_runtime_setup_struct *setup);
  */
 extern void objc_runtime_get_setup(objc_runtime_setup_struct *setup);
 
+/**
+ * Initializers and registering.
+ *
+ * If you have a function that should modify the run-time somehow before
+ * it gets initialized, register an initializer using the objc_runtime_register_initializer
+ * function.
+ *
+ * Initializers get performed in the same order as they get registered.
+ */
+typedef void(*objc_initializer_f)(void);
+extern void objc_runtime_register_initializer(objc_initializer_f initializer);
+
 
 /**
  * This function initializes the run-time, checks for any missing function pointers,

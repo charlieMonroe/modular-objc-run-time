@@ -1,10 +1,61 @@
 \chapter*{Introduction}
 \addcontentsline{toc}{chapter}{Introduction}
 
+\section{What is a run-time?}
+
+With every object-oriented a question arises - what makes an object object - how is it represented in the memory. In its core it is a structured piece of memory that could be representable by a structure in C language. In particular, an object in Objective-C is defined as a structure, whose first field is a so-called \verb=isa= pointer, pointing to the object's class.
+
+With this in mind, a new question pops up - what are methods and how are the method calls performed? In languages, such as C, where it is already known which code should be executed when you call a particular function/method (in C functions, but as we're talking about object-oriented languages, method would be the correct term), the linker links function calls directly to the address the function resides at. If we had an object-oriented language, where each class had a compile-time known number of functions, these functions could be a part of the class structure, so each method call would consist of just reaching for the correct function pointer within the object's class structure.
+
+This gets more complicated once we take class hierarchy into consideration. Each class can override methods of its parent class, which can be solved by using the same function 'slot'. Let's demonstrate this on an example written in a pseudo-code:
+
+\begin{verbatim}
+
+/** Memory representation of an object. */
+struct object_structure {
+  class_structure_t *class;
+  
+  /** Other fields follow. */
+} object_structure_t;
+
+/** Memory representation of a class. */
+struct class_structure {
+  struct class *super_class;
+  
+  /** Function array of unknown size */
+  void*(*functions)(object_structure_t *, ...);
+} class_structure_t;
+
+class Class1 {
+  void method1();
+  int method2();
+}
+
+class Class2 : Class1 {
+  override void method1();
+}
+  
+\end{verbatim}
+
+From this example, \verb=method1= of \verb=Class1= would reside in \verb=Class1->functions[0]=, \verb=method2= in \verb=Class2->functions[1]=, \verb=method1= of \verb=Class2= would reside in \newline{}\verb=Class2->functions[0]=. Hence if \verb=my_obj.method1()= were to be called, it could get translated into \verb=my_obj->class->functions[0]()=.
+
+This, however, brings up a lot of issues - binary compatibility (if you link against a framework which has \verb=method1= in \verb=functions[0]= doesn't mean the next version will do too - it's the compiler that would decide the order of the functions in the \verb=functions= field), the language doesn't support type-ducking (if \verb=Class2= wasn't a subclass of \verb=Class1=, yet implements a method with the same signature - name, types - this wouldn't work either) and the language cannot be dynamic in a sense of adding methods on the fly, e.g. using categories in Objective-C.
+
+That said, we move to a dynamic dispatch - a mechanism that finds the correct method implementation for that particular object. In our case, instead of the \verb=functions= field, there would be a \verb=methods= field, which would contain a list of methods and the dispatch would look at the name of the method you want to invoke, look up the correct implementation and call it. It must be obvious that such a mechanism has its performance cost as calling methods on objects is one of the most common tasks in object-oriented programming.
+
+The run-time, being responsible for this dispatch among other tasks, must hence perform this look-up as fast as possible. Modern run-times include a cache, which caches a method implementation per class on a per-method-name basis. Hence if you have ever called a method on an object of that particular class, the method call is likely to be performed with much lower expense.
+
+\section{Goal}
+
 While there already are existing Objective-C run-times, a closer look at them will show their weaknesses - mostly their dependencies or assumptions about the underlying OS and environment, where are they supposed to be running. Be it the POSIX layer, minimal object size, or GCC-specific C language extensions, all of these dependencies may present an obstacle when trying to compile such a run-time for a non-typical operating system (for example an experimental one), or when trying to use the Objective-C run-time in the kernel code.
 
-This thesis will analyze source codes of existing versions of Objective-C run-time, their limitations or requirements for compilation. Result of this work will be a prototype of a modular Objective-C run-time, which will allow easy configuration of the run-time environment both at the compilation and run time. For example, for a single-threaded application, you will be able to turn off locking of internal structures without affecting stability, yet performance can be improved (with each message sent\footnote{In Objective-C method calls are called messages being sent to objects, just like in Smalltalk.}, a lock can be potentially locked when the method implementation isn't cached and the class hierarchy has to be searched) - this may save quite a few calls to the kernel.
+This thesis will analyze source codes of existing versions of Objective-C run-time, their limitations or requirements for compilation. Result of this work will be a prototype of a very flexible run-time in terms of modularity - the run-time will be very bare feature-wise, yet will offer ways to be easily extended. For example, the run-time will include no support for categories, yet a class extension will be included which lets you add support for it. Also, the run-time will allow easy configurability - for instance, a single-threaded application will be able to turn off locking of internal structures without affecting stability, yet performance can be improved (with each message sent\footnote{In Objective-C method calls are called messages being sent to objects, just like in Smalltalk.}, a lock can be potentially locked when the method implementation isn't cached) - this may save quite a few syscalls.
+
+The resulting run-time will have virtually zero dependencies on the underlying operation system as well as the compiler, too. The whole run-time will be written to be C89 compatible and as a proof of its flexibility, the run-time will be run on Windows 3.11 and HeSiVa, an experimental operating system written by me and my colleagues Jiří Helmich and Jan Široký for an Operating Systems course at school. 
+
+
+// TODO: move the two paragraphs elsewhere?
 
 There are three available Objective-C run-time implementations (to my knowledge) - one is provided by \emph{Apple} and is used in its OS X and iOS systems - there are slight differences between the iOS and OS X versions of the run-time (e.g.\ iOS doesn't support garbage collection and only the new 2.0 run-time is available). Within this thesis, when talking about Apple's implementation of the run-time, the OS X version will be the one talked about. Then there's a run-time provided with \emph{GCC} compiler and a more experimental one called \emph{\'{E}toil\'{e}} which has been used to improve the \emph{GNUStep} run-time\footnote{http://www.jot.fm/issues/issue\_2009\_01/article4/index.html}.
 
-Even though I will mention a few words about the garbage collection and ARC\footnote{ARC - automatic reference counting, a feature introduced in Xcode 4.2 (Xcode is Apple's IDE) that uses compiler's static analysis combined with special keywords to automatically insert retain/release calls so that the developer doesn't need to manually manage reference counts on objects.}, not much attention will be paid to them as garbage collection is being deprecated in OS X 10.8 (and has severe dependencies on the underlying operating system itself) and ARC is a relatively new technology which uses a lot of compiler-dependent features as well as auto-zeroing weak references, etc.; which is beyond the scope of this work. Instead, the focus will be put on the core functionality of the run-time, analysis of the current implementations and designing the modular run-time itself.
+Even though I will mention a few words about the garbage collection and ARC\footnote{ARC - automatic reference counting, a feature introduced in Xcode 4.2 (Xcode is Apple's IDE) that uses compiler's static analysis combined with special keywords to automatically insert retain/release calls so that the developer doesn't need to manually manage reference counts on objects.}, not much attention will be paid to them as garbage collection is being deprecated in OS X 10.8 (and has severe dependencies on the underlying operating system itself) and ARC is a relatively new technology which uses a lot of compiler-dependent features, which is beyond the scope of this work. Instead, the focus will be put on the core functionality of the run-time, analysis of the current implementations and designing the modular run-time itself.

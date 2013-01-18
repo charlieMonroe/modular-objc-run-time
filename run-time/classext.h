@@ -3,6 +3,7 @@
 #define OBJC_CLASS_EXTENSION_H_
 
 #include "types.h"
+#include "os.h" /* For OBJC_INLINE */
 
 typedef struct _objc_class_extension {
 	/**
@@ -75,8 +76,31 @@ typedef struct _objc_class_extension {
 /* Caller is responsible for keeping the structure in memory. */
 extern void objc_class_add_extension(objc_class_extension *extension);
 
-extern void *objc_class_extensions_beginning(Class cl);
-extern void *objc_object_extensions_beginning(id obj);
+/**
+ * Returns the beginning of the memory after the internal structure fields
+ * of either a class or an object.
+ *
+ * Generally 
+ * 
+ * (objc_class_extensions_beginning(cl) + ext.class_extra_space_offset)
+ *
+ * is the pointer to the place where the extension's extra space starts.
+ * Replace 'class' with 'object' to get the extra space for an object.
+ */
+OBJC_INLINE void *objc_class_extensions_beginning(Class cl) OBJC_ALWAYS_INLINE;
+OBJC_INLINE void *objc_class_extensions_beginning(Class cl){
+	if (cl == Nil){
+		return NULL;
+	}
+	return (void*)((char*)cl + sizeof(struct objc_class));
+}
 
+OBJC_INLINE void *objc_object_extensions_beginning(id obj) OBJC_ALWAYS_INLINE;
+OBJC_INLINE void *objc_object_extensions_beginning(id obj){
+	if (obj == nil){
+		return NULL;
+	}
+	return (void*)((char*)obj + obj->isa->instance_size);
+}
 
 #endif /* OBJC_CLASS_EXTENSION_H_ */

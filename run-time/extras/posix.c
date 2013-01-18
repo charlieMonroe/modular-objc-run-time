@@ -26,7 +26,6 @@ static void _rw_lock_destroyer(objc_rw_lock lock){
 	free(lock);
 }
 
-static void _objc_posix_init(void) __attribute__((constructor));
 static void _objc_posix_init(void){
 	
 	objc_runtime_set_allocator(_malloc);
@@ -42,6 +41,9 @@ static void _objc_posix_init(void){
 	objc_runtime_set_rw_lock_rlock((objc_rw_lock_read_lock_f)pthread_rwlock_rdlock);
 	objc_runtime_set_rw_lock_wlock((objc_rw_lock_write_lock_f)pthread_rwlock_wrlock);
 	objc_runtime_set_rw_lock_unlock((objc_rw_lock_unlock_f)pthread_rwlock_unlock);
-	
-	objc_runtime_init();
+}
+
+static void _objc_posix_register_initializer(void) __attribute__((constructor));
+static void _objc_posix_register_initializer(void){
+	objc_runtime_register_initializer(_objc_posix_init);
 }

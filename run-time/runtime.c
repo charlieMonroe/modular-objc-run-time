@@ -14,7 +14,48 @@
  * This is marked during objc_init() as YES. After that point, no modifications
  * to the setup may be made.
  */
-static BOOL objc_runtime_has_been_initialized = NO;
+BOOL objc_runtime_has_been_initialized = NO;
+BOOL objc_runtime_is_initializing = NO;
+
+/**
+ * Registering of initializers. As the run-time has no means of
+ * allocation at this moment, a simple array is used. Static vars
+ * are zero'ed, hence we just use the last NULL index.
+ */
+#define MAX_NUMBER_OF_INITIALIZERS 32
+static objc_initializer_f objc_initializers[MAX_NUMBER_OF_INITIALIZERS];
+
+void objc_runtime_register_initializer(objc_initializer_f initializer){
+	if (objc_runtime_is_initializing || objc_runtime_has_been_initialized){
+		objc_abort("Cannot register an initializer when the run-time has already been initialized.");
+	}
+	
+	int i;
+	for (i = 0; i < MAX_NUMBER_OF_INITIALIZERS; ++i){
+		if (objc_initializers[i] == NULL){
+			objc_initializers[i] = initializer;
+			return;
+		}
+	}
+	
+	/** All initializer slots have been taken up. */
+	objc_abort("All initializer slots are taken up!");
+}
+
+/**
+ * Goes through registered initializers and calls them.
+ */
+static void _objc_runtime_perform_initializers(void){
+	int i;
+	for (i = 0; i < MAX_NUMBER_OF_INITIALIZERS; ++i){
+		if (objc_initializers[i] == NULL){
+			return;
+		}else{
+			objc_initializers[i]();
+		}
+	}
+}
+
 
 /* The exported runtime setup structure. Private for internal use only, though. */
 objc_runtime_setup_struct objc_setup;
@@ -117,8 +158,15 @@ static void _objc_runtime_validate_function_pointers(void){
 
 /* See header for documentation */
 void objc_runtime_init(void){
+	if (objc_runtime_is_initializing || objc_runtime_has_been_initialized){
+		/* Make sure that we don't initialize twice */
+		return;
+	}
+	
 	/* Run-time has been initialized */
-	objc_runtime_has_been_initialized = YES;
+	objc_runtime_is_initializing = YES;
+	
+	_objc_runtime_perform_initializers();
 	
 	/* If inline functions aren't in use, check the function pointers */
 	if (!OBJC_USES_INLINE_FUNCTIONS){
@@ -128,6 +176,9 @@ void objc_runtime_init(void){
 	/* Initialize classes */
 	objc_class_init();
 	objc_selector_init();
+	
+	objc_runtime_has_been_initialized = YES;
+	objc_runtime_is_initializing = NO;
 }
 
 /********** Getters and setters. ***********/

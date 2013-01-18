@@ -769,6 +769,11 @@ Class objc_class_create(Class superclass, const char *name) {
 	Class newClass;
 	unsigned int extra_space;
 	
+	/** Check if the run-time has been initialized. */
+	if (!objc_runtime_has_been_initialized){
+		objc_runtime_init();
+	}
+	
 	if (name == NULL || *name == '\0'){
 		objc_abort("Trying to create a class with NULL or empty name.");
 	}
@@ -1144,18 +1149,6 @@ Ivar *objc_class_get_ivar_list(Class cl){
 
 /***** EXTENSION-RELATED *****/
 
-void *objc_class_extensions_beginning(Class cl){
-	if (cl == Nil){
-		return NULL;
-	}
-	return (void*)((char*)cl + sizeof(struct objc_class));
-}
-void *objc_object_extensions_beginning(id obj){
-	if (obj == nil){
-		return NULL;
-	}
-	return (void*)((char*)obj + obj->isa->instance_size);
-}
 void objc_class_add_extension(objc_class_extension *extension){
 	if (objc_classes != NULL){
 		objc_abort("The run-time has already been initialized."

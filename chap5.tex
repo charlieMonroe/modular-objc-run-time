@@ -1,58 +1,95 @@
 \chapter{Modular Run-Time}
+
 \section{Objectives}
 
-The main objective of this work is to create a prototype of a run-time that will have no dependencies on any external libraries, not even the POSIX ones, allowing the developer to set up his own run-time from different modules.
+When thinking about creating a run-time from the scratch, one has to think mainly about two things:
 
-Also, no constructs that require any OS support (dynamic loader, standard OS libraries, etc.) will be used. This means, that constructs such as \verb=static\ __thread= (which creates a new copy of the variable declared for each thread created) or \newline{} \verb=__attribute__((constructor))= (which marks the function to be called by the dynamic loader right after the binary has been loaded) can be used either.
+\begin{itemize}
+  \item{\bf{Speed}} The run-time is the core of every app that uses it. The speed of the apps using the run-time is greatly dependent on the speed of the run-time, the method dispatch in particular.
+  \item{\bf{Flexibility}} The run-time should be as flexible as possible. It should be easy to port the framework to other platforms, and even to kernel space. You should be able to add custom features to the run-time without modifying the run-time's source code - just adding another source code file and possibly registering it on the fly without the need to even recompile the run-time.
+\end{itemize}
 
-This will, however, requires the user to call some run-time initializing functions manually at the beginning of the program's execution, as they won't get called by the dynamic loader. On systems that do support the constructor functions, this can be easily avoided by compiling the run-time with an additional file which will declare and implement a constructor, as can be seen in the \verb=posix.c= file, which is included with the run-time as an extra, which demonstrates how to add support for your operating system.
+The main objective of this work is to create a prototype of a completely new run-time that will have no dependencies on any external libraries, not even the POSIX layer, thus allowing the developer to easily set up his own run-time from different modules.
 
-In a real-world scenario, of course, we cannot require that each user supplies all these functions first thing in the \verb=main= function. For example, on \verb=*nix=\footnote{Most Unix systems, cannot be guaranteed that this will work on all of the systems.} systems, this can be easily solved by compiling the library with a single \verb=.c= file which has a function populating the setup structure with system-specific functions. This function can then either be called by the dynamic loader (which requires support from the dynamic loader), or can have a GCC-specific \verb=__attribute__((constructor))= if the system supports it. If neither is an option, then the user really needs to call this system-specific function to populate the run-time setup and then initialize the run-time, if the system-specific function hasn't done so. An example of this can be found in the \verb=posix.c= file which is bundled with the run-time as an example.
+Also, no constructs that require any OS support (dynamic loader, standard OS libraries, etc.) will be used. This means, that constructs such as \verb=static __thread= (which creates a new copy of the variable declared for each thread created) or \newline{} \verb=__attribute__((constructor))= (which marks the function to be called by the dynamic loader right after the binary has been loaded) can be used either.
 
+In its way, the run-time will be a bare skeleton, which will be ready to be extended for a particular system. As I have decided not to use any compiler-specific extensions, the \verb=constructor= attribute in particular, a question arises, who or what will initialize the run-time.
 
-\subsection{Example 1: Lock-less run-time}
-In a single-threaded application (or applications, where you know that Objective-C code will be used only in one thread), there is no need for any locking whatsoever. All of the existing implementations require some locking, even though they are trying to use lock-free structures, such as sparse arrays that do not support deleting.
+On systems that do support the constructor functions, this can be easily solved by compiling the run-time with an additional file which will declare and implement a constructor, as can be seen in the \verb=posix.c= file, which is included with the run-time as an extra, which demonstrates how to add support for your operating system.
+
+In a real-world scenario, of course, it cannot be assumed that every program's \verb=main= function will start by feeding the run-time with necessary function pointers and calling the run-time initializer. For example, on \verb=*nix=\footnote{Most Unix-based systems, cannot be guaranteed that this will work on all of the systems.} systems, this can be easily solved by compiling the library with a single \verb=.c= file which has a function populating the setup structure with system-specific functions. As can be seen in the aforementioned \verb=posix.c= file.
+
+This only solves a half of the problem. Who is responsible for calling the \verb=_objc_posix_init= function if your system doesn't support constructor functions? If it is possible to tie the run-time with the OS more tightly, the answer is the dynamic loader. If this isn't the case, then a few options emerge:
+
+\begin{itemize}
+  \item{\bf{Use a special \verb=main= function}} Instead of implementing the main function in the program itself, implement it inside the run-time and make it call an external \verb=objc_main= function, which would get to be implemented in the program. It is similar to start of a C program, where the \verb=start= function is called, which initializes some C global variables and then calls the \verb=main= function.
+  \item{\bf{Add hooks to class registration}} Second option is to add a check into the class creating/registering functions if the run-time has already been initialized (a global variable may be used for this) and if not, call the initializing function and continue. Class registration function seems like a good place to add such a hook as it doesn't make sense to call any other functions if no classes have been registered with the run-time. Also, such a check does cost something (an \verb=if= statement), so it is not suitable for any function that gets called more often.
+\end{itemize}
+
+Now that the initialization has been figured out, even on systems that do not support constructors, another question comes up - what about the on-the-fly customization? What if I want to customize the run-time at the beginning of my program? Here's a few examples a person might want to change:
+
+\begin{itemize}
+\item{\bf{Example 1: Lock-less run-time}}
+In a single-threaded application (or applications, where you know that Objective-C code will be used only in one thread), there is no need for any locking whatsoever. All of the existing implementations require some locking, even though they are using read-lock-free structures, such as sparse arrays that do not support deleting.
 
 But even so, any \verb=@synchronized(obj)= code is translated to actually lock a mutex associated with \verb=obj=, be it either a mutex from a lock pool in the traditional run-times, or a mutex that is associated just with \verb=obj= in the \'Etoil\'e run-time. This can speed up both loading of the application and code execution.
 
-\subsection{Example 2: Kernel usage}
+\item{\bf{Example 2: Kernel usage}}
 
-To get the existing run-times working in a kernel of an operating system might be tricky, depending on how much is the kernel POSIX-compatible. But even so, the \verb=malloc= functions and others usually are just wrappers around kernel allocators, which slows down allocation of all structures within the run-time.
+To get the existing run-times working in a kernel of an operating system might be tricky, depending on how much the kernel is POSIX-compatible. But even so, the \verb=malloc= functions and others usually are just wrappers around kernel allocators, which slows down allocation of all structures within the run-time.
 
-Using the modular run-time it will be possible to change the allocator with a simple function-pointer assignment.
+Using the modular run-time, it is be possible to change the allocator with a simple function-pointer assignment.
 
-
-\subsection{Example 3: Benchmarking}
+\item{\bf{Example 3: Benchmarking}}
 
 The modularity that will be introduced by this work will allow anyone to explore changes in the speed of the run-time simply by changing internal data structures used to hold the class list, selector list and caching. This may help the future development of the run-time.
 
+\end{itemize}
+
+Logically, there needs to be some sort of a line after which the run-time cannot be modified as it would lead to inconsistency - for example changing the deallocator after some objects have been already allocated may lead to memory leaks or crashes as the new deallocator will not recognize that particular memory. The following section describes how to set up the run-time.
 
 \section{Run-time Setup}
 
 As has been mentioned before, the run-time has been designed to be as flexible as possible. This means that all possible dependencies had to be removed, as well as all assumptions about the underlying OS, or whether the run-time is running in user space, or kernel space.
 
-The run-time, however, needs a way to allocate memory, locks, and so on, which are system-specific tasks. The intention behind this run-time is to completely separate these dependencies, so that porting the run-time on another platform is as easy as providing one single file containing all necessary resources.
+The run-time, however, needs a way to allocate memory, locks, and so on, which are system-specific tasks. The intention behind this run-time is to completely separate these dependencies, so that porting the run-time to another platform is as easy as providing a single file containing all the necessary resources.
 
 There are basically two ways of doing so:
 
-\subsection{Inline Functions}
+\begin{itemize}
+\item{\bf{Inline Functions}}
 The first one is very similar to what the other run-time implementations have done - create a header file that contains multiple static inline functions that implement all the OS-specific calls required by the run-time.
 
 This approach to the platform-independence problem has one advantage and one disadvantage. The obvious disadvantage is that you can perform compile-time changes only. Once the run-time has been compiled, there is no way to change, for example, the allocator without performing some wild hackery exchanging the \verb=malloc= function pointer using the dynamic loader API.
 
 The advantage, on the other hand, is definitely speed. There is no extra cost associated with calling these system APIs as the functions get inlined.
 
-\subsection{Function Pointers}
-
-Other approach is to create a setup structure that consists of function pointers, which are then called by the run-time. This has the opposite advantages and disadvantages as inlining functions.
+\item{\bf{Function Pointers}}
+Another approach is to create a setup structure that consists of function pointers, which are then called by the run-time. This has the opposite advantages and disadvantages as inlining functions.
 
 The advantage is that the run-time can be compiled without knowing the functions at all and then every program can decide which allocators to use, etc. Or if there is enough support from the dynamic loader, the dynamic loader can decide which functions to use to populate the run-time setup based on some binary flags.
 
-The dynamic loader could then define a specific function name, \newline{}\verb=objc_runtime_user_preflight()= for example, and if the loaded program had such a function implemented, it would get called before initializing the run-time as that's the point the setup structure needs to be sealed to prevent any further changes in the function pointers as some structures might already be allocated and initialized. If the function pointers were to be changed, it would probably lead to a crash.
+The disadvantage here, on the other hand, is speed. While the function itself has to be called anyway, it is possible that the function types used in the run-time do not match function types in your system. You then need to create a proxy function that converts the parameters.
 
-The disadvantage here, on the other hand, is speed. While the function itself has to be called anyway, it is possible that the function types used in the run-time do not match function types in your system. You then need to create a proxy function that converts parameters.
+For example, the read/write lock functions are made to be compatible with the POSIX \verb=pthread_rwlock_*= functions (as can be seen in \verb=extras/posix.c=), which return an \verb=int= containing a possible error value, or zero if the call was successful. In the same manner, the run-time may assume that if the function pointer returns zero, the call was successful. If the OS you are porting the run-time to doesn't return anything, or returns a different value than zero for success, you need to create a proxy function that calls the system function and then returns some value accordingly. This, however, costs an extra function call.
 
-For example, the read/write lock functions are made to be compatible with the POSIX \verb=pthread_rwlock_*= functions (as can be seen in \verb=extras/posix.c=), which return an \verb=int= containing a possible error value, or zero if the call was successful. In the same manner, the run-time assumes that if the function pointer returns zero, the call was successful. If the OS you are porting the run-time to doesn't return anything, or returns a different value than zero for success, you need to create a proxy function that calls the system function and then returns some value accordingly. This, however, costs an extra function call.
+\end{itemize}
+
+
+Assuming that function pointers are used, you might want to disable all locks in your program as has been described in \textbf{Example 1} above. Even though most operating systems no-op all mutex-related function unless the program is running as multi-threaded. You may, however, be running a multi-threaded application with Objective-C code running in just one thread. Then it may be useful to no-op all the locking functions manually.
+
+If there already is a function that fills all the function pointers, like the one in the \verb=posix.c= example, you need to modify the mutex pointers after the \verb=_objc_posix_init()= is called, as otherwise your change to the function pointers would get overwritten, yet before \verb=objc_runtime_init()= is called, as afterwards, any attempt to modify the run-time setup will result in abort.
+
+Again, several options emerge:
+
+\begin{itemize}
+  \item{\bf{With compiler and dynamic loader support}} If enough support is possible from both, just like the \verb=constructor= attribute, other attributes, such as \verb=objc_constructor= and \verb=objc_modifier= could be used, where the constructor would get called first, in our example the \verb=_objc_posix_init= and the modifiers would follow.
+  \item{\bf{Without compiler and dynamic loader support}} As the previous option requires a lot of support from both the compiler and dynamic loader, it is unlikely to be used in less common operating systems, which this work is trying to target. For this reason, the run-time supports registering initializer functions that get called within \verb=objc_runtime_init=. Because the run-time has no way to allocate new memory, the number of such initializer functions needs to be limited to 32.
+  
+  This, again, poses a question when to call \verb=objc_runtime_init=. And the answer is simple. The run-time places a check in the \verb=objc_class_create= function and if the run-time hasn't been initialized, it gets initialized. So what if you call another function before the initialization? The program is likely to crash since it doesn't make much sense to call any other function without having registered at least one class.
+  
+  If, for whatever reason, you need to init the run-time at another time, just call the \verb=objc_runtime_init= function. It can be called multiple times, however, only calling it the first time does anything. Note that registering an initializer after the runtime has been initialized aborts the program.
+\end{itemize}
 
 \subsection{Implementation}
 
@@ -254,3 +291,14 @@ Then you can create some getter and setter functions for associated objects. To 
 Just like anything, even adding class extension effects the performance somehow. If no extensions are installed in the run-time, the objects are created directly. If extensions get installed, the extension list needs to be iterated and for each extension, one extra function call is performed. This iteration itself doesn't change the asymptotic complexity as the number of class extensions is constant number, usually a very small one. The only thing that can effect the performance is the object initializer function itself.
 
 To speed things up even more for extensions that lazy-initialize their structures (as described in the Associated Objects example), the run-time allows for any of the function pointers to be \verb=NULL= (this includes the \verb=object_deallocator= if your extension doesn't have to allocate dynamically any structures and hence doesn't need to deallocate any as well).
+
+\subsection{Internal Classes}
+\paragraph{MRString}
+
+\subsection{Class Extensions}
+\subsection{AO}
+\subsection{Categories}
+
+\subsection{Ports}
+\paragraph{Windows 3.11}
+\paragraph{HeSiVa}
