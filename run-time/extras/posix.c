@@ -6,10 +6,7 @@
 #include "ao-ext.h"
 #include "../runtime.h"
 
-static void *_malloc(unsigned int size){
-	return malloc(size);
-}
-static void *_zero_alloc(unsigned int size){
+static void *_zero_alloc(unsigned long size){
 	return calloc(1, size);
 }
 static void _abort(const char *reason){
@@ -28,7 +25,7 @@ static void _rw_lock_destroyer(objc_rw_lock lock){
 
 static void _objc_posix_init(void){
 	
-	objc_runtime_set_allocator(_malloc);
+	objc_runtime_set_allocator(malloc);
 	objc_runtime_set_deallocator(free);
 	objc_runtime_set_zero_allocator(_zero_alloc);
 	

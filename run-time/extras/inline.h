@@ -16,13 +16,13 @@ OBJC_INLINE void objc_abort(const char *reason){
 	abort();
 }
 
-OBJC_INLINE void *objc_alloc(unsigned int size) OBJC_ALWAYS_INLINE;
-OBJC_INLINE void *objc_alloc(unsigned int size){
+OBJC_INLINE void *objc_alloc(unsigned long size) OBJC_ALWAYS_INLINE;
+OBJC_INLINE void *objc_alloc(unsigned long size){
 	return malloc(size);
 }
 
-OBJC_INLINE void *objc_zero_alloc(unsigned int size) OBJC_ALWAYS_INLINE;
-OBJC_INLINE void *objc_zero_alloc(unsigned int size){
+OBJC_INLINE void *objc_zero_alloc(unsigned long size) OBJC_ALWAYS_INLINE;
+OBJC_INLINE void *objc_zero_alloc(unsigned long size){
 	return calloc(1, size);
 }
 OBJC_INLINE void objc_dealloc(void *memory) OBJC_ALWAYS_INLINE;

@@ -62,7 +62,7 @@ OBJC_INLINE void _holder_initialize_buckets(_holder holder){
 
 OBJC_INLINE unsigned int _bucket_index_for_key(_holder holder, const void *key) OBJC_ALWAYS_INLINE;
 OBJC_INLINE unsigned int _bucket_index_for_key(_holder holder, const void *key){
-	unsigned int hash = holder->pointer_equality ? (unsigned int)key : objc_hash_string((const char*)key);
+	unsigned long hash = holder->pointer_equality ? (unsigned long)key : objc_hash_string((const char*)key);
 	return hash & (HOLDER_BUCKET_COUNT - 1);
 }
 

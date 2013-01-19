@@ -58,10 +58,10 @@ static void _objc_runtime_perform_initializers(void){
 
 
 /* The exported runtime setup structure. Private for internal use only, though. */
-objc_runtime_setup_struct objc_setup;
+objc_runtime_setup_t objc_setup;
 
 /* See header for documentation */
-void objc_runtime_set_setup(objc_runtime_setup_struct *setup){
+void objc_runtime_set_setup(objc_runtime_setup_t *setup){
 	if (OBJC_USES_INLINE_FUNCTIONS){
 		objc_log("The run-time uses inline functions. Setting the function pointers has no effect.\n");
 		return;
@@ -89,7 +89,7 @@ void objc_runtime_set_setup(objc_runtime_setup_struct *setup){
 }
 
 /* See header for documentation */
-void objc_runtime_get_setup(objc_runtime_setup_struct *setup){
+void objc_runtime_get_setup(objc_runtime_setup_t *setup){
 	if (OBJC_USES_INLINE_FUNCTIONS){
 		objc_log("The run-time uses inline functions. No function pointers have been returned.\n");
 		return;

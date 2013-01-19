@@ -42,7 +42,7 @@ typedef int(*objc_log_f)(const char*, ...);
  */
 /* TODO: change to size_t or similar, though allocating more than 4GB of memory
 	at once is quite unusual... Fixme? */
-typedef void*(*objc_allocator_f)(unsigned int);
+typedef void*(*objc_allocator_f)(unsigned long);
  
 /**
  * A function pointer to a deallocator. The deallocator should take just one  
@@ -56,7 +56,7 @@ typedef void(*objc_deallocator_f)(void*);
  * this function takes only one argument, just like objc_allocator indicating 
  * the size of memory requested. It should be equivalent to calloc(1, size).
  */
-typedef void*(*objc_zero_allocator_f)(unsigned int);
+typedef void*(*objc_zero_allocator_f)(unsigned long);
  
  
 /*********** objc_class_holder ***********/

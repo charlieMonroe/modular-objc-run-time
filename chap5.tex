@@ -75,7 +75,6 @@ For example, the read/write lock functions are made to be compatible with the PO
 
 \end{itemize}
 
-
 Assuming that function pointers are used, you might want to disable all locks in your program as has been described in \textbf{Example 1} above. Even though most operating systems no-op all mutex-related function unless the program is running as multi-threaded. You may, however, be running a multi-threaded application with Objective-C code running in just one thread. Then it may be useful to no-op all the locking functions manually.
 
 If there already is a function that fills all the function pointers, like the one in the \verb=posix.c= example, you need to modify the mutex pointers after the \verb=_objc_posix_init()= is called, as otherwise your change to the function pointers would get overwritten, yet before \verb=objc_runtime_init()= is called, as afterwards, any attempt to modify the run-time setup will result in abort.
@@ -88,16 +87,16 @@ Again, several options emerge:
   
   This, again, poses a question when to call \verb=objc_runtime_init=. And the answer is simple. The run-time places a check in the \verb=objc_class_create= function and if the run-time hasn't been initialized, it gets initialized. So what if you call another function before the initialization? The program is likely to crash since it doesn't make much sense to call any other function without having registered at least one class.
   
-  Note though that this is only to support systems with absolutely no support of anything described above, where the user himself would otherwise need to call the \verb=objc_runtime_init= function at the beginning of \verb=main= - which he still can, but it it redundant. If, however, for whatever reason, it is required to init the run-time at another time, it is possible to just call the \verb=objc_runtime_init= function manually. It can be called multiple times, however, only calling it the first time does anything. Note that registering an initializer after the runtime has been initialized aborts the program, though.
+  Note though that this is only to support systems with absolutely no support of anything described above, where the user himself would otherwise need to call the \verb=objc_runtime_init= function at the beginning of \verb=main= - which he still can, but it is redundant. If, however, for whatever reason, it is required to init the run-time at another time, it is possible to just call the \verb=objc_runtime_init= function manually. It can be called multiple times, however, only calling it the first time does anything. Note that registering an initializer after the runtime has been initialized aborts the program, though.
 \end{itemize}
 
 \subsection{Implementation}
 
-The run-time prototype that is part of this work is designed to support both solutions. Hence if you decide that you want to choose speed over flexibility and dynamic nature of the run-time, you can do so.
+The run-time prototype that is part of this work is designed to support both solutions - function pointers and static inline functions. Hence if you decide that you want to choose speed over flexibility and dynamic nature of the run-time, you can do so.
 
 The key to this is the \verb=os.h= header file. An \verb#if-#else= divides the file into two parts, one for the inlining support, second one for the function pointers support.
 
-When compiling the run-time, you can switch between these two simply by redefining the \verb=OBJC_USES_INLINE_FUNCTIONS= value - \verb=0= for function pointers, \verb=1= for inline functions.
+When compiling the run-time, you can switch between these two simply by redefining the \verb=OBJC_USES_INLINE_FUNCTIONS= value - \verb=0= for function pointers, \verb=1= for inline functions. This can be done in the \verb=Makefile= as can be seen in the sample \verb=Makefile= supplied.
 
 \paragraph{Inlining}
 
@@ -113,7 +112,37 @@ The first part of the \verb=os.h= header file is the part that should be used fo
 
 You should hence create your own header file for that particular OS and include it in the run-time source files. The obvious disadvantage here is that you need to supply all necessary functions at the compile time.
 
-For a list of function names required to implement, see the function pointers part, which uses \verb=#define=s to substitute the function names with fetching function pointers from a private structure.
+The following list of functions needs to be defined:
+
+\begin{itemize}
+  \item{\bf{objc\_alloc}} Memory allocator.
+  \item{\bf{objc\_zero\_alloc}} Memory allocator that fills the allocated memory with zeroes.
+  \item{\bf{objc\_dealloc}} Memory deallocator.
+  \item{\bf{objc\_abort}} Aborts the executions of the program.
+  \item{\bf{\emph{objc\_log}}} Logs supplied format string.
+  \item{\bf{objc\_rw\_lock\_create}} Creates a read-write lock.
+  \item{\bf{objc\_rw\_lock\_rlock}} Locks the lock as read-only.
+  \item{\bf{objc\_rw\_lock\_wlock}} Locks the lock as read/write.
+  \item{\bf{objc\_rw\_lock\_unlock}} Unlocks the lock.
+  \item{\bf{objc\_rw\_lock\_destroy}} Deallocates the lock.
+  \item{\bf{\emph{objc\_class\_holder\_create}}} Creates a structure that registers classes.
+  \item{\bf{\emph{objc\_class\_holder\_insert}}} Adds a class pointer to the structure.
+  \item{\bf{\emph{objc\_class\_holder\_lookup}}} Looks up a class pointer for name.
+  \item{\bf{\emph{objc\_selector\_holder\_create}}} Creates a structure that registers selectors.
+  \item{\bf{\emph{objc\_selector\_holder\_insert}}} Inserts a selector.
+  \item{\bf{\emph{objc\_selector\_holder\_lookup}}} Looks up a selector.
+  \item{\bf{\emph{objc\_array\_create}}} Creates an array.
+  \item{\bf{\emph{objc\_array\_append}}} Appends an item to an array.
+  \item{\bf{\emph{objc\_array\_get\_enumerator}}} Returns an array enumerator.
+  \item{\bf{\emph{objc\_cache\_create}}} Creates a cache for dynamic dispatch.
+  \item{\bf{\emph{objc\_cache\_destroy}}} Destroys the cache structure.
+  \item{\bf{\emph{objc\_cache\_fetch}}} Fetches a method for selector.
+  \item{\bf{\emph{objc\_cache\_insert}}} Inserts a method into the cache.
+\end{itemize}
+
+When using static inline functions, all of these need to be implemented. To use the default implementation of functions that are marked italic in the list above, you may use the \verb=array-inline.h= and \verb=holder-inline.h= header files that are included in the \verb=extras= directory.
+
+For a detailed description of each function, see the section about function pointers.
 
 \paragraph{Function Pointers}
 
@@ -122,83 +151,112 @@ If you decide to use function pointers, you don't need to modify the run-time so
 \begin{verbatim}
 #if OBJC_USES_INLINE_FUNCTIONS
 
-#include <stdlib.h>
-
-// Static-inline allocator, simply passing the call
-// to malloc
-static inline void *objc_alloc(unsigned int size){
-  return malloc(size);
-}
+  /* ... */
 
 #else
 
-#include "runtime-private.h"
+  #include "private.h"
 
-#define objc_alloc objc_setup.memory.allocator
+  #define objc_alloc objc_setup.memory.allocator
+
+  /* ... */
 
 #endif
 
 \end{verbatim}
 
-The run-time defines a \verb=objc_setup= global variable in \verb=runtime.c= and exports it in \verb=runtime-private.h=:
+The run-time defines a private \verb=objc_setup= global variable in \verb=runtime.c= and exports it in \verb=private.h=:
  
 \begin{verbatim}
 objc_runtime_setup_struct objc_setup;
 \end{verbatim}
 
-- while the user has no direct access to this structure as it is exported in a private header, the run-time itself can access it directly for the sake of the speed to eliminate unnecessary function calls that would serve just as proxy calls. The user doesn't have a direct access to the structure only as a security precaution so that the structure cannot be modified from the outside during the program execution, but the user is free to get the setup structure using the \verb=objc_runtime_get_setup= function, which copies over the whole setup structure. The user can then cache this structure for performance.
+While the user has no direct access to this structure as it is exported in a private header (and the \verb=os.h= header doesn't get exported as well), the run-time itself can access it directly for the sake of speed to eliminate unnecessary function calls that would serve just as proxy calls. The user doesn't have a direct access to the structure only as a security precaution, so that the structure cannot be modified from the outside during the program execution, but the user is free to get the setup structure using the \verb=objc_runtime_get_setup= function, which copies over the whole setup structure. The user can then cache this structure for performance, so that he doesn't have to fetch it each time he wants to access a run-time function.
 
 You can view the structure below:
 
 \begin{verbatim}
-  // TODO: paste the final structure when available
 typedef struct {
-  objc_abort abort;
-  objc_allocator allocator;
-  struct {
-    objc_class_holder_creator creator;
-    objc_class_holder_destroyer destroyer;
-    objc_class_holder_lookup lookup;
-  } class_holder;
-} objc_runtime_setup_struct;
+  objc_setup_memory_t memory;
+  objc_setup_execution_t execution;
+  objc_setup_sync_t sync;
+  
+  objc_setup_logging_t logging;
+  
+  objc_setup_class_holder_t class_holder;
+  objc_setup_selector_holder_t selector_holder;
+  objc_setup_array_t array;
+  objc_setup_cache_t cache;
+} objc_runtime_setup_t;
 \end{verbatim}
 
-This allows the modularity of the run-time. One can, at the beginning of his program, modify all of those pointers using setter functions declared in \verb=function-types.h=. After the runtime has been initialized, however, the whole structure is sealed from changes using those setter functions to prevent any data corruption (as some data structures may be already initialized, changing these functions would most likely lead to bad memory access crashing the program). Using any of the setter functions after the run-time has been initialized will lead abort the program.
+The structure contains a set of structures, each containing a set of related functions. For example, the \verb=objc_setup_memory_t= structure:
+
+\begin{verbatim}
+typedef struct {
+  objc_allocator_f allocator;
+  objc_deallocator_f deallocator;
+  objc_zero_allocator_f zero_allocator;
+} objc_setup_memory_t;
+\end{verbatim}
+
+This allows the modularity of the run-time. One can, at the beginning of his program (as has been described above), modify all of those pointers using setter functions declared in \verb=ftypes.h=. After the runtime has been initialized, however, the whole structure is sealed off changes using those setter functions to prevent any data corruption (as some data structures may be already initialized, changing these functions would most likely lead to bad memory access crashing the program). Using any of the setter functions after the run-time has been initialized will cause the program to be aborted.
 
 A description of each section of the setup structure can be found below:
 
-\paragraph{execution}
+\paragraph{Memory}
 
-This part of the structure contains function pointers to functions dealing with the execution of the program itself - it is commonly said that there is no software without bugs - hence it is sometimes necessary to abort the program execution if the program gets into an inconsistent point, or a point where illegal arguments are passed to the environment (for example, setting the run-time setup structure to NULL), hence it contains functions like \verb=objc_abort=, etc.
+As the run-time needs new memory for dynamic object creation, an allocator is needed. All existing run-times use \verb=malloc=, which, however, ties them to systems that use malloc.
 
-\paragraph{Allocator, Deallocator, Reallocator and Zero-allocator}
+The Modular Run-Time lets you specify your own allocator, which can, for example, be just a wrapper around \verb=malloc= adding some debug logging, or a completely different allocator, e.g.\ a kernel allocator as has been mentioned before. It can also be just the \verb=malloc= function itself, as the function type takes just one argument - the size of the memory required and returns a \verb=void*= pointer.
 
-As the run-time needs new memory for dynamic object creation, an allocator is needed. All existing run-times use \verb=malloc=, which, however, ties them to Unix-based operating systems.
-
-The Modular Run-Time lets you specify your own allocator, which can be, for example, just a wrapper around \verb=malloc= adding some debug logging, or a completely different allocator, e.g.\ a kernel allocator as has been mentioned before. It can also be just the \verb=malloc= function itself, as the function type takes just one argument - the size of the memory required and returns a \verb=void*= pointer.
-
-Sometimes, the memory acquired should be filled with zeros - just as the \verb=calloc= function would do, however, it is called \verb=zero_allocator= in this run-time. The \verb=calloc= function can be assigned, however.
-
-For dynamically growing structures, reallocation may be needed - hence the inclusion of the reallocating function. It is pointer-compatible with the \verb=realloc= function.
+Sometimes, the memory acquired should be filled with zeros - just as the \verb=calloc= function would do, however, it is called \verb=zero_allocator= in this run-time. Also, unlike the \verb=calloc= function, the \verb=zero_allocator= takes only one argument - the size of memory. It can be easily declared as \verb=calloc(1, size)=.
 
 When the run-time is done with memory it has allocated, it will deallocate it using the deallocate function, which has the same signature as the POSIX \verb=free= function.
 
-\paragraph{Arrays}
+\paragraph{Execution}
 
-A lot of the code of the traditional run-times is riddled with code that is takes care of consistency of dynamically growing arrays (or rather arrays of arrays) - there's a lot of duplicate code for functions related to lists of methods, protocols, etc.\ on each class.
+This part of the structure contains function pointers (in current version of the run-time only one) to functions dealing with the execution of the program itself - it is commonly said that there is no software without bugs - hence it is sometimes necessary to abort the program execution if the program gets into an inconsistent point, or a point where illegal arguments are passed to the environment (for example, setting the run-time setup structure to NULL), hence it contains an \verb=objc_abort= function, which aborts the run of the program. Unlike the regular \verb=abort= function, this one takes an additional argument - the reason why it is being aborted.
 
-This run-time declares a \verb=objc_array= type, which is just a retyped \verb=void*=, but can be implemented in any possible way. The run-time includes a working implementation of such an array and installs these function pointers at initialization, unless other pointers are provided.
+\paragraph{Synchronization}
 
-The default implementation is a structure that contains two \verb=unsigned int=s - one that remembers the allocated capacity of the array, the second one pointing to an index in the actual allocated array holding the items. If the structure is initialized as lock-able, then a mutex is allocated as well.
+The synchronization structure consists of substructures, or in current state a single one - declaring functions related to read-write locks - it is possible in the future additional synchronization-related functions, such as mutex, condition variables, etc.
 
+\subparagraph{Read-Write Locks} The run-time currently uses only read-write locks to prevent concurrent writes to structures, which are mostly read-lock-free. The structure contains functions that create locks, dealloc them, r/w lock them or unlock them. The locking and unlocking functions are compatible with \newline{}\verb=pthread_rwlock_*= functions.
+
+\paragraph{Logging}
+
+In a very few cases, the run-time logs some information, that is mostly useful to an Objective-C developer, to see what went wrong. For example, when creating a class with the same name as an existing class, a message is logged that the class with this name already exists. The logging function is compatible with \verb=printf= and by default is filled with a no-op function, so you don't necessarily need to include a logging function in your run-time setup, if you don't want to see any log messages from the run-time.
 
 \paragraph{Class Holder}
 
 The run-time needs to keep track of all classes that are registered with it. To do so, it needs to keep a list in some data structure. As the run-time is designed to be flexible, it doesn't matter what data structure at all.
 
-There is a defined data type \verb=objc_class_holder= which, however, is again only a retyped \verb=void*=. Using the run-times function pointers \verb=class_holder.creator=, \verb=class_holder.destroyer=, \verb=class_holder.lookup= and TODO, the run-time creates the data structure required, has means to destroy it, lookup a class according to its name and TODO.
+There is a defined data type \verb=objc_class_holder= which, however, is only a retyped \verb=void *=. The functions included in this structure need to be able to create such a structure, store a class pointer in it and look up a class pointer for a name, where, of course, speed matters as this class lookup function is used whenever a class method is called.
 
-The run-time provides a default implementation of this structure, a simple hash table which resembles slightly \verb=NXMapTable= from Apple's run-time, but removes all dependencies and is made slightly less complicated.
+The run-time provides a default implementation of this structure, a very simple hash table with a constant number of fields for the simplicity. It should be most likely replaced by some more sophisticated structure if the run-time were to be used in an environment with hundreds of classes.
+
+\paragraph{Selector Holder}
+
+Just like with classes, the run-time needs to keep track of selectors, for a simple reason - if there is only one selector of the same name within the run-time, you can hash the pointer (when looking up method implementations later on in a cache), instead of reading the selector's name over and over again.
+
+\paragraph{Arrays}
+
+A lot of the code of the traditional run-times is riddled with code that takes care of consistency of dynamically growing arrays (or rather arrays of arrays) - there's a lot of duplicate code for functions related to lists of methods, protocols, etc.\ on each class.
+
+This run-time declares a \verb=objc_array= type, which is again just a retyped \verb=void *=, but can be implemented in any possible way. The run-time includes a working implementation of such an array and installs these function pointers at initialization, unless other pointers are provided.
+
+The default implementation is a linked list, which keeps track of its first and last object. It also includes a lock for insertion, however, as no delete operation is allowed, the lock doesn't need to be locked for reading.
+
+To enable fast iteration over the array, an enumerator is returned, which contains a \verb=next= field, pointing to the next node. If your implementation does not use a linked list, it is a good idea to store the items in such a wrapper anyway and link them together, so that the run-time can iterate over your structure in a fast manner without knowing any details about its internal structure and implementation.
+
+\paragraph{Cache}
+
+As has been noted several times before, almost any language with dynamic dispatch uses some sort of a cache so that it doesn't have to climb the whole class hierarchy to find a method implementation of a method that is only implemented on the root class.
+
+The caching mechanism is described in a greater detail in the Caching section below. 
+
+If you want to disable the caching mechanism altogether, just replace the cache creator and fetch functions with functions that return \verb=NULL=, and the insert and destroy functions with a no-op function.
 
 \section{Class}
 
@@ -209,6 +267,8 @@ At the core of the run-time lies a structure representing a class. Like the \'Et
 The class structure begins in the traditional fashion with a pointer to its superclass - the \verb=isa= pointer. This pointer is followed by the class name, class methods and instance methods. Both class methods and instance methods use the \verb=objc_array= structure, which is a list of lists of \verb=Method=s, just like in the other run-times 
 
 // TODO: cache, ivars
+
+\section{Caching}
 
 \section{Extensibility of Classes}
 
@@ -225,10 +285,10 @@ This function has a single argument: a pointer to a \verb=objc_class_extension= 
     void(*class_initializer)(Class, void*);
     void(*object_initializer)(id, void*);
     void(*object_deallocator)(id, void*);
-	
+  
     unsigned int extra_class_space;
     unsigned int extra_object_space;
-	
+  
     unsigned int object_offset;
 } objc_class_extension;
 \end{verbatim}
@@ -286,19 +346,18 @@ Then you can create some getter and setter functions for associated objects. To 
   // Do something with the hashtable
 \end{verbatim}
 
+\subsection{Categories}
 
 \subsection{Performance}
 Just like anything, even adding class extension effects the performance somehow. If no extensions are installed in the run-time, the objects are created directly. If extensions get installed, the extension list needs to be iterated and for each extension, one extra function call is performed. This iteration itself doesn't change the asymptotic complexity as the number of class extensions is constant number, usually a very small one. The only thing that can effect the performance is the object initializer function itself.
 
 To speed things up even more for extensions that lazy-initialize their structures (as described in the Associated Objects example), the run-time allows for any of the function pointers to be \verb=NULL= (this includes the \verb=object_deallocator= if your extension doesn't have to allocate dynamically any structures and hence doesn't need to deallocate any as well).
 
-\subsection{Internal Classes}
-\paragraph{MRString}
+\section{Dynamic Dispatch}
 
-\subsection{Class Extensions}
-\subsection{AO}
-\subsection{Categories}
+\section{Internal Classes}
+\subsection{MRString}
 
-\subsection{Ports}
-\paragraph{Windows 3.11}
-\paragraph{HeSiVa}
+\section{Ports}
+\subsection{Windows 3.11}
+\subsection{HeSiVa}

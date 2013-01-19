@@ -14,12 +14,17 @@
 #ifndef OBJC_OS_H_
 #define OBJC_OS_H_
 
-#if defined(USES_C99)
+/** C89 doesn't have static inline functions. */
+#if !defined(USES_C89)
 	#define OBJC_INLINE static inline
 #else
 	#define OBJC_INLINE static
 #endif
 
+/** 
+ * Some compilers might not support this attribute
+ * that forces the compiler to always inline the functions.
+ */
 #if defined(HAS_ALWAYS_INLINE_ATTRIBUTE)
 	#define OBJC_ALWAYS_INLINE __attribute__((always_inline))
 #else
@@ -33,62 +38,61 @@
 
 #if OBJC_USES_INLINE_FUNCTIONS
 
-/********* INLINE FUNCTIONS *********/
+	/********* INLINE FUNCTIONS *********/
 
-#include "extras/inline.h"
+	#if 1
+		#include "extras/inline.h"
+	/* #elseif defined(TARGET_MY_OS)
+		#include "os-my-os.h" */
+	#else
+		#error "This OS isn't supported at the moment."
+	#endif
 
-/*
-#if TARGET_MY_OS
-	#include "os-my-os.h"
+
 #else
-	#error "This OS isn't supported at the moment."
-#endif
- */
 
-#else
+	/********* FUNCTION POINTERS *********/
 
-/********* FUNCTION POINTERS *********/
+	#include "private.h"
 
-#include "private.h"
+	/* Memory */
+	#define objc_alloc objc_setup.memory.allocator
+	#define objc_zero_alloc objc_setup.memory.zero_allocator
+	#define objc_dealloc objc_setup.memory.deallocator
 
-/* Memory */
-#define objc_alloc objc_setup.memory.allocator
-#define objc_zero_alloc objc_setup.memory.zero_allocator
-#define objc_dealloc objc_setup.memory.deallocator
+	/* Execution */
+	#define objc_abort objc_setup.execution.abort
 
-/* Execution */
-#define objc_abort objc_setup.execution.abort
+	/* Logging */
+	#define objc_log objc_setup.logging.log
 
-/* Logging */
-#define objc_log objc_setup.logging.log
+	/* RW lock */
+	#define objc_rw_lock_create objc_setup.sync.rwlock.creator
+	#define objc_rw_lock_rlock objc_setup.sync.rwlock.rlock
+	#define objc_rw_lock_wlock objc_setup.sync.rwlock.wlock
+	#define objc_rw_lock_unlock objc_setup.sync.rwlock.unlock
+	#define objc_rw_lock_destroy objc_setup.sync.rwlock.destroyer
 
-/* RW lock */
-#define objc_rw_lock_create objc_setup.sync.rwlock.creator
-#define objc_rw_lock_rlock objc_setup.sync.rwlock.rlock
-#define objc_rw_lock_wlock objc_setup.sync.rwlock.wlock
-#define objc_rw_lock_unlock objc_setup.sync.rwlock.unlock
-#define objc_rw_lock_destroy objc_setup.sync.rwlock.destroyer
+	/* Class holder */
+	#define objc_class_holder_create objc_setup.class_holder.creator
+	#define objc_class_holder_insert objc_setup.class_holder.inserter
+	#define objc_class_holder_lookup objc_setup.class_holder.lookup
 
-/* Class holder */
-#define objc_class_holder_create objc_setup.class_holder.creator
-#define objc_class_holder_insert objc_setup.class_holder.inserter
-#define objc_class_holder_lookup objc_setup.class_holder.lookup
+	/* Selector holder */
+	#define objc_selector_holder_create objc_setup.selector_holder.creator
+	#define objc_selector_holder_insert objc_setup.selector_holder.inserter
+	#define objc_selector_holder_lookup objc_setup.selector_holder.lookup
 
-/* Selector holder */
-#define objc_selector_holder_create objc_setup.selector_holder.creator
-#define objc_selector_holder_insert objc_setup.selector_holder.inserter
-#define objc_selector_holder_lookup objc_setup.selector_holder.lookup
+	/* Array */
+	#define objc_array_create objc_setup.array.creator
+	#define objc_array_append objc_setup.array.append
+	#define objc_array_get_enumerator objc_setup.array.enum_getter
 
-/* Array */
-#define objc_array_create objc_setup.array.creator
-#define objc_array_append objc_setup.array.append
-#define objc_array_get_enumerator objc_setup.array.enum_getter
-
-/* Cache */
-#define objc_cache_create objc_setup.cache.creator
-#define objc_cache_destroy objc_setup.cache.destroyer
-#define objc_cache_fetch objc_setup.cache.fetcher
-#define objc_cache_insert objc_setup.cache.inserter
+	/* Cache */
+	#define objc_cache_create objc_setup.cache.creator
+	#define objc_cache_destroy objc_setup.cache.destroyer
+	#define objc_cache_fetch objc_setup.cache.fetcher
+	#define objc_cache_insert objc_setup.cache.inserter
 
 #endif
 

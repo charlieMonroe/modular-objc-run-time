@@ -53,6 +53,6 @@ void objc_class_init(void);
  * An external run-time setup structure. This structure shouldn't be modified
  * from anywhere after the run-time is started.
  */
-extern objc_runtime_setup_struct objc_setup;
+extern objc_runtime_setup_t objc_setup;
 
 #endif /* OBJC_PRIVATE_H_ */
