@@ -7,6 +7,7 @@ Method objc_method_create(SEL selector, const char *types, IMP implementation){
 	m->selector = selector;
 	m->implementation = implementation;
 	m->types = objc_strcpy(types);
+	m->version = 0;
 	return m;
 }
 

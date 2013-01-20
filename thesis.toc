@@ -58,19 +58,20 @@
 \contentsline {paragraph}{Cache}{40}{section*.20}
 \contentsline {section}{\numberline {5.3}Class}{40}{section.5.3}
 \contentsline {subsection}{\numberline {5.3.1}Structure of a Class}{41}{subsection.5.3.1}
-\contentsline {section}{\numberline {5.4}Caching}{41}{section.5.4}
-\contentsline {section}{\numberline {5.5}Extensibility of Classes}{41}{section.5.5}
-\contentsline {subsection}{\numberline {5.5.1}Associated Objects}{43}{subsection.5.5.1}
-\contentsline {subsection}{\numberline {5.5.2}Categories}{43}{subsection.5.5.2}
-\contentsline {subsection}{\numberline {5.5.3}Performance}{43}{subsection.5.5.3}
-\contentsline {section}{\numberline {5.6}Dynamic Dispatch}{44}{section.5.6}
-\contentsline {section}{\numberline {5.7}Internal Classes}{44}{section.5.7}
-\contentsline {subsection}{\numberline {5.7.1}MRString}{44}{subsection.5.7.1}
-\contentsline {section}{\numberline {5.8}Ports}{44}{section.5.8}
-\contentsline {subsection}{\numberline {5.8.1}Windows 3.11}{44}{subsection.5.8.1}
-\contentsline {subsection}{\numberline {5.8.2}HeSiVa}{44}{subsection.5.8.2}
-\contentsline {chapter}{Conclusion}{45}{chapter*.21}
-\contentsline {chapter}{Bibliography}{46}{chapter*.22}
-\contentsline {chapter}{List of Tables}{47}{chapter*.23}
-\contentsline {chapter}{List of Abbreviations}{48}{chapter*.24}
-\contentsline {chapter}{Attachments}{49}{chapter*.25}
+\contentsline {section}{\numberline {5.4}Dynamic Dispatch and Caching}{42}{section.5.4}
+\contentsline {section}{\numberline {5.5}Forwarding}{44}{section.5.5}
+\contentsline {section}{\numberline {5.6}Compatibility}{44}{section.5.6}
+\contentsline {section}{\numberline {5.7}Extensibility of Classes}{44}{section.5.7}
+\contentsline {subsection}{\numberline {5.7.1}Associated Objects}{46}{subsection.5.7.1}
+\contentsline {subsection}{\numberline {5.7.2}Categories}{47}{subsection.5.7.2}
+\contentsline {subsection}{\numberline {5.7.3}Performance}{47}{subsection.5.7.3}
+\contentsline {section}{\numberline {5.8}Internal Classes}{48}{section.5.8}
+\contentsline {subsection}{\numberline {5.8.1}MRString}{48}{subsection.5.8.1}
+\contentsline {section}{\numberline {5.9}Ports}{48}{section.5.9}
+\contentsline {subsection}{\numberline {5.9.1}Windows 3.11}{48}{subsection.5.9.1}
+\contentsline {subsection}{\numberline {5.9.2}HeSiVa}{48}{subsection.5.9.2}
+\contentsline {chapter}{Conclusion}{49}{chapter*.21}
+\contentsline {chapter}{Bibliography}{50}{chapter*.22}
+\contentsline {chapter}{List of Tables}{51}{chapter*.23}
+\contentsline {chapter}{List of Abbreviations}{52}{chapter*.24}
+\contentsline {chapter}{Attachments}{53}{chapter*.25}

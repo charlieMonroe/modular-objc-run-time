@@ -236,7 +236,7 @@ objc_runtime_create_getter_setter_function_body(objc_array_enumerator_getter_f, 
 objc_runtime_create_getter_setter_function_body(objc_array_append_f, array_append, array.append)
 
 objc_runtime_create_getter_setter_function_body(objc_cache_creator_f, cache_creator, cache.creator)
-objc_runtime_create_getter_setter_function_body(objc_cache_destroyer_f, cache_destroyer, cache.destroyer)
+objc_runtime_create_getter_setter_function_body(objc_cache_mark_to_dealloc_f, cache_destroyer, cache.destroyer)
 objc_runtime_create_getter_setter_function_body(objc_cache_fetcher_f, cache_fetcher, cache.fetcher)
 objc_runtime_create_getter_setter_function_body(objc_cache_inserter_f, cache_inserter, cache.inserter)
 

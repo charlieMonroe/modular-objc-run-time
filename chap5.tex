@@ -264,11 +264,110 @@ At the core of the run-time lies a structure representing a class. Like the \'Et
 
 \subsection{Structure of a Class}
 
-The class structure begins in the traditional fashion with a pointer to its superclass - the \verb=isa= pointer. This pointer is followed by the class name, class methods and instance methods. Both class methods and instance methods use the \verb=objc_array= structure, which is a list of lists of \verb=Method=s, just like in the other run-times 
+The class structure begins with an \verb=isa= pointer, which points to itself - a class is hence its own instance. This allows a quick detection of a class in the method dispatch - \verb+obj->isa == obj+ - macros \verb=OBJC_OBJ_IS_CLASS= and \newline{}\verb=OBJC_OBJ_IS_INSTANCE= are included.
 
-// TODO: cache, ivars
+\begin{figure}[htbp] 
+  
+\begin{verbatim}
+      struct objc_class {
+        Class isa;
+        Class super_class;
+        char *name;
+        
+        objc_array class_methods;
+        objc_array instance_methods;
+        
+        objc_array ivars;
+        
+        objc_cache class_cache;
+        objc_cache instance_cache;
+        
+        unsigned int instance_size;
+        struct {
+          BOOL in_construction : 1;
+        } flags;
+        
+        void *extra_space;
+      };
+      \end{verbatim}
 
-\section{Caching}
+	\centering{}
+	\caption{Class structure.}
+	\label{fig:class_struct}
+\end{figure}
+
+The \verb=isa= pointer is followed by a pointer to the super class, or \verb=Nil= in case the class is a root class. Name of the class is followed.
+
+Next, class and instance methods are listed. Each of the \verb=objc_array= structures contains a C-style list of \verb=Method= pointers. In other words, each item of the array is actually a \verb=Method *= array. Thanks to this, it is easy to add new methods in bulk - simply append the \verb=Method *= array to the \verb=objc_array=. This is generally how other run-times handle the method lists.
+
+The ivars are directly listed in the \verb=objc_array= as ivar lists, unlike the method lists, are sealed after the class has been emph\{finished} (a step, where the run-time is informed that you do not intend to modify the class anymore and that it should be marked as ready for use - Apple calls this \emph{registering\ a\ class\ pair}), because adding an ivar is likely to change the size of the instances and most importantly of the class' subclasses. Adding methods on the fly, on the other hand, is a valid and used practice.
+
+The class and instance caches will be explained in length in the Caching section that follows this section.
+
+Instance size marks the size of the class' instances, yet doesn't include the space required by class extensions, which are described later, since the class structure may be loaded from a module, which doesn't know about installed class extensions.
+
+A bitfield \verb=flags= follows, which includes a number of flags about the class. In particular, if it is still in construction - i.e.\ hasn't been \emph{finished} yet. Another flags might be included, such as if the class itself implements a \verb=+initialize= method, if such a method has been called, etc.
+
+The field \verb=extra_space= itself isn't used, only marks the beginning of the extra space required by the class extensions for quick access to it.
+
+\section{Dynamic Dispatch and Caching}
+
+The speed of the run-time really depends not that much on the speed of the lookup function itself (the function that climbs the class hierarchy looking for the method implementation in the method lists), which gets called only the first time a method with that particular selector, but depends mostly on the speed of the caching mechanism of the run-time.
+
+Unlike Apple's implementation, the run-time doesn't handle the calling of the method implementation function itself, but just like the GCC run-time, or the \'Etoil\'e run-time, it looks up a \verb=Method= pointer, or an \verb=IMP= depending on your needs.
+
+If you can assure inline caching, just like in the \'Etoil\'e run-time's proposal, then you should fetch the \verb=Method= pointer, which includes a \verb=version= field, which, just like in the \'Etoil\'e run-time gets incremented each time the \verb=Method= structure gets modified.
+
+Using the inline caching, you can easily achieve near C-function-call speeds, as if the inline cache is indeed filled with a valid version of the \verb=Method=, the cost of the call over the direct C function call is one comparison for the selector and three comparisons of the cache properties - whether the \verb=Method= is not \verb=NULL= (note that in the \'Etoil\'e run-time, the structure isn't a method structure, but a \emph{slot}) - altogether, it is four pointer-equality comparisons and two \verb=if= statements. And that's it.
+
+If the inline caching cannot be achieved, however, for example because the \verb=__thread= variables are unavailable on your system; or if the inline cache doesn't contain the correct version of the \verb=Method=, the mechanism needs to fallback to the traditional cache - a regular per-class cache - the class structure fields \verb=class_cache= and \verb=instance_cache=. Note that a class may implement a class and an instance method of the same name - the selector pointer is the same, but implementations differ (most likely). Hence the necessity of two caches per class (Apple and GCC run-times actually include two caches per class as well, though the fact is slightly hidden by the fact that each class is actually a class pair consisting of the class and meta-class objects).
+
+When the inline cache is unavailable, or it misses, one of the following two methods should get called (a \verb=_super= alternative exists for \verb=super= calls):
+
+\begin{verbatim}
+extern Method objc_object_lookup_method(id obj, SEL selector);
+extern IMP objc_object_lookup_impl(id obj, SEL selector);
+\end{verbatim}
+
+The first function returns the \verb=Method= pointer, so it should be used in case the compiler can generate inline caches. If it cannot, it is unnecessary to retrieve the \verb=Method= pointer, use the function fetching directly the method implementation, instead.
+
+In either case, the look up function works like this:
+
+\begin{enumerate}
+  \item{\bf{Look inside the cache}} The function detects whether \verb=obj= is an instance of a class, or the class itself. Depending on that it looks inside the correct cache and if it results in a cache hit, the \verb=Method= is immediately returned. The cost of such call is \emph{dependent on the cache speed}.
+  \item{\bf{Ask extensions}} As will be described later on, each class extension may supply its own lookup function, in case the extension can, for example, generate methods, or adds them via categories. If any extension finds a method implementation, it is then returned. Were there two such extensions that would implement this method, the extension that gets registered first is used (the extension list is iterated until an extension returns something other than \verb=NULL=). If any extension implements this method, it gets cached, so that the next time this method gets called on this class, the lookup will stop at the cache lookup.
+  \item{\bf{Method lookup}} If the method implementation for this selector hasn't been cached yet, it is necessary to climb the class tree, looking into each class' method lists. If an implementation is found, it gets cached.
+  \item{\bf{Forwarding}} Now, we are at a point where the method isn't cached, isn't implemented by any class extension, not the class itself or one of its superclasses. The modular run-time introduces a simplified forwarding mechanism, which gives the object a chance to handle the unrecognized selector. This forwarding mechanism is described in the next section.
+  \item{\bf{Abort}} If the method hasn't been found and the class doesn't implement the forwarding mechanism, or the forwarding mechanism rejects this selector, the program is aborted.
+\end{enumerate}
+
+In its sense, the idea behind the caching is very simple and would be indeed very simple, if we wouldn't have to think about the following scenario, where \verb=Class3= is subclass of subclass of \verb=Class2=, which is subclass of \verb=Class1= and \verb=-doSomething= is a method implemented \emph{only} on \verb=Class1=:
+
+\begin{enumerate}
+  \item{\bf{\verb=Class2= and \verb=Class3= get instantiated}} An instance of both \verb=Class2= and \verb=Class3= gets created. Let's call those \verb=instance2= and \verb=instance3=.
+  \item{\bf{Method \verb=doSomething= gets called on both \verb=instance2= and \verb=instance3=}} This results in caching the method implementation on both \verb=Class2= and \verb=Class3=, while the method itself is only implemented on their superclass \verb=Class1=.
+  \item{\bf{Method \verb=doSomething= gets added to \verb=Class2=}} Either using \newline{}\verb=objc_class_add_instance_method=, or by adding a class category, the \verb=doSomething= method gets added to \verb=Class2=. Now, however, if \verb=instance2= or \verb=instance3= were to be called the \verb=doSomething= method, the cache would still point to the method implementation of \verb=Class1=.
+\end{enumerate}
+
+This presents a small hiccup on the easiness of the cache implementation as this scenario requires caches of \verb=Class2= and \verb=Class3= to be flushed. Note, though, that as the cache caches the whole \verb=Method= pointer, hence simply changing the method implementation pointer (the \verb=IMP=) doesn't require any cache flushing.
+
+The question remains: how to flush the class cache. One might say that simply removing all cache entries is sufficient - in a single-threaded environment, this is indeed true. In a multi-threaded environment, this isn't the case as the cache may be read at the same time as it is being cleared.
+
+While this could be overcome by locking the structure, it would require all readers to lock the read lock as well, which is, unfortunately, an unbearable cost as it would slow down the dynamic dispatch multiple times.
+
+The solution to create a new cache structure, replace it in the \verb=Class= structure and keep the old cache structure alive as there still may be readers somewhere in the structure.
+
+The question is, how long should the old structure be kept alive? This is up to the cache structure implementation. The modular run-time requires a function of type \verb=objc_cache_mark_to_dealloc_f= which should mark the cache structure as 'unnecessary' and that it should be deallocated at the first safe opportunity.
+
+Apple's implementation solves this by looking at each thread's \verb=PC=/\verb=IP=/\verb=RIP= register and comparing it with the ranges of address of all functions that may be reading from the cache. In particular, those methods are listed in a global variable called \verb=objc_entryPoints= declared in the same assembly source file as the \verb=objc_msgSend= functions. The default implementation supplied with the modular run-time assumes that the cache is marked to be deallocated \emph{after} the cache pointer in the \verb=Class= structure has already been swapped for an empty cache pointer (or \verb=NULL=), and hence no new readers of the cache will appear.
+
+The cache hence keeps track of the readers, using a simple \verb=unsigned int= - if there are no readers, when marked to dealloc, the cache is removed at that moment. Otherwise, the last reader to leave the cache structure is responsible for deallocating the structure.
+
+\section{Forwarding}
+
+
+
+\section{Compatibility}
 
 \section{Extensibility of Classes}
 
@@ -298,11 +397,11 @@ The first field, \verb=next_extension= is a pointer to the next extension as the
 This field is followed by three function pointers:
 
 \begin{itemize}
-  \item \verb=class_initialize= - this function gets called each time a class is registered with the run-time using \verb=objc_finish_class()=. This is the place where the extra space, to which a pointer is passed as the second argument, should get populated and initialized.
+  \item{} \verb=class_initialize= - this function gets called each time a class is registered with the run-time using \verb=objc_finish_class()=. This is the place where the extra space, to which a pointer is passed as the second argument, should get populated and initialized.
   
-  \item \verb=object_initializer= - any time an object is allocated, this function gets called in order to initialize the extra space in the object (again, the second argument is a pointer to the extra space within the structure).
+  \item{} \verb=object_initializer= - any time an object is allocated, this function gets called in order to initialize the extra space in the object (again, the second argument is a pointer to the extra space within the structure).
   
-  \item \verb=object_deallocator= - before the object gets deallocated, each class   extension is provided an option to deallocated any dynamically allocated structures.
+  \item{} \verb=object_deallocator= - before the object gets deallocated, each class   extension is provided an option to deallocated any dynamically allocated structures.
 \end{itemize}
 
 These pointers are followed by three unsigned integers. The first two declare how much space is requested by this class extension for the class and object structures.
@@ -352,8 +451,6 @@ Then you can create some getter and setter functions for associated objects. To 
 Just like anything, even adding class extension effects the performance somehow. If no extensions are installed in the run-time, the objects are created directly. If extensions get installed, the extension list needs to be iterated and for each extension, one extra function call is performed. This iteration itself doesn't change the asymptotic complexity as the number of class extensions is constant number, usually a very small one. The only thing that can effect the performance is the object initializer function itself.
 
 To speed things up even more for extensions that lazy-initialize their structures (as described in the Associated Objects example), the run-time allows for any of the function pointers to be \verb=NULL= (this includes the \verb=object_deallocator= if your extension doesn't have to allocate dynamically any structures and hence doesn't need to deallocate any as well).
-
-\section{Dynamic Dispatch}
 
 \section{Internal Classes}
 \subsection{MRString}

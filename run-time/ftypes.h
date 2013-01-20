@@ -138,7 +138,7 @@ typedef SEL(*objc_selector_holder_lookup_f)(objc_selector_holder, const char*);
  * deleted *after* a new one has been created and placed instead.
  */
 typedef objc_cache(*objc_cache_creator_f)(void);
-typedef void(*objc_cache_destroyer_f)(objc_cache);
+typedef void(*objc_cache_mark_to_dealloc_f)(objc_cache);
 typedef void(*objc_cache_inserter_f)(objc_cache, Method);
 typedef Method(*objc_cache_fetcher_f)(objc_cache, SEL);
 

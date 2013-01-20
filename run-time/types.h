@@ -55,6 +55,7 @@ typedef struct objc_method {
 	SEL selector;
 	const char *types;
 	IMP implementation;
+	unsigned int version;
 } *Method;
 
 /**

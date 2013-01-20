@@ -46,6 +46,16 @@ static id _objc_nil_receiver_function(id self, SEL _cmd, ...){
 	return nil;
 }
 
+/**
+ * A method wrapper for the _objc_nil_receiver_function.
+ */
+static struct objc_method _objc_nil_receiver_method = {
+	NULL, /** No need for a selector. */
+	NULL, /** No need for types. */
+	_objc_nil_receiver_function, /** Implementation. */
+	0 /** Version */
+};
+
 /***** PRIVATE FUNCTIONS *****/
 
 /**
@@ -480,7 +490,7 @@ OBJC_INLINE void _forwarding_not_supported_abort(id obj, SEL selector) OBJC_ALWA
 OBJC_INLINE void _forwarding_not_supported_abort(id obj, SEL selector){
 	/* i.e. the object doesn't respond to the
 	 forwarding selector either. */
-	objc_log("%s doesn't support forwarding and doesn't respond to selector %s!\n", obj->isa->name, selector->name);
+	objc_log("%s doesn't support forwarding and doesn't respond to selector %s!\n", obj->isa->name, objc_selector_get_name(selector));
 	objc_abort("Class doesn't support forwarding.");
 }
 
@@ -679,6 +689,70 @@ OBJC_INLINE Method *_method_list_flatten(objc_array list){
 	return methods;
 }
 
+OBJC_INLINE Method _lookup_method(id obj, SEL selector) OBJC_ALWAYS_INLINE;
+OBJC_INLINE Method _lookup_method(id obj, SEL selector){
+	Method method = NULL;
+	
+	if (obj == nil){
+		return &_objc_nil_receiver_method;
+	}
+	
+	if (OBJC_OBJ_IS_CLASS(obj)){
+		/* Class method */
+		method = _lookup_class_method((Class)obj, selector);
+	}else{
+		/* Instance method. */
+		method = _lookup_instance_method(obj->isa, selector);
+	}
+	
+	if (method == NULL){
+		/* Not found! Prepare for forwarding. */
+		if (_forward_method_invocation(obj, selector)){
+			return &_objc_nil_receiver_method;
+		}else{
+			_forwarding_not_supported_abort(obj, selector);
+			return NULL;
+		}
+	}
+	
+	return method;
+}
+
+OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector) OBJC_ALWAYS_INLINE;
+OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector){
+	Method method;
+	
+	if (sup == NULL){
+		return NULL;
+	}
+	
+	if (sup->receiver == nil){
+		return &_objc_nil_receiver_method;
+	}
+	
+	if (OBJC_OBJ_IS_CLASS(sup->receiver)){
+		/* Class method */
+		method = _lookup_class_method(sup->class, selector);
+	}else{
+		/* Instance method. */
+		method = _lookup_instance_method(sup->class, selector);
+	}
+	
+	if (method == NULL){
+		/* Not found! Prepare for forwarding. */
+		objc_log("Called super to class %s, which doesn't implement selector %s.", sup->class->name, selector == NULL ? "(null)" : selector->name);
+		if (_forward_method_invocation(sup->receiver, selector)){
+			return &_objc_nil_receiver_method;
+		}else{
+			_forwarding_not_supported_abort(sup->receiver, selector);
+			return NULL;
+		}
+	}
+	
+	return method;
+}
+
+
 /***** PUBLIC FUNCTIONS *****/
 
 void objc_class_add_class_method(Class cl, Method m){
@@ -724,6 +798,7 @@ IMP objc_class_replace_instance_method_implementation(Class cls, SEL name, IMP i
 		 */
 	}else{
 		m->implementation = imp;
+		++m->version;
 		
 		/**
 		 * There's no need to flush any caches as the whole
@@ -750,6 +825,7 @@ IMP objc_class_replace_class_method_implementation(Class cls, SEL name, IMP imp,
 		 */
 	}else{
 		m->implementation = imp;
+		++m->version;
 		
 		/**
 		 * There's no need to flush any caches as the whole
@@ -1036,60 +1112,17 @@ void objc_object_deallocate(id obj){
 	_finalize_object(obj);
 	objc_dealloc(obj);
 }
+Method objc_object_lookup_method(id obj, SEL selector){
+	return _lookup_method(obj, selector);
+}
+Method objc_object_lookup_method_super(objc_super *sup, SEL selector){
+	return _lookup_method_super(sup, selector);
+}
 IMP objc_object_lookup_impl(id obj, SEL selector){
-	IMP implementation = NULL;
-	
-	if (obj == nil){
-		return _objc_nil_receiver_function;
-	}
-	
-	if (OBJC_OBJ_IS_CLASS(obj)){
-		/* Class method */
-		implementation = _lookup_class_method_impl((Class)obj, selector);
-	}else{
-		/* Instance method. */
-		implementation = _lookup_instance_method_impl(obj->isa, selector);
-	}
-	
-	if (implementation == NULL){
-		/* Not found! Prepare for forwarding. */
-		if (_forward_method_invocation(obj, selector)){
-			return _objc_nil_receiver_function;
-		}else{
-			_forwarding_not_supported_abort(obj, selector);
-			return NULL;
-		}
-	}
-	
-	return implementation;
+	return _lookup_method(obj, selector)->implementation;
 }
 IMP objc_object_lookup_impl_super(objc_super *sup, SEL selector){
-	IMP implementation;
-	
-	if (sup == NULL){
-		return NULL;
-	}
-	
-	if (OBJC_OBJ_IS_CLASS(sup->receiver)){
-		/* Class method */
-		implementation = _lookup_class_method_impl(sup->class, selector);
-	}else{
-		/* Instance method. */
-		implementation = _lookup_instance_method_impl(sup->class, selector);
-	}
-	
-	if (implementation == NULL){
-		/* Not found! Prepare for forwarding. */
-		objc_log("Called super to class %s, which doesn't implement selector %s.", sup->class->name, selector == NULL ? "(null)" : selector->name);
-		if (_forward_method_invocation(sup->receiver, selector)){
-			return _objc_nil_receiver_function;
-		}else{
-			_forwarding_not_supported_abort(sup->receiver, selector);
-			return NULL;
-		}
-	}
-	
-	return implementation;
+	return _lookup_method_super(sup, selector)->implementation;
 }
 
 /***** INFORMATION GETTERS *****/

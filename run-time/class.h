@@ -162,6 +162,8 @@ extern IMP objc_lookup_instance_method_impl(id obj, SEL selector);
  * used by the compiler. It detects whether obj is a class or an instance
  * and handles the situation depending on that.
  */
+extern Method objc_object_lookup_method(id obj, SEL selector);
+extern Method objc_object_lookup_method_super(objc_super *sup, SEL selector);
 extern IMP objc_object_lookup_impl(id obj, SEL selector);
 extern IMP objc_object_lookup_impl_super(objc_super *sup, SEL selector);
 

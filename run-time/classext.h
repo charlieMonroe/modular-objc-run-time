@@ -92,7 +92,7 @@ OBJC_INLINE void *objc_class_extensions_beginning(Class cl){
 	if (cl == Nil){
 		return NULL;
 	}
-	return (void*)((char*)cl + sizeof(struct objc_class));
+	return (void*)((char*)cl->extra_space);
 }
 
 OBJC_INLINE void *objc_object_extensions_beginning(id obj) OBJC_ALWAYS_INLINE;
