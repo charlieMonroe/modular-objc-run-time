@@ -14,6 +14,11 @@
 #ifndef OBJC_OS_H_
 #define OBJC_OS_H_
 
+/** Try to detect C89 automatically. */
+#if !defined(USES_C89) && !defined(__GNUC_STDC_INLINE__)
+	#define USES_C89 1
+#endif
+
 /** C89 doesn't have static inline functions. */
 #if !defined(USES_C89)
 	#define OBJC_INLINE static inline

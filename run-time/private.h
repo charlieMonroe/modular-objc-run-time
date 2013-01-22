@@ -43,6 +43,8 @@ struct objc_class {
 	struct {
 		BOOL in_construction : 1;
 	} flags;
+	
+	void *extra_space;
 };
 
 void objc_class_init(void);

@@ -119,7 +119,7 @@ OBJC_INLINE void *objc_class_extensions_beginning(Class cl){
 	if (cl == Nil){
 		return NULL;
 	}
-	return (void*)((char*)cl + sizeof(struct objc_class));
+	return cl->extra_space;
 }
 
 OBJC_INLINE void *objc_object_extensions_beginning(id obj) OBJC_ALWAYS_INLINE;
@@ -129,5 +129,26 @@ OBJC_INLINE void *objc_object_extensions_beginning(id obj){
 	}
 	return (void*)((char*)obj + obj->isa->instance_size);
 }
+
+/**
+ * The same as the functions above, only returns the space
+ * where the extension begins its space.
+ */
+OBJC_INLINE void *objc_class_extensions_beginning_for_extension(Class cl, objc_class_extension *ext) OBJC_ALWAYS_INLINE;
+OBJC_INLINE void *objc_class_extensions_beginning_for_extension(Class cl, objc_class_extension *ext){
+	if (cl == Nil){
+		return NULL;
+	}
+	return (char*)objc_class_extensions_beginning(cl) + ext->class_extra_space_offset;
+}
+
+OBJC_INLINE void *objc_object_extensions_beginning_for_extension(id obj, objc_class_extension *ext) OBJC_ALWAYS_INLINE;
+OBJC_INLINE void *objc_object_extensions_beginning_for_extension(id obj, objc_class_extension *ext){
+	if (obj == nil){
+		return NULL;
+	}
+	return (char*)objc_object_extensions_beginning(obj) + ext->object_extra_space_offset;
+}
+
 
 #endif /* OBJC_CLASS_EXTENSION_H_ */

@@ -928,9 +928,7 @@ Class objc_class_create(Class superclass, const char *name) {
 		return NULL;
 	}
 	
-	extra_space = _extra_class_space_for_extensions();
-	
-	newClass = (Class)(objc_alloc(sizeof(struct objc_class) + extra_space));
+	newClass = (Class)(objc_alloc(sizeof(struct objc_class)));
 	newClass->isa = newClass; /* A loop to self to detect class method calls. */
 	newClass->super_class = superclass;
 	newClass->name = objc_strcpy(name);
@@ -951,9 +949,11 @@ Class objc_class_create(Class superclass, const char *name) {
 	
 	newClass->flags.in_construction = YES;
 	
-	if (extra_space > 0){
-		/** Zero-out the extra space. */
-		objc_memory_zero(objc_class_extensions_beginning(newClass), extra_space);
+	extra_space = _extra_class_space_for_extensions();
+	if (extra_space != 0){
+		newClass->extra_space = objc_zero_alloc(extra_space);
+	}else{
+		newClass->extra_space = NULL;
 	}
 	
 	objc_class_holder_insert(objc_classes, newClass);
@@ -1036,13 +1036,15 @@ void objc_class_finish(Class cl){
 	
 	/* Pass the class through all extensions */
 	ext = class_extensions;
-	extra_space = (char*)objc_class_extensions_beginning(cl);
-	while (ext != NULL) {
-		if (ext->class_initializer != NULL){
-			ext->class_initializer(cl, (void*)extra_space);
+	extra_space = (char*)cl->extra_space;
+	if (extra_space != NULL){
+		while (ext != NULL) {
+			if (ext->class_initializer != NULL){
+				ext->class_initializer(cl, (void*)extra_space);
+			}
+			extra_space += ext->extra_class_space;
+			ext = ext->next_extension;
 		}
-		extra_space += ext->extra_class_space;
-		ext = ext->next_extension;
 	}
 	
 	/* That's it! Just mark it as not in construction */

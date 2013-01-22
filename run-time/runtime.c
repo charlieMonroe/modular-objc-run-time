@@ -26,11 +26,12 @@ BOOL objc_runtime_is_initializing = NO;
 static objc_initializer_f objc_initializers[MAX_NUMBER_OF_INITIALIZERS];
 
 void objc_runtime_register_initializer(objc_initializer_f initializer){
+	int i;
+	
 	if (objc_runtime_is_initializing || objc_runtime_has_been_initialized){
 		objc_abort("Cannot register an initializer when the run-time has already been initialized.");
 	}
 	
-	int i;
 	for (i = 0; i < MAX_NUMBER_OF_INITIALIZERS; ++i){
 		if (objc_initializers[i] == NULL){
 			objc_initializers[i] = initializer;
