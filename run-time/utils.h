@@ -125,4 +125,18 @@ OBJC_INLINE void objc_copy_memory(void *src, void *dst, unsigned int size){
 	}
 }
 
+/**
+ * Clears memory by writing zeroes everywhere.
+ */
+OBJC_INLINE void objc_memory_zero(void *mem, unsigned int size) OBJC_ALWAYS_INLINE;
+OBJC_INLINE void objc_memory_zero(void *mem, unsigned int size){
+	char *mem_prt = (char*)mem;
+	unsigned int i;
+	
+	for (i = 0; i < size; ++i){
+		mem_prt[i] = 0;
+	}
+}
+
 #endif /* OBJC_UTILITIES_H_ */
+

@@ -50,7 +50,7 @@ void objc_associated_object_register_extension(void){
 	ao_extension.extra_class_space = 0;
 	ao_extension.extra_object_space = sizeof(ao_extension_object_part);
 	ao_extension.instance_lookup_function = NULL;
-	ao_extension.object_deallocator = _associated_object_deallocate;
+	ao_extension.object_destructor = _associated_object_deallocate;
 	ao_extension.object_initializer = NULL; /* Lazy allocation */
 	
 	objc_class_add_extension(&ao_extension);

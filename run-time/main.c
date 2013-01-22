@@ -13,6 +13,7 @@
 
 typedef struct {
 	Class isa;
+	id proxy_object;
 	int i;
 } MyClass;
 
@@ -56,8 +57,16 @@ id _MyClass_increase_via_ao(MyClass *self, SEL _cmd, ...){
 	return nil;
 }
 
-BOOL _MyClass_forward(id self, SEL _cmd, SEL selector){
-	printf("Class %s supports forwarding - trying to forward selector %s.\n", objc_class_get_name(self->isa), objc_selector_get_name(selector));
+Method _MyClass_forwarded_method(MyClass *self, SEL _cmd, SEL selector){
+	return objc_object_lookup_method(self->proxy_object, selector);
+	/**
+	printf("Class %s supports forwarding methods - would return method for selector %s.\n", objc_class_get_name(self->isa), objc_selector_get_name(selector));
+	return NULL;
+	 */
+}
+
+BOOL _MyClass_drop_message(id self, SEL _cmd, SEL selector){
+	printf("Class %s supports message dropping - dropped call with selector %s.\n", objc_class_get_name(self->isa), objc_selector_get_name(selector));
 	return YES;
 }
 
@@ -69,12 +78,14 @@ static SEL log_selector;
 static SEL increase_via_gs_selector;
 static SEL increase_via_ao_selector;
 static SEL forwarding_selector;
+static SEL call_dropping_selector;
 
 static Method alloc_method;
 static Method log_method;
 static Method increase_via_gs_method;
 static Method increase_via_ao_method;
 static Method forwarding_method;
+static Method call_dropping_method;
 
 static IMP alloc_impl;
 
@@ -88,7 +99,9 @@ static void create_classes(void){
 	log_selector = objc_selector_register("log");
 	increase_via_gs_selector = objc_selector_register("increaseViaGS");
 	increase_via_ao_selector = objc_selector_register("increaseViaAO");
-	forwarding_selector = objc_selector_register("forwardMessage:");
+	forwarding_selector = objc_selector_register("forwardedMethodForSelector:");
+	call_dropping_selector = objc_selector_register("dropsUnrecognizedMessage:");
+	
 	second_alloc_selector = objc_selector_register("alloc");
 	if (second_alloc_selector != alloc_selector){
 		printf("alloc selector (%p) != second_alloc_selector (%p)!", alloc_selector, second_alloc_selector);
@@ -97,6 +110,8 @@ static void create_classes(void){
 		((IMP)(NULL))(nil, NULL);
 	}
 	
+	objc_class_add_ivar(my_class, "isa", sizeof(Class), __alignof(Class), "#");
+	objc_class_add_ivar(my_class, "proxy_object", sizeof(id), __alignof(id), "@");
 	objc_class_add_ivar(my_class, "i", sizeof(int), __alignof(int), "i");
 	objc_class_finish(my_class);
 	(void)objc_class_create(Nil, "MyClass");
@@ -105,20 +120,23 @@ static void create_classes(void){
 	objc_class_finish(my_subclass);
 	
 	
-	alloc_method = objc_method_create(alloc_selector, "^@:", &_MyClass_alloc);
+	alloc_method = objc_method_create(alloc_selector, "^@:", _MyClass_alloc);
 	objc_class_add_class_method(my_class, alloc_method);
 	
-	log_method = objc_method_create(log_selector, "^@:", (IMP)&_MyClass_log);
+	log_method = objc_method_create(log_selector, "^@:", (IMP)_MyClass_log);
 	objc_class_add_instance_method(my_class, log_method);
 	
-	increase_via_gs_method = objc_method_create(increase_via_gs_selector, "^@:", (IMP)&_MyClass_increase_via_setters_and_getters);
+	increase_via_gs_method = objc_method_create(increase_via_gs_selector, "^@:", (IMP)_MyClass_increase_via_setters_and_getters);
 	objc_class_add_instance_method(my_class, increase_via_gs_method);
 	
-	increase_via_ao_method = objc_method_create(increase_via_ao_selector, "^@:", (IMP)&_MyClass_increase_via_ao);
+	increase_via_ao_method = objc_method_create(increase_via_ao_selector, "^@:", (IMP)_MyClass_increase_via_ao);
 	objc_class_add_instance_method(my_class, increase_via_ao_method);
 	
-	forwarding_method = objc_method_create(forwarding_selector, "^@::", (IMP)_MyClass_forward);
+	forwarding_method = objc_method_create(forwarding_selector, "^@::", (IMP)_MyClass_forwarded_method);
 	objc_class_add_instance_method(my_class, forwarding_method);
+	
+	call_dropping_method = objc_method_create(call_dropping_selector, "B@::", (IMP)_MyClass_drop_message);
+	objc_class_add_instance_method(my_class, call_dropping_method);
 	
 	alloc_impl = objc_object_lookup_impl((id)my_subclass, alloc_selector);
 	
@@ -268,13 +286,50 @@ static void object_creation_test(void){
 		id instance = objc_class_create_instance(my_class, 0);
 		objc_object_deallocate(instance);
 	}
-	
 	c2 = clock();
 		
 	printf("Object allocation test took %f seconds.\n", ((double)c2 - (double)c1)/ (double)CLOCKS_PER_SEC);
 }
 
-int main(int argc, const char * argv[]){
+static void _I_NewClass_unknownSelector(id self, SEL _cmd, int i){
+	/* No-op */
+}
+
+static void forwarding_test(void){
+	id new_class_instance;
+	MyClass *my_class_instance;
+	clock_t c1, c2;
+	int i;
+	
+	Class completely_new_class = objc_class_create(Nil, "NewClass");
+	SEL unknown_selector = objc_selector_register("unknownSelector:");
+	objc_class_add_ivar(completely_new_class, "isa", sizeof(Class), __alignof(Class), "#");
+	objc_class_add_instance_method(completely_new_class, objc_method_create(unknown_selector, "v@:i", (IMP)_I_NewClass_unknownSelector));
+	objc_class_finish(completely_new_class);
+	
+	
+	new_class_instance = objc_class_create_instance(completely_new_class, 0);
+	c1 = clock();
+	for (i = 0; i < DISPATCH_ITERATIONS; ++i){
+		((void(*)(id,SEL,int))objc_object_lookup_impl(new_class_instance, unknown_selector))(new_class_instance, unknown_selector, i);
+	}
+	c2 = clock();
+	printf("Non-proxy calls took %f seconds.\n", ((double)c2 - (double)c1)/ (double)CLOCKS_PER_SEC);
+	
+	
+	my_class_instance = (MyClass*)objc_class_create_instance(my_class, 0);
+	my_class_instance->proxy_object = new_class_instance;
+	
+	c1 = clock();
+	for (i = 0; i < DISPATCH_ITERATIONS; ++i){
+		((void(*)(id,SEL,int))objc_object_lookup_impl((id)my_class_instance, unknown_selector))((id)my_class_instance, unknown_selector, i);
+	}
+	c2 = clock();
+	printf("Proxy calls took %f seconds.\n", ((double)c2 - (double)c1)/ (double)CLOCKS_PER_SEC);	
+	
+}
+
+int main(int argc, const char * argv[]){	
 	create_classes();
 	list_classes();
 	
@@ -283,6 +338,7 @@ int main(int argc, const char * argv[]){
 	method_dispatch_test_via_ao();
 	object_creation_test();
 	super_method_dispatch_test();
+	forwarding_test();
 	
 	return 0;
 }

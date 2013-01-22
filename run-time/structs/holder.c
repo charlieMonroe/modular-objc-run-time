@@ -48,6 +48,7 @@ typedef struct _holder_str {
 	objc_rw_lock lock;
 	unsigned int key_offset_in_object;
 	unsigned int readers;
+	holder_type type;
 	BOOL dealloc_mark;
 	BOOL pointer_equality;
 	_bucket **buckets;
@@ -83,13 +84,17 @@ OBJC_INLINE BOOL _holder_contains_object_in_bucket(_holder holder, _bucket *buck
 	return (BOOL)(_holder_object_in_bucket(holder, bucket, obj) != NULL);
 }
 
-OBJC_INLINE void _holder_deallocate_bucket(_bucket *bucket) OBJC_ALWAYS_INLINE;
-OBJC_INLINE void _holder_deallocate_bucket(_bucket *bucket){
+OBJC_INLINE void _holder_deallocate_bucket(_holder holder, _bucket *bucket) OBJC_ALWAYS_INLINE;
+OBJC_INLINE void _holder_deallocate_bucket(_holder holder, _bucket *bucket){
 	_bucket *next_bucket = bucket;
 	while (next_bucket != NULL){
 		_bucket *current_bucket = next_bucket;
 		next_bucket = current_bucket->next;
 		
+		if (holder->type == holder_type_cache){
+			/** Increase method versions on cache clear. */
+			++((Method)(current_bucket->obj))->version;
+		}
 		objc_dealloc(current_bucket);
 	}
 }
@@ -103,7 +108,7 @@ OBJC_INLINE void _holder_deallocate(_holder holder){
 	
 	for (index = 0; index < HOLDER_BUCKET_COUNT; ++index){
 		if (holder->buckets[index] != NULL){
-			_holder_deallocate_bucket(holder->buckets[index]);
+			_holder_deallocate_bucket(holder, holder->buckets[index]);
 		}
 	}
 	
@@ -215,6 +220,7 @@ OBJC_INLINE _holder holder_create_internal(holder_type type){
 	holder->readers = 0;
 	holder->dealloc_mark = NO;
 	holder->pointer_equality = NO;
+	holder->type = type;
 	switch (type) {
 		case holder_type_class:
 			holder->key_offset_in_object = OFFSETOF(struct objc_class, name);

@@ -19,6 +19,33 @@ typedef struct _objc_class_extension {
 	 */
 	
 	/**
+	 * These functions may return a custom allocator
+	 * and deallocator for a specific class. Note that
+	 * only the first class extension that returns a valid
+	 * allocator is used.
+	 *
+	 * The first argument is the class of the object,
+	 * the second argument is the size of the instance,
+	 * including the extra space required by class extensions,
+	 * and possibly the extra_bytes that may be passed to 
+	 * objc_class_create_instance.
+	 *
+	 * Note that the memory returned *should* be zero'ed
+	 * out. If it is not, the run-time will not zero it.
+	 */
+	objc_allocator_f(*object_allocator_for_class)(Class, unsigned int);
+	
+	/**
+	 * Warning: While the deallocator also passes the instance
+	 * size as the second argument, it is the instance size of
+	 * obj->isa - if the isa has been changed since the allocation
+	 * of the object, it doesn't have to match. This argument
+	 * is mainly to serve as a hint, where the object may have come
+	 * from if you base your allocators on the instance size.
+	 */
+	objc_deallocator_f(*object_deallocator_for_object)(id, unsigned int);
+	
+	/**
 	 * This function is responsible for initializing
 	 * the extra space in the class. The second parameter
 	 * is a pointer to the extra space within the class
@@ -39,7 +66,7 @@ typedef struct _objc_class_extension {
 	 * any dynamically allocated space within the object
 	 * extra space.
 	 */
-	void(*object_deallocator)(id, void*);
+	void(*object_destructor)(id, void*);
 	
 	
 	/**
@@ -92,7 +119,7 @@ OBJC_INLINE void *objc_class_extensions_beginning(Class cl){
 	if (cl == Nil){
 		return NULL;
 	}
-	return (void*)((char*)cl->extra_space);
+	return (void*)((char*)cl + sizeof(struct objc_class));
 }
 
 OBJC_INLINE void *objc_object_extensions_beginning(id obj) OBJC_ALWAYS_INLINE;

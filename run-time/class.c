@@ -35,9 +35,10 @@ objc_class_extension *class_extensions;
 objc_rw_lock objc_runtime_lock;
 
 /**
- * A cached forwarding selector.
+ * A cached forwarding selectors.
  */
 static SEL objc_forwarding_selector = NULL;
+static SEL objc_drops_unrecognized_forwarding_selector = NULL;
 
 /**
  * A function that is returned when the receiver is nil.
@@ -495,20 +496,27 @@ OBJC_INLINE void _forwarding_not_supported_abort(id obj, SEL selector){
 }
 
 /**
- * Forwards the method invocation by calling forwardMessage: method on obj
- * be it a class or an instance.
+ * The first part of the forwarding mechanism. obj is called a method
+ * forwardedMethodForSelector: which should return a Method pointer
+ * to the actual method to be called. If it doesn't wish to forward this 
+ * particular selector, return NULL. Note that the Method doesn't need
+ * to be registered anywhere, it may be a faked pointer.
+ *
+ * If NULL is returned, the run-time moves on to the second step:
+ * asking the object whether to drop the message (a nil-receiver
+ * method is returned), or whether to raise an exception.
  */
-OBJC_INLINE BOOL _forward_method_invocation(id obj, SEL selector) OBJC_ALWAYS_INLINE;
-OBJC_INLINE BOOL _forward_method_invocation(id obj, SEL selector){
-	if (objc_selectors_equal(selector, objc_forwarding_selector)){
-		/* Make sure the app really crashes. */
-		return NO;
+OBJC_INLINE Method _forward_method_invocation(id obj, SEL selector) OBJC_ALWAYS_INLINE;
+OBJC_INLINE Method _forward_method_invocation(id obj, SEL selector){
+	if (objc_selectors_equal(selector, objc_forwarding_selector) || objc_selectors_equal(selector, objc_drops_unrecognized_forwarding_selector)){
+		/* Make sure the app really crashes and doesn't create an infinite cycle. */
+		return NULL;
 	}else{
 		/* Forwarding. */
 		IMP forwarding_imp;
 		
 		if (objc_forwarding_selector == NULL){
-			objc_forwarding_selector = objc_selector_register("forwardMessage:");
+			objc_forwarding_selector = objc_selector_register("forwardedMethodForSelector:");
 		}
 		
 		if (OBJC_OBJ_IS_CLASS(obj)){
@@ -518,10 +526,45 @@ OBJC_INLINE BOOL _forward_method_invocation(id obj, SEL selector){
 		}
 		
 		if (forwarding_imp == NULL){
+			objc_log("Class %s doesn't respond to selector %s.\n", obj->isa->name, objc_selector_get_name(selector));
+			return NULL;
+		}
+		
+		return ((Method(*)(id,SEL,SEL))forwarding_imp)(obj, objc_forwarding_selector, selector);
+	}
+}
+
+/**
+ * Second part of the forwarding mechanism. Should the unhandled
+ * message be ignored (dropped)? If YES, the run-time goes on, otherwise
+ * aborts.
+ */
+OBJC_INLINE BOOL _drops_unrecognized_message(id obj, SEL selector) OBJC_ALWAYS_INLINE;
+OBJC_INLINE BOOL _drops_unrecognized_message(id obj, SEL selector){
+	if (objc_selectors_equal(selector, objc_forwarding_selector)
+	    || objc_selectors_equal(selector, objc_drops_unrecognized_forwarding_selector)){
+		/* Make sure the app really crashes and doesn't create an infinite cycle. */
+		return NO;
+	}else{
+		/* Forwarding. */
+		IMP drops_imp;
+		
+		if (objc_drops_unrecognized_forwarding_selector == NULL){
+			objc_drops_unrecognized_forwarding_selector = objc_selector_register("dropsUnrecognizedMessage:");
+		}
+		
+		if (OBJC_OBJ_IS_CLASS(obj)){
+			drops_imp = _lookup_class_method_impl((Class)obj, objc_drops_unrecognized_forwarding_selector);
+		}else{
+			drops_imp = _lookup_instance_method_impl(obj->isa, objc_drops_unrecognized_forwarding_selector);
+		}
+		
+		if (drops_imp == NULL){
+			objc_log("Class %s doesn't implement call dropping mechanism.\n", obj->isa->name);
 			return NO;
 		}
 		
-		return ((BOOL(*)(id,SEL,SEL))forwarding_imp)(obj, selector, selector);
+		return ((BOOL(*)(id,SEL,SEL))drops_imp)(obj, objc_drops_unrecognized_forwarding_selector, selector);
 	}
 }
 
@@ -549,8 +592,8 @@ OBJC_INLINE void _finalize_object(id obj){
 	void *obj_ext_beginning = objc_object_extensions_beginning(obj);
 	ext = class_extensions;
 	while (ext != NULL){
-		if (ext->object_deallocator != NULL){
-			ext->object_deallocator(obj, (void*)((char*)obj_ext_beginning + ext->object_extra_space_offset));
+		if (ext->object_destructor != NULL){
+			ext->object_destructor(obj, (void*)((char*)obj_ext_beginning + ext->object_extra_space_offset));
 		}
 		ext = ext->next_extension;
 	}
@@ -694,6 +737,8 @@ OBJC_INLINE Method _lookup_method(id obj, SEL selector){
 	Method method = NULL;
 	
 	if (obj == nil){
+		/** ++ to invalidate inline cache. */
+		++_objc_nil_receiver_method.version;
 		return &_objc_nil_receiver_method;
 	}
 	
@@ -707,12 +752,25 @@ OBJC_INLINE Method _lookup_method(id obj, SEL selector){
 	
 	if (method == NULL){
 		/* Not found! Prepare for forwarding. */
-		if (_forward_method_invocation(obj, selector)){
-			return &_objc_nil_receiver_method;
-		}else{
-			_forwarding_not_supported_abort(obj, selector);
-			return NULL;
+		Method forwarded_method = _forward_method_invocation(obj, selector);
+		if (forwarded_method != NULL){
+			/** The object returned a method 
+			 * that should be called instead.
+			 */
+			
+			/** ++ to invalidate inline cache. */
+			++forwarded_method->version;
+			return forwarded_method;
 		}
+		
+		if (forwarded_method == NULL && _drops_unrecognized_message(obj, selector)){
+			/** ++ to invalidate inline cache. */
+			++_objc_nil_receiver_method.version;
+			return &_objc_nil_receiver_method;
+		}
+		
+		_forwarding_not_supported_abort(obj, selector);
+		return NULL;
 	}
 	
 	return method;
@@ -854,6 +912,14 @@ Class objc_class_create(Class superclass, const char *name) {
 		objc_abort("Trying to create a class with NULL or empty name.");
 	}
 	
+	if (superclass != Nil && superclass->flags.in_construction){
+		/** Cannot create a subclass of an unfinished class.
+		 * The reason is simple: what if the superclass added
+		 * a variable after the subclass did so?
+		 */
+		objc_abort("Trying to create a subclass of unfinished class.");
+	}
+	
 	objc_rw_lock_wlock(objc_runtime_lock);
 	if (objc_class_holder_lookup(objc_classes, name) != NULL){
 		/* i.e. a class with this name already exists */
@@ -862,7 +928,9 @@ Class objc_class_create(Class superclass, const char *name) {
 		return NULL;
 	}
 	
-	newClass = (Class)(objc_alloc(sizeof(struct objc_class)));
+	extra_space = _extra_class_space_for_extensions();
+	
+	newClass = (Class)(objc_alloc(sizeof(struct objc_class) + extra_space));
 	newClass->isa = newClass; /* A loop to self to detect class method calls. */
 	newClass->super_class = superclass;
 	newClass->name = objc_strcpy(name);
@@ -873,18 +941,19 @@ Class objc_class_create(Class superclass, const char *name) {
 	newClass->ivars = NULL;
 	
 	/*
-	 * Right now sizeof(id) as the object always includes pointer to its class.
-	 * Adding or removing ivars changes the value. Doesn't include extra space.
+	 * The instance size needs to be 0, as the root class
+	 * is responsible for adding an isa ivar.
 	 */
-	newClass->instance_size = sizeof(id);
+	newClass->instance_size = 0;
+	if (superclass != Nil){
+		newClass->instance_size = superclass->instance_size;
+	}
 	
 	newClass->flags.in_construction = YES;
 	
-	extra_space = _extra_class_space_for_extensions();
-	if (extra_space != 0){
-		newClass->extra_space = objc_zero_alloc(extra_space);
-	}else{
-		newClass->extra_space = NULL;
+	if (extra_space > 0){
+		/** Zero-out the extra space. */
+		objc_memory_zero(objc_class_extensions_beginning(newClass), extra_space);
 	}
 	
 	objc_class_holder_insert(objc_classes, newClass);
@@ -925,13 +994,31 @@ void objc_complete_object(id instance){
 }
 id objc_class_create_instance(Class cl, unsigned int extra_bytes){
 	id obj;
+	unsigned int size;
+	objc_allocator_f allocator = objc_zero_alloc;
+	objc_class_extension *ext;
 	
 	if (cl->flags.in_construction){
 		objc_log("Trying to create an instance of unfinished class (%s).", cl->name);
 		return nil;
 	}
 	
-	obj = (id)objc_zero_alloc(_instance_size(cl) + extra_bytes);
+	size = _instance_size(cl) + extra_bytes;
+	
+	ext = class_extensions;
+	while (ext != NULL) {
+		objc_allocator_f ext_allocator;
+		if (ext->object_allocator_for_class != NULL){
+			ext_allocator = ext->object_allocator_for_class(cl, size);
+			if (ext_allocator != NULL){
+				allocator = ext_allocator;
+				break;
+			}
+		}
+		ext = ext->next_extension;
+	}
+	
+	obj = (id)allocator(size);
 	obj->isa = cl;
 	
 	_complete_object(obj);
@@ -949,15 +1036,13 @@ void objc_class_finish(Class cl){
 	
 	/* Pass the class through all extensions */
 	ext = class_extensions;
-	extra_space = (char*)cl->extra_space;
-	if (extra_space != NULL){
-		while (ext != NULL) {
-			if (ext->class_initializer != NULL){
-				ext->class_initializer(cl, (void*)extra_space);
-			}
-			extra_space += ext->extra_class_space;
-			ext = ext->next_extension;
+	extra_space = (char*)objc_class_extensions_beginning(cl);
+	while (ext != NULL) {
+		if (ext->class_initializer != NULL){
+			ext->class_initializer(cl, (void*)extra_space);
 		}
+		extra_space += ext->extra_class_space;
+		ext = ext->next_extension;
 	}
 	
 	/* That's it! Just mark it as not in construction */
@@ -1109,7 +1194,31 @@ Class objc_object_set_class(id obj, Class new_class){
 	return old_class;
 }
 void objc_object_deallocate(id obj){
+	objc_deallocator_f deallocator = objc_dealloc;
+	objc_class_extension *ext;
+	unsigned int size_of_obj;
+	
+	if (obj == nil){
+		return;
+	}
+	
+	size_of_obj = _instance_size(obj->isa) + _extra_object_space_for_extensions();
+	
 	_finalize_object(obj);
+	
+	ext = class_extensions;
+	while (ext != NULL) {
+		objc_deallocator_f ext_deallocator;
+		if (ext->object_deallocator_for_object != NULL){
+			ext_deallocator = ext->object_deallocator_for_object(obj, size_of_obj);
+			if (ext_deallocator != NULL){
+				deallocator = ext_deallocator;
+				break;
+			}
+		}
+		ext = ext->next_extension;
+	}
+	
 	objc_dealloc(obj);
 }
 Method objc_object_lookup_method(id obj, SEL selector){
@@ -1145,7 +1254,13 @@ Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigne
 		return NULL;
 	}
 	
+	if (!cls->flags.in_construction){
+		objc_log("Class %s isn't in construction!\n", cls->name);
+		objc_abort("Trying to add ivar to a class that isn't in construction.");
+	}
+	
 	if (_ivar_named(cls, name) != NULL){
+		objc_log("Class %s, or one of its superclasses already have an ivar named %s!\n", cls->name, name);
 		return NULL;
 	}
 	

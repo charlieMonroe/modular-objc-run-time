@@ -1,0 +1,11 @@
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Class structure.}}{41}{figure.5.1}
+\contentsline {figure}{\numberline {5.2}{\ignorespaces A sample proxy class.}}{47}{figure.5.2}
+\contentsline {figure}{\numberline {5.3}{\ignorespaces Class extension structure.}}{48}{figure.5.3}
+\contentsline {figure}{\numberline {5.4}{\ignorespaces Example of registering a class extension.}}{49}{figure.5.4}
+\contentsline {figure}{\numberline {5.5}{\ignorespaces Example of a custom deallocator.}}{51}{figure.5.5}
+\contentsline {figure}{\numberline {5.6}{\ignorespaces Example of how class extensions use memory within an object.}}{52}{figure.5.6}

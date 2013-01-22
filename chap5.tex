@@ -268,7 +268,7 @@ The class structure begins with an \verb=isa= pointer, which points to itself - 
 
 \begin{figure}[htbp] 
   
-\begin{verbatim}
+    \begin{verbatim}
       struct objc_class {
         Class isa;
         Class super_class;
@@ -286,14 +286,12 @@ The class structure begins with an \verb=isa= pointer, which points to itself - 
         struct {
           BOOL in_construction : 1;
         } flags;
-        
-        void *extra_space;
       };
-      \end{verbatim}
+    \end{verbatim}
 
-	\centering{}
-	\caption{Class structure.}
-	\label{fig:class_struct}
+  \centering{}
+  \caption{Class structure.}
+  \label{fig:class_struct}
 \end{figure}
 
 The \verb=isa= pointer is followed by a pointer to the super class, or \verb=Nil= in case the class is a root class. Name of the class is followed.
@@ -307,8 +305,6 @@ The class and instance caches will be explained in length in the Caching section
 Instance size marks the size of the class' instances, yet doesn't include the space required by class extensions, which are described later, since the class structure may be loaded from a module, which doesn't know about installed class extensions.
 
 A bitfield \verb=flags= follows, which includes a number of flags about the class. In particular, if it is still in construction - i.e.\ hasn't been \emph{finished} yet. Another flags might be included, such as if the class itself implements a \verb=+initialize= method, if such a method has been called, etc.
-
-The field \verb=extra_space= itself isn't used, only marks the beginning of the extra space required by the class extensions for quick access to it.
 
 \section{Dynamic Dispatch and Caching}
 
@@ -365,58 +361,254 @@ The cache hence keeps track of the readers, using a simple \verb=unsigned int= -
 
 \section{Forwarding}
 
+\subsection{Apple Run-Time}
+In a traditional run-time, such as Apple's, when an object is sent a message it does not recognize, i.e.\ it doesn't implement a method with such a selector, a method called \verb=forwardInvocation:= is invoked, the argument being an object of class \verb=NSInvocation=, a class that serves as a wrapper around method invocations, holding parameters and their types.
 
+This, however, as Apple's selectors aren't typed, requires you to implement another method - \verb=methodSignatureForSelector:= which should return an instance of a class \verb=NSMethodSignature=, which should carry the types required by the method implementation.
+
+What this really means is that creating a proxy object costs two object creations per call, not to mention how many methods get called as well. In a simple measurement, where is a proxy class that simply passes the call to an object that is a variable of the proxy class, the proxy calls are roughly 100 times slower than a direct call.
+
+The biggest shortcoming of this, however, is the extra memory usage. If you run a tight loop around a method call, e.g.
+
+\begin{verbatim}
+  for (int i = 0; i < 10000000; ++i){
+    [proxy myMethod];
+  }
+\end{verbatim}
+
+For each method call, two objects get created - the \verb=NSInvocation= \newline{}and \verb=NSMethodSignature= object - in case of this loop, on a 64-bit computer running OS X 10.8, at the end of this loop, the test application has memory usage of over 4.5GB!
+
+This is caused by all the created objects being autoreleased - i.e.\ registered with the \verb=NSAutoreleasePool= instance, to be released later on - which happens at the end of a run loop cycle in applications that install a run loop, or when the pool is drained manually. This can be overcome by wrapping the proxy method call in a \verb=@autoreleasepool= construct, which is generally just creating a new autorelease pool and draining it at the end.
+
+Creating and draining the autorelease pool, however, puts another overhead in the game - the 'pooled' version of the loop is 10 times slower than the 'non-pooled' version. The benchmarks, however, are quite relative depending on how many loops are there and the available memory. Once the free physical memory is used up and the OS starts swapping the memory to the hard drive, the 'pooled' version is faster.
+
+\subsection{GCC Run-Time}
+
+// TODO
+
+\subsection{Modular Run-Time}
+ 
+The approach the modular run-time takes on forwarding calls is a little bit different. The forwarding mechanism in the modular run-time is much easier, doesn't require \emph{any} classes whatsoever - all it requires is for the class to implement two simple methods in order to forward the calls.
+
+When the run-time doesn't find the method cached, no class extension returns a valid method and the class, nor its superclasses implement a method with the particular selector, forwarding comes in place.
+
+The run-time looks up another method - with a selector \verb=forwardedMethodForSelector:= which should return a \verb=Method= pointer to a method implementing the method. If no such method exists, the run-time aborts from the same fact that it would do so in other run-times - the object doesn't respond to the selector.
+
+If the class of the object does implement the forwarding method, and the returned value is valid, it is returned to the original caller.
+
+If an invalid value is returned (i.e.\ is \verb=NULL=), the object is given another chance, to simple no-op the function call. This can be done using the \verb=dropsUnrecognizedMessage:= method, which returns \verb=BOOL= whether to drop the message, or not. If the class doesn't implement this method, \verb=NO= is assumed automatically and the program gets aborted.
+
+The run-time base class \verb=MRObject= implements both methods, the first one always returns \verb=NULL= and warns the user, the second one returning \verb=NO= forcing the program to crash in case the object doesn't recognize a selector.
+
+Figure ~\ref{fig:forwarding_proxy_class} shows how a proxy class could be implemented. Using this mechanism, proxy calls are only 5 times slower than direct calls.
+
+\begin{figure}[htbp] 
+  \begin{verbatim}
+    @interface MRProxy : MRObject {
+      id _proxyObject;
+    }
+    
+    +(MRProxy*)proxyWithObject:(id)obj;
+    
+    @end
+    
+    
+    @implementation MRProxy
+    
+    /** ... */
+    
+    -(Method)forwardedMethodForSelector:(SEL)selector{
+      /** 
+       * Simply call the lookup method, targetting
+       * the proxy object instead. If the proxy object
+       * doesn't implement it, NULL is returned.
+       *
+       * You may use objc_object_lookup_method, as well,
+       * though objc_object_lookup_method will start
+       * the forwarding mechanism again, if the proxy
+       * object doesn't recognize the selector.
+       */
+      return objc_lookup_instance_method(_proxyObject, 
+                                          selector);
+    }
+    
+    -(BOOL)dropsUnrecognizedMessage:(SEL)selector{
+      /** 
+       * Return NO, as there's no reason to drop it.
+       * Though, there could be a fall-back object 
+       * on the proxy, or a delegate, which could 
+       * return YES.
+       */
+      return NO;
+    }
+    
+    @end
+    
+  \end{verbatim}
+  \centering{}
+  \caption{A sample proxy class.}
+  \label{fig:forwarding_proxy_class}
+\end{figure}
+
+ 
 
 \section{Compatibility}
 
+// TODO
+
 \section{Extensibility of Classes}
 
-While the other run-times allow the user to specify extra space when allocating both a class and an object, it is very limiting as if you want to add this extra space, you need to replace the \verb=+alloc= method of \verb=NSObject=, but even so, it will not affect all classes in the run-time as not all objects are subclasses of \verb=NSObject= (e.g.\ \verb=NSProxy=).
+Besides the ability to compile and use the run-time on virtually any platform, the goal of this work is to create a run-time that is flexible in a sense that adding features to it is as easy as registering a single source code file with the run-time.
 
-This is why the modular run-time has introduced class extensions which allow developers to extend the run-time capabilities dynamically. Class extensions can be compared to the run-time delegates. The class extensions must get registered using the \verb=objc_class_add_extension()= function before the run-time gets initialized.
+While the other run-times allow the user to specify extra space when allocating both a class and an object, it is very limiting as if you want to add this extra space, you need to replace the \verb=+alloc= method of \verb=NSObject=, but even so, it will not affect all classes in the run-time as not all objects are subclasses of \verb=NSObject= (e.g.\ the \verb=NSProxy= class).
+
+This is why the modular run-time has introduced class extensions which allow developers to extend the run-time capabilities dynamically. Class extensions can be compared to the concept of delegates that is widely used in the Cocoa frameworks. 
+
+Whenever the run-time is about to do something that might be modified by an extension, each extension is consulted. Such actions include creating an object, looking up a method implementation (non-cached), etc.
+
+A class extension may get registered using the \verb=objc_class_add_extension()= function, however, it must be done before the run-time gets initialized using the \verb=objc_init= as has been described earlier in the section dedicated to the run-time setup.
 
 This function has a single argument: a pointer to a \verb=objc_class_extension= structure:
 
-\begin{verbatim}
-  typedef struct _objc_class_extension {
-    struct _objc_class_extension *next_extension;
+\begin{figure}[htbp] 
+  \begin{verbatim}
+    typedef struct _objc_class_extension {
 
-    void(*class_initializer)(Class, void*);
-    void(*object_initializer)(id, void*);
-    void(*object_deallocator)(id, void*);
-  
-    unsigned int extra_class_space;
-    unsigned int extra_object_space;
-  
-    unsigned int object_offset;
-} objc_class_extension;
-\end{verbatim}
+      struct _objc_class_extension *next_extension;
+      
+      objc_allocator_f(*object_allocator_for_class)(Class,
+                                                unsigned int);
+      objc_deallocator_f(*object_deallocator_for_object)(id,
+                                                unsigned int);
+      
+      void(*class_initializer)(Class, void*);
+      void(*object_initializer)(id, void*);
+      
+      void(*object_destructor)(id, void*);
+        
+      Method(*instance_lookup_function)(Class, SEL);
+      Method(*class_lookup_function)(Class, SEL);
+      
+      unsigned int extra_class_space;
+      unsigned int extra_object_space;
+      
+      unsigned int class_extra_space_offset;
+      unsigned int object_extra_space_offset;
+      
+    } objc_class_extension;
+  \end{verbatim}
+  \centering{}
+  \caption{Class extension structure.}
+  \label{fig:class_ext_struct}
+\end{figure}
 
-The first field, \verb=next_extension= is a pointer to the next extension as the run-time keeps class extensions in a linked list. The run-time populates this field automatically.
+The first field, \verb=next_extension= is a pointer to the next extension as the run-time keeps class extensions in a linked list. The run-time populates this field automatically and \emph{mustn't} be modified by the extension. 
 
-This field is followed by three function pointers:
+Unfortunately, this field has to be included directly in the structure, as at the time the extensions get to be registered (before it is initialized), the run-time doesn't have any access to memory-managing functions, hence cannot dynamically allocated any wrappers and linked lists to keep these structures in memory.
+
+The preferred way to handle this is to declare a static variable of type \newline{}\verb=objc_class_extension= which is then passed to the registering function by reference. An example can be seen in figure~\ref{fig:class_ext_struct_example}.
+
+\begin{figure}[here] 
+  \begin{verbatim}
+    objc_class_extension ao_extension = { 
+        /** ... */ 
+    };
+    
+    /** ... */
+    
+    objc_class_add_extension(&ao_extension);
+  \end{verbatim}
+  \centering{}
+  \caption{Example of registering a class extension.}
+  \label{fig:class_ext_struct_example}
+\end{figure}
+
+
+Here is a quick overview of each field within the extensions structure other than the \verb=next_extension= field. Note that all of the function pointers may be \texttt{NULL} if no action required.
 
 \begin{itemize}
-  \item{} \verb=class_initialize= - this function gets called each time a class is registered with the run-time using \verb=objc_finish_class()=. This is the place where the extra space, to which a pointer is passed as the second argument, should get populated and initialized.
+  \item{\bf{\tt{extra\_class\_space}}} This field marks how much extra space is required by the extension within the \texttt{Class} structure. If \texttt{0} is passed, no extra space will be allocated.
+  \item{\bf{\tt{extra\_object\_space}}} Similarly to the previous field, this field contains number of extra bytes required to be allocated within an object. Again, \texttt{0} means no extra space required.
+  \item{\bf{\tt{object\_allocator\_for\_class}}} In some cases, you might want to use a different allocator for either all, or just some classes, or based on the size of the object to be allocated, for example, in the kernel space a slab allocator may be used.
+  \item{\bf{\tt{object\_deallocator\_for\_object}}} The same way a different allocator may be used for a class, different deallocator is likely to be needed as well. Note, however, that if you have supplied the allocator for this particular object, you need to supply a deallocator as well! On the other hand, if you haven't allocated this object, you mustn't supply a deallocator.
+  While the deallocator gets the size as an argument, be warned that the size passed is the size an object of class \verb=obj->isa= would be were it to be allocated right now. Hence if \verb=obj->isa= has been modified since the allocation, the size argument \emph{may} be different. Of course, you may use the extra object space argument to note the real size there, or even to save a deallocator pointer in there. Anyway, consider the size argument only as a hint as the \verb=isa= pointer isn't likely to change in most cases.
+  See figure~\ref{fig:class_ext_dealloc_example} for an example.
+  \item{\bf{\tt{class\_initializer}}} If any action is required whenever a class is registered with the run-time, supply this function. It is possible to use this function both to initialize the extra space requested by the \texttt{extra\_class\_space} field, or to simply observe whenever a class gets registered with the run-time. Lazy allocation is preferred, however, as not all classes have to be used by the program running, hence no action \emph{should} be required to initialize the extra space as the space gets zero'ed by the run-time.
+  \item{\bf{\tt{object\_initializer}}} A sibling of the previous function field - in this case, whenever an object gets created, this function gets called, unless it is \texttt{NULL}. Again, objects get allocated by either the custom allocator supplied by a class extension, or by \verb=objc_zero_alloc= - a \verb=calloc= equivalent - an allocator that zeroes out the memory it allocates; so theoretically, there should be no need for this, unless you need to initialize the extra space with non-zero values. May be used to observe object creation, as well, counting objects created by the program.
+  \item{\bf{\tt{object\_destructor}}} If the class extension allocates dynamically some extra memory that is associated with objects, this is the place to free it. For example, the associated objects sample class extension may install a hash-table with associated objects onto each object. If it has, it needs to be deallocated when the object is deallocated as well.
+  There is no function that does a similar task for the space allocated on the class structure, as it is not expected for classes to be removed from the run-time.
+  \item{\bf{\tt{instance\_lookup\_function} and \tt{class\_lookup\_function}}} A class extension may extend the methods implemented by objects, or generate them on the fly as well. As has been described above, when the run-time doesn't find a cached method, it \emph{first} lets the extensions supply a method implementation - the ability to let class extensions override regular implementation, which lets categories to be implemented as a class extension.
+  \item{\bf{\tt{class\_extra\_space\_offset} and \tt{object\_extra\_space\_offset}}} These two fields get filled in by the run-time at the init time. When the run-time gets initialized, the class extensions get sealed (adding a class extension after this point aborts the program), iterated through and depending on how much extra space have the previous extensions requested, these two fields get filled in. It is important to realize that these offsets are offsets from the \emph{end} of the class structure or the object - hence the first class extension has offset \texttt{0}, while within the class structure, it is \texttt{sizeof(struct objc\_class) + class\_extra\_space\_offset}. There are two static inline functions \texttt{objc\_class\_extensions\_beginning} \newline{}and \texttt{objc\_object\_extensions\_beginning} which return the pointer to the end of the class structure, or after the object variables. For a better understanding, see the picture in figure~\ref{fig:class_ext_mem_usage_img}.
   
-  \item{} \verb=object_initializer= - any time an object is allocated, this function gets called in order to initialize the extra space in the object (again, the second argument is a pointer to the extra space within the structure).
-  
-  \item{} \verb=object_deallocator= - before the object gets deallocated, each class   extension is provided an option to deallocated any dynamically allocated structures.
 \end{itemize}
 
-These pointers are followed by three unsigned integers. The first two declare how much space is requested by this class extension for the class and object structures.
 
-The last field is populated by the run-time, when it is being initialized and tells the extension what is the offset in the extra space for this particular extension. When multiple extensions are installed, the extra space is divided among all the extensions. The following image illustrates this scenario: \newline{}
+\begin{figure}[htbp] 
+  \begin{verbatim}
+    struct obj_MyClass {
+      id isa;
+      int i;
+      double d;
+    };
+    
+    /** An object cache. */
+    #define CACHE_SIZE 128
+    static struct obj_MyClass my_class_obj_cache[CACHE_SIZE];
+    
+    void custom_deallocator(id obj){
+      /** Marking isa as NULL means that the
+       *  cache slot is free.
+       */
+      obj->isa = NULL;
+    }
+    
+    objc_deallocator_f custom_deallocator_lookup(id obj, 
+                                              unsigned int size){
+      if (obj < my_class_obj_cache || obj >= my_class_obj_cache 
+                    + sizeof(struct obj_MyClass) * CACHE_SIZE){
+        /** Obj isn't from this cache. */
+        return NULL;
+      }
+      return custom_deallocator;
+    }
+    
+    /** Custom allocator ... */
+    
+  \end{verbatim}
+  \centering{}
+  \caption{Example of a custom deallocator.}
+  \label{fig:class_ext_dealloc_example}
+\end{figure}
 
-\includegraphics[width=120mm]{img/class_extensions.png}
+\begin{figure}[htbp] 
+  
+  \includegraphics[width=\textwidth]{img/class_extensions.png}
+  
+  \centering{}
+  \caption{Example of how class extensions use memory within an object.}
+  \label{fig:class_ext_mem_usage_img}
+\end{figure}
 
-While it allows to extend the classes with new functionality, for example properties, or ARC (the \verb=object_deallocator= can do all the automatic deallocations), it poses an issue at the compile time - how much extra space should be left? The compiler needs to know the size of the class structure to generate.
+While this mechanism allows to extend the classes with new functionality, for example properties, or ARC (the \verb=object_deallocator= can do all the automatic deallocations), it poses an issue at the compile time - how much extra space should be left? The compiler needs to know the size of the class structure (or its prototype to be precise) to generate.
 
-One option is to re-allocate all classes with the extra space and copy over all pointers of the class internal structures (it is enough to copy over pointers as the memory will be kept alive). Assuming 1000 classes in a larger application, each class having 64 bytes + those extra bytes, this gives 64 kB of extra memory per application. While this isn't that much nowadays, it would slow down the application launch.
+One option is to re-allocate all classes with the extra space and copy over all pointers of the class internal structures (it is enough to copy over pointers as the memory will be kept alive). Assuming 1000 classes in a larger application, each class having 74 bytes (on a 64-bit computer running OS X 10.8), plus those extra bytes, this gives over 64 kB of extra memory per application. While this isn't that much nowadays, it would slow down the application launch and may present a problem when trying to use the run-time on some older or special systems, such as embedded systems.
 
 Other option is to dynamically allocate the extra space for each class, so the class structure stays of the same size, with the extra space being outside of the structure itself. This allows to add class functionality without the compiler support and without recompiling any previous classes (note that this applies only to classes - when allocating objects, we can compute the object size as it is not allowed to add class extensions after the run-time has been initialized).
 
-There is an example bundled with the run-time: associated objects (see \verb=extras/associated_objects.c=).
+There are two examples bundled with the run-time: associated objects (see \verb=extras/ao-ext.c=) and categories (see \texttt{extras/categs.c}). Both examples are discussed below the subsection on Performance.
+
+\textbf{Note:} While changing the fields of the class extension that declare the number of extra bytes required is technically possible, after the first object has been allocated, it will not allocate more space. To speed up object allocation, the sum of extra bytes required is cached. Changing these fields will only result in the class extensions reading (or writing over) other extension's memory, and possibly to unallocated memory altogether.
+
+\subsection{Performance}
+Just like anything, even adding class extension affects the performance somehow. If no extensions are installed in the run-time, the objects are created directly. If extensions get installed, the extension list needs to be iterated and for each extension, one extra function call is performed, if an object initializing function is installed. This iteration itself doesn't change the asymptotic complexity as the number of class extensions is a constant number, assumed to be a very small one. The only thing that can effect the performance is the object initializer function itself. A quick summary of performance overheads per each function follows.
+
+\begin{itemize}
+  \item{\bf{\tt{object\_allocator\_for\_class} and \tt{object\_deallocator\_for\_object}}} The overhead to supplying your own object allocator and deallocator is at least one function call - the run-time needs to call each extension's (de)allocator lookup (this function), if it returns a non-NULL (de)allocator. Assuming that there is only one extension that supplies pieces of memory depending on the instance size passed as the second argument of this function, the overhead is exactly one function, plus the logic within that function.
+  \item{\bf{\tt{class\_initializer}}} Common frameworks, such as AppKit and Foundation, include roughly 1000 classes each (which can be verified the aforementioned objc-dump tool), 2000 classes altogether, give or take. Which means 2000 function calls to an initializer for each class extension - per run. As has been mentioned, all of the initialization should be lazy, if possible.
+  \item{\bf{\tt{object\_initializer}}} Whenever an object is created, each class extension is given the opportunity to initialize its extra space. Again, all of initialization should be lazy, if possible as there may be many objects allocated that will not take advantage of your particular class extension.
+  \item{\bf{\tt{object\_destructor}}} Calling an object destructor is again only calling a function for each class extension. Assuming that number of class extensions is a small and constant number, one can compare such calls to releasing instance variables within the \texttt{dealloc} method - each class extension implementing the destructor would represent one variable.
+  \item{\bf{\tt{instance\_lookup\_function} and \tt{class\_lookup\_function}}} These two functions may look like they could present a major slow down as the lookup function should be as fast as possible. This would be true, unless the caching mechanism weren't in place. As has been described above, the run-time first looks into the cache. And only if the method isn't cached, the class extensions are called to look for the implementation, which is really only once per class per method.
+\end{itemize}
 
 \subsection{Associated Objects}
 
@@ -447,10 +639,7 @@ Then you can create some getter and setter functions for associated objects. To 
 
 \subsection{Categories}
 
-\subsection{Performance}
-Just like anything, even adding class extension effects the performance somehow. If no extensions are installed in the run-time, the objects are created directly. If extensions get installed, the extension list needs to be iterated and for each extension, one extra function call is performed. This iteration itself doesn't change the asymptotic complexity as the number of class extensions is constant number, usually a very small one. The only thing that can effect the performance is the object initializer function itself.
 
-To speed things up even more for extensions that lazy-initialize their structures (as described in the Associated Objects example), the run-time allows for any of the function pointers to be \verb=NULL= (this includes the \verb=object_deallocator= if your extension doesn't have to allocate dynamically any structures and hence doesn't need to deallocate any as well).
 
 \section{Internal Classes}
 \subsection{MRString}

@@ -58,6 +58,18 @@ typedef struct objc_method {
 	unsigned int version;
 } *Method;
 
+
+/**
+ * The same as objc_method, but char * instead
+ * of SEL.
+ */
+struct objc_method_prototype {
+	const char *selector_name;
+	const char *types;
+	IMP implementation;
+	unsigned int version;
+};
+
 /**
  * Declaration of an Ivar.
  */
