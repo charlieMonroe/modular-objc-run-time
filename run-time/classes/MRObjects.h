@@ -9,7 +9,4 @@ typedef struct {
 	unsigned int retain_count;
 } MRObject_instance_t;
 
-extern Class MRObject;
-extern Class MRString;
-
 #endif /** _MRObject_H_ */

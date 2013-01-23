@@ -57,6 +57,13 @@ static struct objc_method _objc_nil_receiver_method = {
 	0 /** Version */
 };
 
+/**
+ * Class structures are versioned. If a class prototype of a different
+ * version is encountered, it is either ignored, if the version is
+ * 
+ */
+#define OBJC_MAX_CLASS_VERSION_SUPPORTED ((unsigned int)0)
+
 /***** PRIVATE FUNCTIONS *****/
 
 /**
@@ -360,7 +367,7 @@ OBJC_INLINE void _add_methods_to_method_list(objc_array method_list, Method *m, 
 	 * +1 is for the NULL termination.
 	 */
 	Method *methods_copy = objc_alloc((count + 1) * sizeof(Method));
-	int i;
+	unsigned int i;
 	for (i = 0; i < count; ++i){
 		methods_copy[i] = m[i];
 	}
@@ -798,7 +805,7 @@ OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector){
 	
 	if (method == NULL){
 		/* Not found! Prepare for forwarding. */
-		objc_log("Called super to class %s, which doesn't implement selector %s.", sup->class->name, selector == NULL ? "(null)" : selector->name);
+		objc_log("Called super to class %s, which doesn't implement selector %s.\n", sup->class->name, selector == NULL ? "(null)" : selector->name);
 		if (_forward_method_invocation(sup->receiver, selector)){
 			return &_objc_nil_receiver_method;
 		}else{
@@ -808,6 +815,140 @@ OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector){
 	}
 	
 	return method;
+}
+
+OBJC_INLINE BOOL _validate_prototype(struct objc_class_prototype *prototype) OBJC_ALWAYS_INLINE;
+OBJC_INLINE BOOL _validate_prototype(struct objc_class_prototype *prototype){
+	if (prototype->name == NULL || objc_strlen(prototype->name) == 0){
+		objc_log("Trying to register a prototype of a class with NULL or empty name.\n");
+		return NO;
+	}
+	
+	if (objc_class_holder_lookup(objc_classes, prototype->name) != NULL){
+		objc_log("Trying to register a prototype of class %s, but such a class has already been registered.\n", prototype->name);
+		return NO;
+	}
+	
+	if (prototype->super_class_name != NULL && objc_class_holder_lookup(objc_classes, prototype->super_class_name) == NULL){
+		objc_log("Trying to register a prototype of class %s, but its superclass %s hasn't been registered yet.\n", prototype->name, prototype->super_class_name);
+		return NO;
+	}
+	
+	if (prototype->isa != NULL){
+		objc_log("Trying to register a prototype of class %s that has non-NULL isa pointer.\n", prototype->name);
+		return NO;
+	}
+	
+	if (prototype->instance_cache != NULL || prototype->class_cache != NULL){
+		objc_log("Trying to register a prototype of class %s that already has a non-NULL cache.\n", prototype->name);
+		return NO;
+	}
+	
+	if (prototype->version > OBJC_MAX_CLASS_VERSION_SUPPORTED){
+		objc_log("Trying to register a prototype of class %s of a future version (%u).\n", prototype->name, prototype->version);
+		return NO;
+	}
+	
+	return YES;
+}
+
+OBJC_INLINE objc_array _transform_method_prototypes(struct objc_method_prototype **method_prototypes){
+	objc_array arr;
+	Method *methods;
+	unsigned int i = 0;
+	
+	if (method_prototypes == NULL){
+		return NULL;
+	}
+	
+	arr = objc_array_create();
+	
+	while (method_prototypes[i] != NULL) {
+		struct objc_method_prototype *prototype = method_prototypes[i];
+		Method m = (Method)prototype;
+		
+		m->selector = objc_selector_register(prototype->selector_name);
+		
+		++i;
+	}
+	
+	
+	methods = (Method*)method_prototypes;
+	objc_array_append(arr, methods);
+	return arr;
+}
+
+OBJC_INLINE void _add_ivars_from_prototype(Class cl, Ivar *ivars) OBJC_ALWAYS_INLINE;
+OBJC_INLINE void _add_ivars_from_prototype(Class cl, Ivar *ivars){
+	if (cl->super_class != Nil){
+		cl->instance_size = cl->super_class->instance_size;
+	}
+	
+	if (ivars == NULL){
+		/** No ivars. */
+		return;
+	}
+	
+	cl->ivars = objc_array_create();
+	
+	while (*ivars != NULL) {
+		objc_array_append(cl->ivars, *ivars);
+		cl->instance_size += (*ivars)->size;
+		
+		++ivars;
+	}
+}
+
+OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype) OBJC_ALWAYS_INLINE;
+OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype){
+	Class cl;
+	
+	/** First, validation. */
+	if (!_validate_prototype(prototype)){
+		return Nil;
+	}
+	
+	if (prototype->version != OBJC_MAX_CLASS_VERSION_SUPPORTED){
+		/**
+		 * This is the place where in the future, if the class
+		 * prototype gets modified, any compatibility transformations
+		 * should be performed.
+		 */
+		objc_log("This run-time doesn't have implemented class prototype conversion %u -> %u.\n", prototype->version, OBJC_MAX_CLASS_VERSION_SUPPORTED);
+		objc_abort("Cannot convert class prototype.\n");
+	}
+	
+	cl = (Class)prototype;
+	
+	/**
+	 * What needs to be done:
+	 *
+	 * 1) Lookup and connect superclass.
+	 * 2) Connect isa.
+	 * 3) Transform class method prototypes to objc_array.
+	 * 4) Ditto with instance methods.
+	 * 5) Add ivars and calculate instance size.
+	 * 6) Mark as not in construction.
+	 * 7) Add to the class lists.
+	 */
+	
+	if (prototype->super_class_name != NULL){
+		cl->super_class = objc_class_holder_lookup(objc_classes, prototype->super_class_name);
+	}
+	
+	cl->isa = cl;
+	
+	cl->class_methods = _transform_method_prototypes(prototype->class_methods);
+	cl->instance_methods = _transform_method_prototypes(prototype->instance_methods);
+	
+	_add_ivars_from_prototype(cl, prototype->ivars);
+	
+	cl->flags.in_construction = NO;
+	
+	objc_class_holder_insert(objc_classes, cl);
+	objc_array_append(objc_classes_array, cl);
+	
+	return cl;
 }
 
 
@@ -1221,7 +1362,7 @@ void objc_object_deallocate(id obj){
 		ext = ext->next_extension;
 	}
 	
-	objc_dealloc(obj);
+	deallocator(obj);
 }
 Method objc_object_lookup_method(id obj, SEL selector){
 	return _lookup_method(obj, selector);
@@ -1248,7 +1389,8 @@ Class objc_class_get_superclass(Class cl){
 }
 
 /***** IVAR-RELATED *****/
-
+#pragma mark -
+#pragma mark Ivar-related
 Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigned int alignment, const char *types){
 	Ivar variable;
 	
@@ -1296,8 +1438,31 @@ Ivar *objc_class_get_ivar_list(Class cl){
 	return ivars;
 }
 
+/***** PROTOTYPE-RELATED *****/
+#pragma mark -
+#pragma mark Prototype-related
+
+Class objc_class_register_prototype(struct objc_class_prototype *prototype){
+	Class cl;
+	objc_rw_lock_wlock(objc_runtime_lock);
+	cl = _register_prototype(prototype);
+	objc_rw_lock_unlock(objc_runtime_lock);
+	return cl;
+}
+void objc_class_register_prototypes(struct objc_class_prototype *prototypes[]){
+	unsigned int i = 0;
+	objc_rw_lock_wlock(objc_runtime_lock);
+	while (prototypes[i] != NULL){
+		_register_prototype(prototypes[i]);
+		++i;
+	}
+	objc_rw_lock_unlock(objc_runtime_lock);
+}
+
 
 /***** EXTENSION-RELATED *****/
+#pragma mark -
+#pragma mark Extension-related
 
 void objc_class_add_extension(objc_class_extension *extension){
 	if (objc_classes != NULL){
@@ -1315,6 +1480,8 @@ void objc_class_add_extension(objc_class_extension *extension){
 }
 
 /**** CACHE-RELATED ****/
+#pragma mark -
+#pragma mark Cache-related
 
 /**
  * Flushing caches is a little tricky. As the structure is
@@ -1353,6 +1520,9 @@ void objc_class_flush_class_cache(Class cl){
 }
 
 /***** INITIALIZATION *****/
+
+#pragma mark -
+#pragma mark Initializator-related
 void objc_class_init(void){
 	/* Cache the extension offsets */
 	objc_class_extension *ext = class_extensions;

@@ -17,9 +17,9 @@ typedef signed char BOOL;
  
 /********** Class ***********/
 /**
- * Opaque declaration of a Class. The actual structure is private to
- * the run-time, declared in class.c.
+ * Declaration of a Class.
  */
+
 typedef struct objc_class *Class;
 
 /* A definition of a SEL. */
@@ -129,5 +129,59 @@ typedef struct _objc_array_enumerator {
 /* A definition for a read/write lock. */
 typedef void *objc_rw_lock;
 
+
+/* Actual structure of Class. */
+struct objc_class {
+	Class isa; /* Points to self - this way the lookup mechanism detects class method calls */
+	Class super_class;
+	char *name;
+	
+	/*
+	 * Both class and instance methods and ivars are actually
+	 * arrays of arrays - each item of this objc_array is a pointer
+	 * to a C array of methods/ivars.
+	 *
+	 * WARNING: All of them are lazily created -> may be NULL!
+	 */
+	objc_array class_methods;
+	objc_array instance_methods;
+	objc_array ivars;
+	
+	/* Cache */
+	objc_cache class_cache;
+	objc_cache instance_cache;
+	
+	unsigned int instance_size; /* Doesn't include class extensions */
+	unsigned int version; /** Right now 0. */
+	struct {
+		BOOL in_construction : 1;
+	} flags;
+	
+	void *extra_space;
+};
+
+/** Class prototype. */
+struct objc_class_prototype {
+	Class isa; /* Must be NULL! */
+	const char *super_class_name;
+	const char *name;
+	
+	/** All must be NULL-terminated. */
+	struct objc_method_prototype **class_methods;
+	struct objc_method_prototype **instance_methods;
+	Ivar *ivars;
+	
+	/* Cache - all pointers must be NULL */
+	objc_cache class_cache;
+	objc_cache instance_cache;
+	
+	unsigned int instance_size; /* Will be filled */
+	unsigned int version; /** Right now 0. */
+	struct {
+		BOOL in_construction : 1; /* Must be YES */
+	} flags;
+	
+	void *extra_space; /* Must be NULL */
+};
 
 #endif /* OBJC_TYPES_H_ */

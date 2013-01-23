@@ -10,45 +10,151 @@
 /*************** MRObject ***************/
 /** MRObject class, ivars and methods. */
 
-static struct objc_class MRObject_str = {
-	NULL, /** isa pointer gets connected in the init function. */
+static struct objc_method_prototype _C_MRObject_alloc_mp = {
+	"alloc",
+	"@@:",
+	(IMP)_C_MRObject_alloc_,
+	0
+};
+
+static struct objc_method_prototype _C_MRObject_new_mp = {
+	"new",
+	"@@:",
+	(IMP)_C_MRObject_new_,
+	0
+};
+
+static struct objc_method_prototype _I_MRObject_init_mp = {
+	"init",
+	"@@:",
+	(IMP)_I_MRObject_init_,
+	0
+};
+
+static struct objc_method_prototype _I_MRObject_retain_mp = {
+	"retain",
+	"@@:",
+	(IMP)_I_MRObject_retain_,
+	0
+};
+
+static struct objc_method_prototype _C_MRObject_retain_mp = {
+	"retain",
+	"@@:",
+	(IMP)_C_MRObject_retain_noop_,
+	0
+};
+
+static struct objc_method_prototype _I_MRObject_release_mp = {
+	"release",
+	"v@:",
+	(IMP)_I_MRObject_release_,
+	0
+};
+
+static struct objc_method_prototype _C_MRObject_release_mp = {
+	"release",
+	"v@:",
+	(IMP)_C_MRObject_release_noop_,
+	0
+};
+
+static struct objc_method_prototype _I_MRObject_dealloc_mp = {
+	"dealloc",
+	"v@:",
+	(IMP)_I_MRObject_dealloc_,
+	0
+};
+
+static struct objc_method_prototype _I_MRObject_forwardedMethodForSelector_mp = {
+	"forwardedMethodForSelector:",
+	"^@::",
+	(IMP)_IC_MRObject_forwardedMethodForSelector_,
+	0
+};
+
+static struct objc_method_prototype _C_MRObject_forwardedMethodForSelector_mp = {
+	"forwardedMethodForSelector:",
+	"^@::",
+	(IMP)_IC_MRObject_forwardedMethodForSelector_,
+	0
+};
+
+static struct objc_method_prototype _I_MRObject_dropsUnrecognizedMessage_mp = {
+	"dropsUnrecognizedMessage:",
+	"B@::",
+	(IMP)_IC_MRObject_dropsUnrecognizedMessage_,
+	0
+};
+
+static struct objc_method_prototype _C_MRObject_dropsUnrecognizedMessage_mp = {
+	"dropsUnrecognizedMessage:",
+	"B@::",
+	(IMP)_IC_MRObject_dropsUnrecognizedMessage_,
+	0
+};
+
+
+static struct objc_method_prototype *MRObject_class_methods[] = {
+	&_C_MRObject_alloc_mp,
+	&_C_MRObject_new_mp,
+	&_C_MRObject_release_mp,
+	&_C_MRObject_retain_mp,
+	&_C_MRObject_forwardedMethodForSelector_mp,
+	&_C_MRObject_dropsUnrecognizedMessage_mp,
+	NULL
+};
+
+static struct objc_method_prototype *MRObject_instance_methods[] = {
+	&_I_MRObject_init_mp,
+	&_I_MRObject_retain_mp,
+	&_I_MRObject_release_mp,
+	&_I_MRObject_dealloc_mp,
+	&_I_MRObject_forwardedMethodForSelector_mp,
+	&_I_MRObject_dropsUnrecognizedMessage_mp,
+	NULL
+};
+
+
+static struct objc_ivar _MRObject_isa_ivar = {
+	"isa",
+	"#",
+	sizeof(Class),
+	0
+};
+
+static struct objc_ivar _MRObject_retain_count_ivar = {
+	"retain_count",
+	"I",
+	sizeof(unsigned int),
+	sizeof(Class)
+};
+
+static Ivar MRObject_ivars[] = {
+	&_MRObject_isa_ivar,
+	&_MRObject_retain_count_ivar,
+	NULL
+};
+
+static struct objc_class_prototype MRObject_class = {
+	NULL, /** isa pointer gets connected when registering. */
 	NULL, /** Root class */
 	"MRObject",
-	NULL, /** Class methods */
-	NULL, /** Instance methods */
-	NULL, /** Ivars */
+	MRObject_class_methods, /** Class methods */
+	MRObject_instance_methods, /** Instance methods */
+	MRObject_ivars, /** Ivars */
 	NULL, /** Class cache. */
 	NULL, /** Instance cache. */
 	0, /** Instance size - computed from ivars. */
+	0, /** Version. */
 	{
 		YES /** In construction. */
 	}
 };
 
-static struct objc_method_prototype _C_MRObject_alloc_mp = {
-	"alloc",
-	"@@:",
-	(IMP)&_C_MRObject_alloc_,
-	0
-};
-
-static struct objc_method_prototype _I_MRObject_retain_mp = {
-	"alloc",
-	"@@:",
-	(IMP)&_C_MRObject_alloc_,
-	0
-};
-
-
-
-static struct objc_method_prototype *MRObject_class_methods[] = {
-	&_C_MRObject_alloc_mp
-};
-
-
-static struct objc_class MRString_str = {
-	NULL, /** isa pointer gets connected in the init function. */
-	&MRObject_str, /** Superclass */
+static struct objc_class_prototype MRString_class = {
+	NULL, /** isa pointer gets connected when registering. */
+	"MRObject", /** Superclass */
 	"MRString",
 	NULL, /** Class methods */
 	NULL, /** Instance methods */
@@ -56,17 +162,19 @@ static struct objc_class MRString_str = {
 	NULL, /** Class cache. */
 	NULL, /** Instance cache. */
 	0, /** Instance size - computed from ivars. */
+	0, /** Version. */
 	{
 		YES /** In construction. */
 	}
 };
 
 
-
-Class MRObject = &MRObject_str;
-Class MRString = &MRString_str;
-
-
 void objc_install_base_classes(void){
+	struct objc_class_prototype *classes[] = {
+		&MRObject_class,
+		NULL
+	};
+	
+	objc_class_register_prototypes(classes);
 	
 }

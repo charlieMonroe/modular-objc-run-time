@@ -174,9 +174,10 @@ void objc_runtime_init(void){
 		_objc_runtime_validate_function_pointers();
 	}
 	
-	/* Initialize classes */
-	objc_class_init();
+	/* Initialize inner structures */
 	objc_selector_init();
+	objc_class_init();
+	objc_install_base_classes();
 	
 	objc_runtime_has_been_initialized = YES;
 	objc_runtime_is_initializing = NO;
