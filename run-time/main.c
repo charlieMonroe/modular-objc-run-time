@@ -5,6 +5,7 @@
 #include "class.h"
 #include "method.h"
 #include "selector.h"
+#include "classes/MRObjects.h"
 
 #include "extras/ao-ext.h"
 
@@ -329,9 +330,14 @@ static void forwarding_test(void){
 	
 }
 
-int main(int argc, const char * argv[]){	
+int main(int argc, const char * argv[]){
+	id my_string;
+	
 	create_classes();
 	list_classes();
+	
+	OBJC_STRING(my_string, "Hello");
+	MRString_instance_t *inst = (MRString_instance_t *)my_string;
 	
 	method_dispatch_test();
 	method_dispatch_test_via_ivar_setters();

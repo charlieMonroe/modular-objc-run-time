@@ -136,7 +136,14 @@ static Ivar MRObject_ivars[] = {
 	NULL
 };
 
-static struct objc_class_prototype MRObject_class = {
+/**
+ * Non-static to export a pointer to the classes directly.
+ *
+ * In particular, the MRString export allows compile-time
+ * creation of static strings.
+ */
+
+struct objc_class_prototype MRObject_class = {
 	NULL, /** isa pointer gets connected when registering. */
 	NULL, /** Root class */
 	"MRObject",
@@ -152,7 +159,7 @@ static struct objc_class_prototype MRObject_class = {
 	}
 };
 
-static struct objc_class_prototype MRString_class = {
+struct objc_class_prototype MRString_class = {
 	NULL, /** isa pointer gets connected when registering. */
 	"MRObject", /** Superclass */
 	"MRString",
@@ -167,7 +174,6 @@ static struct objc_class_prototype MRString_class = {
 		YES /** In construction. */
 	}
 };
-
 
 void objc_install_base_classes(void){
 	struct objc_class_prototype *classes[] = {
