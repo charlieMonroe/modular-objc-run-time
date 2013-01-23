@@ -817,6 +817,25 @@ OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector){
 	return method;
 }
 
+OBJC_INLINE void _register_class_with_extensions(Class cl) OBJC_ALWAYS_INLINE;
+OBJC_INLINE void _register_class_with_extensions(Class cl){
+	objc_class_extension *ext;
+	char *extra_space;
+	
+	/* Pass the class through all extensions */
+	ext = class_extensions;
+	extra_space = (char*)cl->extra_space;
+	if (extra_space != NULL){
+		while (ext != NULL) {
+			if (ext->class_initializer != NULL){
+				ext->class_initializer(cl, (void*)extra_space);
+			}
+			extra_space += ext->extra_class_space;
+			ext = ext->next_extension;
+		}
+	}
+}
+
 OBJC_INLINE BOOL _validate_prototype(struct objc_class_prototype *prototype) OBJC_ALWAYS_INLINE;
 OBJC_INLINE BOOL _validate_prototype(struct objc_class_prototype *prototype){
 	if (prototype->name == NULL || objc_strlen(prototype->name) == 0){
@@ -902,6 +921,7 @@ OBJC_INLINE void _add_ivars_from_prototype(Class cl, Ivar *ivars){
 OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype) OBJC_ALWAYS_INLINE;
 OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype){
 	Class cl;
+	unsigned int extra_space;
 	
 	/** First, validation. */
 	if (!_validate_prototype(prototype)){
@@ -928,8 +948,9 @@ OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype){
 	 * 3) Transform class method prototypes to objc_array.
 	 * 4) Ditto with instance methods.
 	 * 5) Add ivars and calculate instance size.
-	 * 6) Mark as not in construction.
-	 * 7) Add to the class lists.
+	 * 6) Allocate extra space and register with extensions.
+	 * 7) Mark as not in construction.
+	 * 8) Add to the class lists.
 	 */
 	
 	if (prototype->super_class_name != NULL){
@@ -942,6 +963,15 @@ OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype){
 	cl->instance_methods = _transform_method_prototypes(prototype->instance_methods);
 	
 	_add_ivars_from_prototype(cl, prototype->ivars);
+	
+	extra_space = _extra_class_space_for_extensions();
+	if (extra_space != 0){
+		cl->extra_space = objc_zero_alloc(extra_space);
+	}else{
+		cl->extra_space = NULL;
+	}
+	
+	_register_class_with_extensions(cl);
 	
 	cl->flags.in_construction = NO;
 	
@@ -1167,26 +1197,12 @@ id objc_class_create_instance(Class cl, unsigned int extra_bytes){
 	return obj;
 }
 void objc_class_finish(Class cl){
-	objc_class_extension *ext;
-	char *extra_space;
-	
 	if (cl == Nil){
 		objc_abort("Cannot finish a NULL class!\n");
 		return;
 	}
 	
-	/* Pass the class through all extensions */
-	ext = class_extensions;
-	extra_space = (char*)cl->extra_space;
-	if (extra_space != NULL){
-		while (ext != NULL) {
-			if (ext->class_initializer != NULL){
-				ext->class_initializer(cl, (void*)extra_space);
-			}
-			extra_space += ext->extra_class_space;
-			ext = ext->next_extension;
-		}
-	}
+	_register_class_with_extensions(cl);
 	
 	/* That's it! Just mark it as not in construction */
 	cl->flags.in_construction = NO;
