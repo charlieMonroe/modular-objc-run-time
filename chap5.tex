@@ -384,11 +384,13 @@ Creating and draining the autorelease pool, however, puts another overhead in th
 
 \subsection{GCC Run-Time}
 
-// TODO
+The GCC run-time doesn't need any additional classes, instead it has two forwarding hooks (functions) which both get the selector as an argument and should return an \verb=IMP= pointer. The second hook also takes the receiver object as an argument.
+
+If neither hook is installed, or neither returns a valid implementation pointer, the run-time goes on, trying to send a \verb=forward::= message to the object. If the object doesn't implement this method, the run-time tries to call \verb=doesNotRecognize:=. If that isn't implemented as well, the program aborts.
 
 \subsection{Modular Run-Time}
  
-The approach the modular run-time takes on forwarding calls is a little bit different. The forwarding mechanism in the modular run-time is much easier, doesn't require \emph{any} classes whatsoever - all it requires is for the class to implement two simple methods in order to forward the calls.
+The approach the modular run-time takes on forwarding calls is a little bit different, though quite similar in many ways. The forwarding mechanism in the modular run-time is much easier, doesn't require \emph{any} classes whatsoever - all it requires is for the class to implement two simple methods in order to forward the calls.
 
 When the run-time doesn't find the method cached, no class extension returns a valid method and the class, nor its superclasses implement a method with the particular selector, forwarding comes in place.
 
@@ -397,6 +399,8 @@ The run-time looks up another method - with a selector \verb=forwardedMethodForS
 If the class of the object does implement the forwarding method, and the returned value is valid, it is returned to the original caller.
 
 If an invalid value is returned (i.e.\ is \verb=NULL=), the object is given another chance, to simple no-op the function call. This can be done using the \verb=dropsUnrecognizedMessage:= method, which returns \verb=BOOL= whether to drop the message, or not. If the class doesn't implement this method, \verb=NO= is assumed automatically and the program gets aborted.
+
+When the object decides to drop the message, the same method gets returned as if the receiver were \verb=nil= - a no-op function. This way, the run-time doesn't need to, unlike the GCC run-time handle the different return types of the function. The ``nil function" is common to methods of all signatures as the hidden argument gets lost, anyway.
 
 The run-time base class \verb=MRObject= implements both methods, the first one always returns \verb=NULL= and warns the user, the second one returning \verb=NO= forcing the program to crash in case the object doesn't recognize a selector.
 

@@ -73,8 +73,11 @@
 \contentsline {section}{\numberline {5.9}Ports}{54}{section.5.9}
 \contentsline {subsection}{\numberline {5.9.1}Windows 3.11}{54}{subsection.5.9.1}
 \contentsline {subsection}{\numberline {5.9.2}HeSiVa}{54}{subsection.5.9.2}
-\contentsline {chapter}{Conclusion}{55}{chapter*.21}
-\contentsline {chapter}{Bibliography}{56}{chapter*.22}
-\contentsline {chapter}{List of Figures}{57}{chapter*.22}
-\contentsline {chapter}{List of Abbreviations}{58}{chapter*.24}
-\contentsline {chapter}{Attachments}{59}{chapter*.25}
+\contentsline {chapter}{\numberline {6}Known Issues}{55}{chapter.6}
+\contentsline {section}{\numberline {6.1}Forwarding}{55}{section.6.1}
+\contentsline {chapter}{\numberline {7}Future Work}{56}{chapter.7}
+\contentsline {chapter}{Conclusion}{57}{chapter*.21}
+\contentsline {chapter}{Bibliography}{58}{chapter*.22}
+\contentsline {chapter}{List of Figures}{59}{chapter*.22}
+\contentsline {chapter}{List of Abbreviations}{60}{chapter*.24}
+\contentsline {chapter}{Attachments}{61}{chapter*.25}
