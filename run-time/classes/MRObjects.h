@@ -12,13 +12,13 @@ typedef struct {
 typedef struct {
 	Class isa;
 	unsigned int retain_count;
-	const char *string;
-} MRString_instance_t;
+	const char *c_string;
+} __MRConstString_instance_t;
 
 extern struct objc_class_prototype MRObject_class;
-extern struct objc_class_prototype MRString_class;
+extern struct objc_class_prototype __MRConstString_class;
 
-#define OBJC_STRING(VAR_NAME, STR) static MRString_instance_t VAR_NAME##_stat_str = { (Class)(&MRString_class), 1, STR };\
+#define OBJC_STRING(VAR_NAME, STR) static __MRConstString_instance_t VAR_NAME##_stat_str = { (Class)(&__MRConstString_class), 1, STR };\
 							     VAR_NAME = (id)&VAR_NAME##_stat_str;
 
 

@@ -10,6 +10,9 @@
 /*************** MRObject ***************/
 /** MRObject class, ivars and methods. */
 
+#pragma mark -
+#pragma mark MRObject
+
 static struct objc_method_prototype _C_MRObject_alloc_mp = {
 	"alloc",
 	"@@:",
@@ -156,28 +159,78 @@ struct objc_class_prototype MRObject_class = {
 	0, /** Version. */
 	{
 		YES /** In construction. */
-	}
+	},
+	NULL /** Extra space */
 };
 
-struct objc_class_prototype MRString_class = {
+#pragma mark -
+#pragma mark __MRConstString
+
+static struct objc_method_prototype _I___MRConstString_retain_mp = {
+	"retain",
+	"@@:",
+	(IMP)_C_MRObject_retain_noop_, /** We can use the no-op class implementation. */
+	0
+};
+
+static struct objc_method_prototype _I___MRConstString_release_mp = {
+	"release",
+	"v@:",
+	(IMP)_C_MRObject_release_noop_,
+	0
+};
+
+static struct objc_method_prototype _I___MRConstString_cString_mp = {
+	"cString",
+	"^@:",
+	(IMP)_I___MRConstString_cString_,
+	0
+};
+
+static struct objc_method_prototype *__MRConstString_instance_methods[] = {
+	&_I___MRConstString_cString_mp,
+	&_I___MRConstString_release_mp,
+	&_I___MRConstString_retain_mp,
+	NULL
+};
+
+
+static struct objc_ivar ___MRConstString_cString_ivar = {
+	"c_string",
+	"^",
+	sizeof(const char *),
+	sizeof(MRObject_instance_t)
+};
+
+static Ivar __MRConstString_ivars[] = {
+	&___MRConstString_cString_ivar,
+	NULL
+};
+
+struct objc_class_prototype __MRConstString_class = {
 	NULL, /** isa pointer gets connected when registering. */
 	"MRObject", /** Superclass */
-	"MRString",
+	"__MRConstString",
 	NULL, /** Class methods */
-	NULL, /** Instance methods */
-	NULL, /** Ivars */
+	__MRConstString_instance_methods, /** Instance methods */
+	__MRConstString_ivars, /** Ivars */
 	NULL, /** Class cache. */
 	NULL, /** Instance cache. */
 	0, /** Instance size - computed from ivars. */
 	0, /** Version. */
 	{
 		YES /** In construction. */
-	}
+	},
+	NULL /** Extra space. */
 };
+
+#pragma mark -
+#pragma mark Class Installer
 
 void objc_install_base_classes(void){
 	struct objc_class_prototype *classes[] = {
 		&MRObject_class,
+		&__MRConstString_class,
 		NULL
 	};
 	

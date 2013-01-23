@@ -5,6 +5,8 @@
 #include "class.h"
 #include "selector.h"
 
+#pragma mark MRObject
+
 id _C_MRObject_alloc_(id self, SEL _cmd){
 	MRObject_instance_t *instance = (MRObject_instance_t*)objc_class_create_instance((Class)self, 0);
 	instance->retain_count = 1;
@@ -84,3 +86,9 @@ BOOL _IC_MRObject_dropsUnrecognizedMessage_(MRObject_instance_t *self, SEL _cmd,
 	return NO;
 }
 
+#pragma mark -
+#pragma mark __MRConstString
+
+const char *_I___MRConstString_cString_(__MRConstString_instance_t *self, SEL _cmd){
+	return self->c_string;
+}

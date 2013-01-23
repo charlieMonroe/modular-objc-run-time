@@ -19,4 +19,6 @@ extern void _I_MRObject_dealloc_(MRObject_instance_t *self, SEL _cmd);
 extern Method _IC_MRObject_forwardedMethodForSelector_(MRObject_instance_t *self, SEL _cmd, SEL selector);
 extern BOOL _IC_MRObject_dropsUnrecognizedMessage_(MRObject_instance_t *self, SEL _cmd, SEL selector);
 
+extern const char *_I___MRConstString_cString_(__MRConstString_instance_t *self, SEL _cmd);
+
 #endif /** _MRObjectMethods_H_ */

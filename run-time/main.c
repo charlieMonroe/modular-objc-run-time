@@ -337,7 +337,7 @@ int main(int argc, const char * argv[]){
 	list_classes();
 	
 	OBJC_STRING(my_string, "Hello");
-	MRString_instance_t *inst = (MRString_instance_t *)my_string;
+	__MRConstString_instance_t *inst = (__MRConstString_instance_t *)my_string;
 	
 	method_dispatch_test();
 	method_dispatch_test_via_ivar_setters();
