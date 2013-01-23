@@ -984,6 +984,9 @@ OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype){
 
 /***** PUBLIC FUNCTIONS *****/
 
+#pragma mark -
+#pragma mark Adding methods
+
 void objc_class_add_class_method(Class cl, Method m){
 	if (cl == NULL || m == NULL){
 		return;
@@ -1010,6 +1013,10 @@ Method *objc_class_get_instance_method_list(Class cl){
 	}
 	return _method_list_flatten(cl->instance_methods);
 }
+
+#pragma mark -
+#pragma mark Replacing methods
+
 IMP objc_class_replace_instance_method_implementation(Class cls, SEL name, IMP imp, const char *types){
 	Method m;
 	
@@ -1064,12 +1071,10 @@ IMP objc_class_replace_class_method_implementation(Class cls, SEL name, IMP imp,
 	}
 	return m == NULL ? NULL : m->implementation;
 }
-Method *objc_class_get_class_method_list(Class cl){
-	if (cl == Nil){
-		return NULL;
-	}
-	return _method_list_flatten(cl->class_methods);
-}
+
+#pragma mark -
+#pragma mark Creating classes
+
 Class objc_class_create(Class superclass, const char *name) {
 	Class newClass;
 	unsigned int extra_space;
@@ -1134,35 +1139,70 @@ Class objc_class_create(Class superclass, const char *name) {
 	
 	return newClass;
 }
-Class *objc_class_get_list(void){
-	unsigned int count = 0;
-	unsigned int i = 0;
-	objc_array_enumerator en;
-	Class *classes;
-	
-	en = objc_array_get_enumerator(objc_classes_array);
-	while (en != NULL){
-		++count;
-		en = en->next;
+void objc_class_finish(Class cl){
+	if (cl == Nil){
+		objc_abort("Cannot finish a NULL class!\n");
+		return;
 	}
 	
-	classes = (Class*)objc_alloc(sizeof(Class) * (count + 1));
+	_register_class_with_extensions(cl);
 	
-	en = objc_array_get_enumerator(objc_classes_array);
-	while (en != NULL && i < count) {
-		classes[i] = en->item;
-		++i;
-		en = en->next;
+	/* That's it! Just mark it as not in construction */
+	cl->flags.in_construction = NO;
+}
+
+#pragma mark -
+#pragma mark Responding to selectors
+
+BOOL objc_class_responds_to_instance_selector(Class cl, SEL selector){
+	return _lookup_instance_method(cl, selector) != NULL;
+}
+BOOL objc_class_responds_to_class_selector(Class cl, SEL selector){
+	return _lookup_class_method(cl, selector) != NULL;
+}
+
+
+#pragma mark -
+#pragma mark Regular lookup functions
+
+Method objc_lookup_class_method(Class cl, SEL selector){
+	return _lookup_class_method(cl, selector);
+}
+IMP objc_lookup_class_method_impl(Class cl, SEL selector){
+	/** No forwarding here! This is simply to lookup 
+	 * a method implementation.
+	 */
+	return _lookup_class_method_impl(cl, selector);
+}
+Method objc_lookup_instance_method(id obj, SEL selector){
+	if (obj == nil){
+		return NULL;
 	}
-	
-	/* NULL termination. */
-	classes[count] = NULL;
-	
-	return classes;
+	return _lookup_instance_method(obj->isa, selector);
 }
-void objc_complete_object(id instance){
-	_complete_object(instance);
+IMP objc_lookup_instance_method_impl(id obj, SEL selector){
+	if (obj == nil){
+		return NULL;
+	}
+	return _lookup_instance_method_impl(obj->isa, selector);
 }
+
+#pragma mark -
+#pragma mark Setting class of an object
+
+Class objc_object_set_class(id obj, Class new_class){
+	Class old_class;
+	if (obj == nil){
+		return Nil;
+	}
+	old_class = obj->isa;
+	obj->isa = new_class;
+	return old_class;
+}
+
+#pragma mark -
+#pragma mark Object creation, copying and destruction
+
 id objc_class_create_instance(Class cl, unsigned int extra_bytes){
 	id obj;
 	unsigned int size;
@@ -1196,16 +1236,128 @@ id objc_class_create_instance(Class cl, unsigned int extra_bytes){
 	
 	return obj;
 }
-void objc_class_finish(Class cl){
-	if (cl == Nil){
-		objc_abort("Cannot finish a NULL class!\n");
+void objc_object_deallocate(id obj){
+	objc_deallocator_f deallocator = objc_dealloc;
+	objc_class_extension *ext;
+	unsigned int size_of_obj;
+	
+	if (obj == nil){
 		return;
 	}
 	
-	_register_class_with_extensions(cl);
+	size_of_obj = _instance_size(obj->isa) + _extra_object_space_for_extensions();
 	
-	/* That's it! Just mark it as not in construction */
-	cl->flags.in_construction = NO;
+	_finalize_object(obj);
+	
+	ext = class_extensions;
+	while (ext != NULL) {
+		objc_deallocator_f ext_deallocator;
+		if (ext->object_deallocator_for_object != NULL){
+			ext_deallocator = ext->object_deallocator_for_object(obj, size_of_obj);
+			if (ext_deallocator != NULL){
+				deallocator = ext_deallocator;
+				break;
+			}
+		}
+		ext = ext->next_extension;
+	}
+	
+	deallocator(obj);
+}
+
+id objc_object_copy(id obj){
+	id copy;
+	unsigned int size;
+	
+	if (obj == nil){
+		return nil;
+	}
+	
+	size = _instance_size(obj->isa);
+	
+#warning TODO: use extensions to get allocator
+	
+	copy = objc_alloc(size);
+	
+	objc_copy_memory(obj, copy, size);
+	
+	return copy;
+}
+void objc_complete_object(id instance){
+	_complete_object(instance);
+}
+void objc_finalize_object(id instance){
+	_finalize_object(instance);
+}
+
+
+
+#pragma mark -
+#pragma mark Object lookup
+
+Method objc_object_lookup_method(id obj, SEL selector){
+	return _lookup_method(obj, selector);
+}
+Method objc_object_lookup_method_super(objc_super *sup, SEL selector){
+	return _lookup_method_super(sup, selector);
+}
+IMP objc_object_lookup_impl(id obj, SEL selector){
+	return _lookup_method(obj, selector)->implementation;
+}
+IMP objc_object_lookup_impl_super(objc_super *sup, SEL selector){
+	return _lookup_method_super(sup, selector)->implementation;
+}
+
+/***** INFORMATION GETTERS *****/
+#pragma mark -
+#pragma mark Information getters
+
+BOOL objc_class_in_construction(Class cl){
+	return cl->flags.in_construction;
+}
+const char *objc_class_get_name(Class cl){
+	return cl->name;
+}
+Class objc_class_get_superclass(Class cl){
+	return cl->super_class;
+}
+Class objc_object_get_class(id obj){
+	return obj == nil ? Nil : obj->isa;
+}
+unsigned int objc_class_instance_size(Class cl){
+	return _instance_size(cl);
+}
+Method *objc_class_get_class_method_list(Class cl){
+	if (cl == Nil){
+		return NULL;
+	}
+	return _method_list_flatten(cl->class_methods);
+}
+Class *objc_class_get_list(void){
+	unsigned int count = 0;
+	unsigned int i = 0;
+	objc_array_enumerator en;
+	Class *classes;
+	
+	en = objc_array_get_enumerator(objc_classes_array);
+	while (en != NULL){
+		++count;
+		en = en->next;
+	}
+	
+	classes = (Class*)objc_alloc(sizeof(Class) * (count + 1));
+	
+	en = objc_array_get_enumerator(objc_classes_array);
+	while (en != NULL && i < count) {
+		classes[i] = en->item;
+		++i;
+		en = en->next;
+	}
+	
+	/* NULL termination. */
+	classes[count] = NULL;
+	
+	return classes;
 }
 Class objc_class_for_name(const char *name){
 	Class c;
@@ -1222,73 +1374,57 @@ Class objc_class_for_name(const char *name){
 	
 	return c;
 }
-BOOL objc_class_responds_to_instance_selector(Class cl, SEL selector){
-	return _lookup_instance_method(cl, selector) != NULL;
-}
-BOOL objc_class_responds_to_class_selector(Class cl, SEL selector){
-	return _lookup_class_method(cl, selector) != NULL;
-}
-void objc_finalize_object(id instance){
-	_finalize_object(instance);
-}
-unsigned int objc_class_instance_size(Class cl){
-	return _instance_size(cl);
-}
-Method objc_lookup_class_method(Class cl, SEL selector){
-	return _lookup_class_method(cl, selector);
-}
-IMP objc_lookup_class_method_impl(Class cl, SEL selector){
-	IMP implementation = _lookup_class_method_impl(cl, selector);
-	if (implementation == NULL){
-		/* Not found! Prepare for forwarding. */
-		if (_forward_method_invocation((id)cl, selector)){
-			return _objc_nil_receiver_function;
-		}else{
-			_forwarding_not_supported_abort((id)cl, selector);
-			return NULL;
-		}
-	}
+
+
+/***** IVAR-RELATED *****/
+#pragma mark -
+#pragma mark Ivar-related
+
+Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigned int alignment, const char *types){
+	Ivar variable;
 	
-	return implementation;
-}
-Method objc_lookup_instance_method(id obj, SEL selector){
-	if (obj == nil){
+	if (cls == Nil || name == NULL || size == 0 || types == NULL){
 		return NULL;
 	}
-	return _lookup_instance_method(obj->isa, selector);
-}
-IMP objc_lookup_instance_method_impl(id obj, SEL selector){
-	IMP implementation;
-	if (obj == nil){
+	
+	if (!cls->flags.in_construction){
+		objc_log("Class %s isn't in construction!\n", cls->name);
+		objc_abort("Trying to add ivar to a class that isn't in construction.");
+	}
+	
+	if (_ivar_named(cls, name) != NULL){
+		objc_log("Class %s, or one of its superclasses already have an ivar named %s!\n", cls->name, name);
 		return NULL;
 	}
-	implementation = _lookup_instance_method_impl(obj->isa, selector);
-	if (implementation == NULL){
-		/* Not found! Prepare for forwarding. */
-		if (_forward_method_invocation(obj, selector)){
-			return _objc_nil_receiver_function;
-		}else{
-			_forwarding_not_supported_abort(obj, selector);
-			return NULL;
-		}
+	
+	variable = (Ivar)objc_alloc(sizeof(struct objc_ivar));
+	variable->name = objc_strcpy(name);
+	variable->type = objc_strcpy(types);
+	variable->size = size;
+	
+	/* The offset is the aligned end of the instance size. */
+	variable->offset = cls->instance_size;
+	if (alignment != 0 && (variable->offset % alignment) > 0){
+		variable->offset = (variable->offset + (alignment - 1)) & ~(alignment - 1);
 	}
 	
-	return implementation;
+	cls->instance_size = variable->offset + size;
+	
+	if (cls->ivars == NULL){
+		cls->ivars = objc_array_create();
+	}
+	objc_array_append(cls->ivars, variable);
+	
+	return variable;
 }
-id objc_object_copy(id obj){
-	id copy;
-	unsigned int size;
-	
-	if (obj == nil){
-		return nil;
-	}
-	
-	size = _instance_size(obj->isa);
-	copy = objc_alloc(size);
-	
-	objc_copy_memory(obj, copy, size);
-	
-	return copy;
+Ivar objc_class_get_ivar(Class cls, const char *name){
+	return _ivar_named(cls, name);
+}
+Ivar *objc_class_get_ivar_list(Class cl){
+	unsigned int number_of_ivars = _ivar_count(cl);
+	Ivar *ivars = objc_alloc(sizeof(Ivar) * (number_of_ivars + 1));
+	_ivars_copy_to_list(cl, ivars, number_of_ivars);
+	return ivars;
 }
 Ivar objc_object_get_variable_named(id obj, const char *name, void **out_value){
 	Ivar ivar;
@@ -1339,119 +1475,6 @@ void objc_object_set_variable(id obj, Ivar ivar, void *value){
 	}
 	
 	objc_copy_memory(value, (char*)obj + ivar->offset, ivar->size);
-}
-Class objc_object_get_class(id obj){
-	return obj == nil ? Nil : obj->isa;
-}
-Class objc_object_set_class(id obj, Class new_class){
-	Class old_class;
-	if (obj == nil){
-		return Nil;
-	}
-	old_class = obj->isa;
-	obj->isa = new_class;
-	return old_class;
-}
-void objc_object_deallocate(id obj){
-	objc_deallocator_f deallocator = objc_dealloc;
-	objc_class_extension *ext;
-	unsigned int size_of_obj;
-	
-	if (obj == nil){
-		return;
-	}
-	
-	size_of_obj = _instance_size(obj->isa) + _extra_object_space_for_extensions();
-	
-	_finalize_object(obj);
-	
-	ext = class_extensions;
-	while (ext != NULL) {
-		objc_deallocator_f ext_deallocator;
-		if (ext->object_deallocator_for_object != NULL){
-			ext_deallocator = ext->object_deallocator_for_object(obj, size_of_obj);
-			if (ext_deallocator != NULL){
-				deallocator = ext_deallocator;
-				break;
-			}
-		}
-		ext = ext->next_extension;
-	}
-	
-	deallocator(obj);
-}
-Method objc_object_lookup_method(id obj, SEL selector){
-	return _lookup_method(obj, selector);
-}
-Method objc_object_lookup_method_super(objc_super *sup, SEL selector){
-	return _lookup_method_super(sup, selector);
-}
-IMP objc_object_lookup_impl(id obj, SEL selector){
-	return _lookup_method(obj, selector)->implementation;
-}
-IMP objc_object_lookup_impl_super(objc_super *sup, SEL selector){
-	return _lookup_method_super(sup, selector)->implementation;
-}
-
-/***** INFORMATION GETTERS *****/
-BOOL objc_class_in_construction(Class cl){
-	return cl->flags.in_construction;
-}
-const char *objc_class_get_name(Class cl){
-	return cl->name;
-}
-Class objc_class_get_superclass(Class cl){
-	return cl->super_class;
-}
-
-/***** IVAR-RELATED *****/
-#pragma mark -
-#pragma mark Ivar-related
-Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigned int alignment, const char *types){
-	Ivar variable;
-	
-	if (cls == Nil || name == NULL || size == 0 || types == NULL){
-		return NULL;
-	}
-	
-	if (!cls->flags.in_construction){
-		objc_log("Class %s isn't in construction!\n", cls->name);
-		objc_abort("Trying to add ivar to a class that isn't in construction.");
-	}
-	
-	if (_ivar_named(cls, name) != NULL){
-		objc_log("Class %s, or one of its superclasses already have an ivar named %s!\n", cls->name, name);
-		return NULL;
-	}
-	
-	variable = (Ivar)objc_alloc(sizeof(struct objc_ivar));
-	variable->name = objc_strcpy(name);
-	variable->type = objc_strcpy(types);
-	variable->size = size;
-	
-	/* The offset is the aligned end of the instance size. */
-	variable->offset = cls->instance_size;
-	if (alignment != 0 && (variable->offset % alignment) > 0){
-		variable->offset = (variable->offset + (alignment - 1)) & ~(alignment - 1);
-	}
-	
-	cls->instance_size = variable->offset + size;
-	
-	if (cls->ivars == NULL){
-		cls->ivars = objc_array_create();
-	}
-	objc_array_append(cls->ivars, variable);
-	
-	return variable;
-}
-Ivar objc_class_get_ivar(Class cls, const char *name){
-	return _ivar_named(cls, name);
-}
-Ivar *objc_class_get_ivar_list(Class cl){
-	unsigned int number_of_ivars = _ivar_count(cl);
-	Ivar *ivars = objc_alloc(sizeof(Ivar) * (number_of_ivars + 1));
-	_ivars_copy_to_list(cl, ivars, number_of_ivars);
-	return ivars;
 }
 
 /***** PROTOTYPE-RELATED *****/
@@ -1536,9 +1559,9 @@ void objc_class_flush_class_cache(Class cl){
 }
 
 /***** INITIALIZATION *****/
-
 #pragma mark -
 #pragma mark Initializator-related
+
 void objc_class_init(void){
 	/* Cache the extension offsets */
 	objc_class_extension *ext = class_extensions;
