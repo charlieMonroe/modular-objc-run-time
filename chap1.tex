@@ -192,9 +192,15 @@ id obj = class_createInstance(objc_getClass("Subclass"), 0);
 The \verb=objc_getClass= function returns a pointer to the class called \verb=Subclass=, the \verb=class_createInstance= function creates an instance of the \verb=Subclass= class, with \verb=0= extra bytes - the extra bytes parameter is here in case you wanted to dynamically add extra space to some of your instances, or to all by overriding the \verb=+alloc= method of the class (it is noteworthy that the \verb=+alloc= method is actually nothing else than \verb=-alloc= on the meta class - i.e.\ all class methods are in fact instance methods on the meta class).
 
 
-When we try to visualize this situation (two classes - one root class and its subclass; and an instance of the subclass), we get a diagram as follows:
+When we try to visualize this situation (two classes - one root class and its subclass; and an instance of the subclass), we get a diagram that can be seen on figure \~ref{fig:class_metaclass_graph}.
 
-\includegraphics[width=130mm]{img/metaclass_graph.png}
+
+\begin{figure}[htbp] 
+\includegraphics[width=\textwidth]{img/metaclass_graph.png}
+  \centering{}
+  \caption{A graph of the class - meta-class relationship.}
+  \label{fig:class_metaclass_graph}
+\end{figure}
 
 As you can see, it is far less complicated than the Smalltalk object model. The class hierarchy ends at the point of the root class. To sum it up:
 

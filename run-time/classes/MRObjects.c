@@ -128,8 +128,8 @@ static struct objc_ivar _MRObject_isa_ivar = {
 
 static struct objc_ivar _MRObject_retain_count_ivar = {
 	"retain_count",
-	"I",
-	sizeof(unsigned int),
+	"i",
+	sizeof(int),
 	sizeof(Class)
 };
 
@@ -187,16 +187,24 @@ static struct objc_method_prototype _I___MRConstString_cString_mp = {
 	0
 };
 
+static struct objc_method_prototype _I___MRConstString_length_mp = {
+	"length",
+	"u@:",
+	(IMP)_I___MRConstString_length_,
+	0
+};
+
 static struct objc_method_prototype *__MRConstString_instance_methods[] = {
 	&_I___MRConstString_cString_mp,
 	&_I___MRConstString_release_mp,
 	&_I___MRConstString_retain_mp,
+	&_I___MRConstString_length_mp,
 	NULL
 };
 
 
 static struct objc_ivar ___MRConstString_cString_ivar = {
-	"c_string",
+	"cString",
 	"^",
 	sizeof(const char *),
 	sizeof(MRObject_instance_t)

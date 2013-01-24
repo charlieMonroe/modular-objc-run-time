@@ -12,8 +12,8 @@
 \contentsline {subsection}{\numberline {1.2.2}Object Model}{10}{subsection.1.2.2}
 \contentsline {paragraph}{Root Class}{10}{section*.7}
 \contentsline {subsection}{\numberline {1.2.3}Creating Classes Programmatically}{14}{subsection.1.2.3}
-\contentsline {subsection}{\numberline {1.2.4}Translating Methods to Functions}{15}{subsection.1.2.4}
-\contentsline {subsection}{\numberline {1.2.5}Synchronization}{16}{subsection.1.2.5}
+\contentsline {subsection}{\numberline {1.2.4}Translating Methods to Functions}{14}{subsection.1.2.4}
+\contentsline {subsection}{\numberline {1.2.5}Synchronization}{15}{subsection.1.2.5}
 \contentsline {subsection}{\numberline {1.2.6}Protocols}{16}{subsection.1.2.6}
 \contentsline {subsection}{\numberline {1.2.7}Required Classes}{17}{subsection.1.2.7}
 \contentsline {paragraph}{Strings}{17}{section*.8}
@@ -64,20 +64,27 @@
 \contentsline {subsection}{\numberline {5.5.2}GCC Run-Time}{45}{subsection.5.5.2}
 \contentsline {subsection}{\numberline {5.5.3}Modular Run-Time}{45}{subsection.5.5.3}
 \contentsline {section}{\numberline {5.6}Compatibility}{46}{section.5.6}
-\contentsline {section}{\numberline {5.7}Extensibility of Classes}{46}{section.5.7}
-\contentsline {subsection}{\numberline {5.7.1}Performance}{52}{subsection.5.7.1}
-\contentsline {subsection}{\numberline {5.7.2}Associated Objects}{53}{subsection.5.7.2}
-\contentsline {subsection}{\numberline {5.7.3}Categories}{54}{subsection.5.7.3}
-\contentsline {section}{\numberline {5.8}Internal Classes}{54}{section.5.8}
-\contentsline {subsection}{\numberline {5.8.1}MRString}{54}{subsection.5.8.1}
-\contentsline {section}{\numberline {5.9}Ports}{54}{section.5.9}
-\contentsline {subsection}{\numberline {5.9.1}Windows 3.11}{54}{subsection.5.9.1}
-\contentsline {subsection}{\numberline {5.9.2}HeSiVa}{54}{subsection.5.9.2}
-\contentsline {chapter}{\numberline {6}Known Issues}{55}{chapter.6}
-\contentsline {section}{\numberline {6.1}Forwarding}{55}{section.6.1}
-\contentsline {chapter}{\numberline {7}Future Work}{56}{chapter.7}
-\contentsline {chapter}{Conclusion}{57}{chapter*.21}
-\contentsline {chapter}{Bibliography}{58}{chapter*.22}
-\contentsline {chapter}{List of Figures}{59}{chapter*.22}
-\contentsline {chapter}{List of Abbreviations}{60}{chapter*.24}
-\contentsline {chapter}{Attachments}{61}{chapter*.25}
+\contentsline {section}{\numberline {5.7}Extensibility of Classes}{48}{section.5.7}
+\contentsline {subsection}{\numberline {5.7.1}Performance}{53}{subsection.5.7.1}
+\contentsline {subsection}{\numberline {5.7.2}Associated Objects}{54}{subsection.5.7.2}
+\contentsline {subsection}{\numberline {5.7.3}Apple's implementation}{54}{subsection.5.7.3}
+\contentsline {subsection}{\numberline {5.7.4}Modular run-time implementation}{55}{subsection.5.7.4}
+\contentsline {subsection}{\numberline {5.7.5}Categories}{57}{subsection.5.7.5}
+\contentsline {section}{\numberline {5.8}Creating Prototypes and Registering Them}{57}{section.5.8}
+\contentsline {section}{\numberline {5.9}Internal Classes}{57}{section.5.9}
+\contentsline {subsection}{\numberline {5.9.1}MRObject}{57}{subsection.5.9.1}
+\contentsline {paragraph}{Reference counting in traditional run-times}{57}{section*.21}
+\contentsline {subparagraph}{Upsides}{58}{section*.22}
+\contentsline {subparagraph}{Downsides}{58}{section*.23}
+\contentsline {subparagraph}{Possible solutions}{59}{section*.24}
+\contentsline {subsection}{\numberline {5.9.2}\_\_MRConstString}{60}{subsection.5.9.2}
+\contentsline {section}{\numberline {5.10}Ports}{60}{section.5.10}
+\contentsline {subsection}{\numberline {5.10.1}Windows 3.11}{60}{subsection.5.10.1}
+\contentsline {subsection}{\numberline {5.10.2}HeSiVa}{62}{subsection.5.10.2}
+\contentsline {chapter}{\numberline {6}Known Issues}{66}{chapter.6}
+\contentsline {chapter}{\numberline {7}Future Work}{67}{chapter.7}
+\contentsline {chapter}{Conclusion}{68}{chapter*.25}
+\contentsline {chapter}{Bibliography}{69}{chapter*.26}
+\contentsline {chapter}{List of Figures}{70}{chapter*.26}
+\contentsline {chapter}{List of Abbreviations}{71}{chapter*.28}
+\contentsline {chapter}{Attachments}{72}{chapter*.29}

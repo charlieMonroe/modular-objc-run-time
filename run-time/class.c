@@ -981,6 +981,27 @@ OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype){
 	return cl;
 }
 
+OBJC_INLINE objc_allocator_f _allocator_for_class(Class cl, unsigned int size) OBJC_ALWAYS_INLINE;
+OBJC_INLINE objc_allocator_f _allocator_for_class(Class cl, unsigned int size){
+	objc_allocator_f allocator = objc_zero_alloc;
+	objc_class_extension *ext;
+	
+	ext = class_extensions;
+	while (ext != NULL) {
+		objc_allocator_f ext_allocator;
+		if (ext->object_allocator_for_class != NULL){
+			ext_allocator = ext->object_allocator_for_class(cl, size);
+			if (ext_allocator != NULL){
+				allocator = ext_allocator;
+				break;
+			}
+		}
+		ext = ext->next_extension;
+	}
+	
+	return allocator;
+}
+
 
 /***** PUBLIC FUNCTIONS *****/
 
@@ -1203,31 +1224,18 @@ Class objc_object_set_class(id obj, Class new_class){
 #pragma mark -
 #pragma mark Object creation, copying and destruction
 
-id objc_class_create_instance(Class cl, unsigned int extra_bytes){
+id objc_class_create_instance(Class cl){
 	id obj;
+	objc_allocator_f allocator;
 	unsigned int size;
-	objc_allocator_f allocator = objc_zero_alloc;
-	objc_class_extension *ext;
 	
 	if (cl->flags.in_construction){
 		objc_log("Trying to create an instance of unfinished class (%s).", cl->name);
 		return nil;
 	}
 	
-	size = _instance_size(cl) + extra_bytes;
-	
-	ext = class_extensions;
-	while (ext != NULL) {
-		objc_allocator_f ext_allocator;
-		if (ext->object_allocator_for_class != NULL){
-			ext_allocator = ext->object_allocator_for_class(cl, size);
-			if (ext_allocator != NULL){
-				allocator = ext_allocator;
-				break;
-			}
-		}
-		ext = ext->next_extension;
-	}
+	size = _instance_size(cl);
+	allocator = _allocator_for_class(cl, size);
 	
 	obj = (id)allocator(size);
 	obj->isa = cl;
@@ -1267,6 +1275,7 @@ void objc_object_deallocate(id obj){
 
 id objc_object_copy(id obj){
 	id copy;
+	objc_allocator_f allocator;
 	unsigned int size;
 	
 	if (obj == nil){
@@ -1274,10 +1283,9 @@ id objc_object_copy(id obj){
 	}
 	
 	size = _instance_size(obj->isa);
+	allocator = _allocator_for_class(obj->isa, size);
 	
-#warning TODO: use extensions to get allocator
-	
-	copy = objc_alloc(size);
+	copy = allocator(size);
 	
 	objc_copy_memory(obj, copy, size);
 	

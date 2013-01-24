@@ -4,12 +4,13 @@
 #include "os.h"
 #include "class.h"
 #include "selector.h"
+#include "utils.h"
 
 #pragma mark MRObject
 
 id _C_MRObject_alloc_(id self, SEL _cmd){
-	MRObject_instance_t *instance = (MRObject_instance_t*)objc_class_create_instance((Class)self, 0);
-	instance->retain_count = 1;
+	MRObject_instance_t *instance = (MRObject_instance_t*)objc_class_create_instance((Class)self);
+	instance->retainCount = 1;
 	return (id)instance;
 }
 
@@ -37,15 +38,16 @@ id _I_MRObject_init_(MRObject_instance_t *self, SEL _cmd){
 }
 
 id _I_MRObject_retain_(MRObject_instance_t *self, SEL _cmd){
-	/** TODO atomic */
-	++self->retain_count;
+	/** Warning, this atomic function is a GCC builtin function */
+	__sync_add_and_fetch(&self->retainCount, 1);
 	return (id)self;
 }
 
 void _I_MRObject_release_(MRObject_instance_t *self, SEL _cmd){
 	/** TODO atomic */
-	--self->retain_count;
-	if (self->retain_count == 0){
+	
+	unsigned int retain_cnt = __sync_sub_and_fetch(&self->retainCount, 1);
+	if (retain_cnt == 0){
 		/** Dealloc */
 		static SEL dealloc_selector;
 		IMP dealloc_IMP;
@@ -90,5 +92,9 @@ BOOL _IC_MRObject_dropsUnrecognizedMessage_(MRObject_instance_t *self, SEL _cmd,
 #pragma mark __MRConstString
 
 const char *_I___MRConstString_cString_(__MRConstString_instance_t *self, SEL _cmd){
-	return self->c_string;
+	return self->cString;
+}
+
+unsigned int _I___MRConstString_length_(__MRConstString_instance_t *self, SEL _cmd){
+	return objc_strlen(self->cString);
 }

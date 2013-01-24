@@ -1,13 +1,22 @@
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {1.1}{\ignorespaces A graph of the class - meta-class relationship.}}{13}{figure.1.1}
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {5.1}{\ignorespaces Class structure.}}{41}{figure.5.1}
 \contentsline {figure}{\numberline {5.2}{\ignorespaces A sample proxy class.}}{47}{figure.5.2}
-\contentsline {figure}{\numberline {5.3}{\ignorespaces Class extension structure.}}{48}{figure.5.3}
-\contentsline {figure}{\numberline {5.4}{\ignorespaces Example of registering a class extension.}}{49}{figure.5.4}
-\contentsline {figure}{\numberline {5.5}{\ignorespaces Example of a custom deallocator.}}{51}{figure.5.5}
-\contentsline {figure}{\numberline {5.6}{\ignorespaces Example of how class extensions use memory within an object.}}{52}{figure.5.6}
+\contentsline {figure}{\numberline {5.3}{\ignorespaces Class extension structure.}}{49}{figure.5.3}
+\contentsline {figure}{\numberline {5.4}{\ignorespaces Example of registering a class extension.}}{50}{figure.5.4}
+\contentsline {figure}{\numberline {5.5}{\ignorespaces Example of a custom deallocator.}}{52}{figure.5.5}
+\contentsline {figure}{\numberline {5.6}{\ignorespaces Example of how class extensions use memory within an object.}}{53}{figure.5.6}
+\contentsline {figure}{\numberline {5.7}{\ignorespaces Example of a class extension - associated objects.}}{56}{figure.5.7}
+\contentsline {figure}{\numberline {5.8}{\ignorespaces Default list of vtable selectors in Apple's run-time.}}{58}{figure.5.8}
+\contentsline {figure}{\numberline {5.9}{\ignorespaces Diagram of a hidden reference count variable.}}{59}{figure.5.9}
+\contentsline {figure}{\numberline {5.10}{\ignorespaces \_\_MRConstString class export.}}{61}{figure.5.10}
+\contentsline {figure}{\numberline {5.11}{\ignorespaces \_\_MRConstString static instance creation.}}{61}{figure.5.11}
+\contentsline {figure}{\numberline {5.12}{\ignorespaces The modular run-time running on Windows 3.11 in a DOSBox emulator.}}{63}{figure.5.12}
+\contentsline {figure}{\numberline {5.13}{\ignorespaces The only lines that needed to be added in order for the run-time to run on kalisto HeSiVa.}}{64}{figure.5.13}
+\contentsline {figure}{\numberline {5.14}{\ignorespaces The modular run-time running on kalisto HeSiVa.}}{65}{figure.5.14}
 \addvspace {10\p@ }
 \addvspace {10\p@ }

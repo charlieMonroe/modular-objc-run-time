@@ -20,5 +20,6 @@ extern Method _IC_MRObject_forwardedMethodForSelector_(MRObject_instance_t *self
 extern BOOL _IC_MRObject_dropsUnrecognizedMessage_(MRObject_instance_t *self, SEL _cmd, SEL selector);
 
 extern const char *_I___MRConstString_cString_(__MRConstString_instance_t *self, SEL _cmd);
+extern unsigned int _I___MRConstString_length_(__MRConstString_instance_t *self, SEL _cmd);
 
 #endif /** _MRObjectMethods_H_ */

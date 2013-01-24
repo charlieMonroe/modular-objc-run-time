@@ -19,7 +19,7 @@ typedef struct {
 } MyClass;
 
 id _MyClass_alloc(id self, SEL _cmd, ...){
-	return objc_class_create_instance((Class)self, 0);
+	return objc_class_create_instance((Class)self);
 }
 
 id _MyClass_log(MyClass *self, SEL _cmd, ...){
@@ -284,7 +284,7 @@ static void object_creation_test(void){
 	
 	c1 = clock();
 	for (i = 0; i < ALLOCATION_ITERATIONS; ++i){
-		id instance = objc_class_create_instance(my_class, 0);
+		id instance = objc_class_create_instance(my_class);
 		objc_object_deallocate(instance);
 	}
 	c2 = clock();
@@ -309,7 +309,7 @@ static void forwarding_test(void){
 	objc_class_finish(completely_new_class);
 	
 	
-	new_class_instance = objc_class_create_instance(completely_new_class, 0);
+	new_class_instance = objc_class_create_instance(completely_new_class);
 	c1 = clock();
 	for (i = 0; i < DISPATCH_ITERATIONS; ++i){
 		((void(*)(id,SEL,int))objc_object_lookup_impl(new_class_instance, unknown_selector))(new_class_instance, unknown_selector, i);
@@ -318,7 +318,7 @@ static void forwarding_test(void){
 	printf("Non-proxy calls took %f seconds.\n", ((double)c2 - (double)c1)/ (double)CLOCKS_PER_SEC);
 	
 	
-	my_class_instance = (MyClass*)objc_class_create_instance(my_class, 0);
+	my_class_instance = (MyClass*)objc_class_create_instance(my_class);
 	my_class_instance->proxy_object = new_class_instance;
 	
 	c1 = clock();

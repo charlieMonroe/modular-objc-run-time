@@ -57,9 +57,7 @@ extern BOOL objc_class_responds_to_class_selector(Class cl, SEL selector);
 
 /**
  * This function allocates enough space to contain an instance
- * of the class, including the space required by class extensions,
- * plus extra_bytes, which is generally just for compatibility reasons,
- * as you should use class extensions instead.
+ * of the class, including the space required by class extensions.
  *
  * Each class extension gets called, if it implements an object
  * initializer function.
@@ -67,7 +65,7 @@ extern BOOL objc_class_responds_to_class_selector(Class cl, SEL selector);
  * If you do not use this function for object creation, you need to
  * call the complete_object function (see below) on each created object.
  */
-extern id objc_class_create_instance(Class cl, unsigned int extra_bytes);
+extern id objc_class_create_instance(Class cl);
 
 /**
  * If, for whatever reason, you do not use the run-time function

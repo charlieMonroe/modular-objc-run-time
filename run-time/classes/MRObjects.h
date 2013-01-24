@@ -6,13 +6,13 @@
 
 typedef struct {
 	Class isa;
-	unsigned int retain_count;
+	int retainCount;
 } MRObject_instance_t;
 
 typedef struct {
 	Class isa;
-	unsigned int retain_count;
-	const char *c_string;
+	int retainCount;
+	const char *cString;
 } __MRConstString_instance_t;
 
 extern struct objc_class_prototype MRObject_class;
