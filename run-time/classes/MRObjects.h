@@ -2,7 +2,7 @@
 #ifndef _MRObject_H_
 #define _MRObject_H_
 
-#include "private.h"
+#include "../private.h"
 
 typedef struct {
 	Class isa;

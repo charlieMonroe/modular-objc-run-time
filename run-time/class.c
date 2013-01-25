@@ -684,61 +684,6 @@ OBJC_INLINE void _ivars_copy_to_list(Class cl, Ivar *list, unsigned int max_coun
 	list[max_count] = NULL;
 }
 
-OBJC_INLINE unsigned int _method_count_in_method_list(objc_array list) OBJC_ALWAYS_INLINE;
-OBJC_INLINE unsigned int _method_count_in_method_list(objc_array list){
-	unsigned int count = 0;
-	objc_array_enumerator en;
-	
-	if (list == NULL){
-		return count;
-	}
-	
-	en = objc_array_get_enumerator(list);
-	while (en != NULL) {
-		Method *methods = en->item;
-		while (*methods != NULL){
-			++count;
-			++methods;
-		}
-		en = en->next;
-	}
-	return count;
-}
-
-OBJC_INLINE void _methods_copy_to_list(objc_array method_list, Method *list, unsigned int max_count) OBJC_ALWAYS_INLINE;
-OBJC_INLINE void _methods_copy_to_list(objc_array method_list, Method *list, unsigned int max_count){
-	unsigned int count = 0;
-	objc_array_enumerator en;
-	
-	if (method_list == NULL){
-		/* NULL-terminate, even when NULL */
-		list[0] = NULL;
-		return;
-	}
-	
-	en = objc_array_get_enumerator(method_list);
-	while (en != NULL) {
-		Method *methods = en->item;
-		while (*methods != NULL){
-			list[count] = *methods;
-			++count;
-			++methods;
-		}
-		en = en->next;
-	}
-	
-	/* NULL termination */
-	list[max_count] = NULL;
-}
-
-OBJC_INLINE Method *_method_list_flatten(objc_array list) OBJC_ALWAYS_INLINE;
-OBJC_INLINE Method *_method_list_flatten(objc_array list){
-	unsigned int number_of_methods = _method_count_in_method_list(list);
-	Method *methods = objc_alloc(sizeof(Method) * (number_of_methods + 1));
-	_methods_copy_to_list(list, methods, number_of_methods);
-	return methods;
-}
-
 OBJC_INLINE Method _lookup_method(id obj, SEL selector) OBJC_ALWAYS_INLINE;
 OBJC_INLINE Method _lookup_method(id obj, SEL selector){
 	Method method = NULL;
@@ -871,32 +816,6 @@ OBJC_INLINE BOOL _validate_prototype(struct objc_class_prototype *prototype){
 	return YES;
 }
 
-OBJC_INLINE objc_array _transform_method_prototypes(struct objc_method_prototype **method_prototypes){
-	objc_array arr;
-	Method *methods;
-	unsigned int i = 0;
-	
-	if (method_prototypes == NULL){
-		return NULL;
-	}
-	
-	arr = objc_array_create();
-	
-	while (method_prototypes[i] != NULL) {
-		struct objc_method_prototype *prototype = method_prototypes[i];
-		Method m = (Method)prototype;
-		
-		m->selector = objc_selector_register(prototype->selector_name);
-		
-		++i;
-	}
-	
-	
-	methods = (Method*)method_prototypes;
-	objc_array_append(arr, methods);
-	return arr;
-}
-
 OBJC_INLINE void _add_ivars_from_prototype(Class cl, Ivar *ivars) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _add_ivars_from_prototype(Class cl, Ivar *ivars){
 	if (cl->super_class != Nil){
@@ -959,8 +878,8 @@ OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype){
 	
 	cl->isa = cl;
 	
-	cl->class_methods = _transform_method_prototypes(prototype->class_methods);
-	cl->instance_methods = _transform_method_prototypes(prototype->instance_methods);
+	cl->class_methods = objc_method_transform_method_prototypes(prototype->class_methods);
+	cl->instance_methods = objc_method_transform_method_prototypes(prototype->instance_methods);
 	
 	_add_ivars_from_prototype(cl, prototype->ivars);
 	
@@ -1027,12 +946,6 @@ void objc_class_add_instance_method(Class cl, Method m){
 }
 void objc_class_add_instance_methods(Class cl, Method *m, unsigned int count){
 	_add_instance_methods(cl, m, count);
-}
-Method *objc_class_get_instance_method_list(Class cl){
-	if (cl == Nil){
-		return NULL;
-	}
-	return _method_list_flatten(cl->instance_methods);
 }
 
 #pragma mark -
@@ -1339,7 +1252,13 @@ Method *objc_class_get_class_method_list(Class cl){
 	if (cl == Nil){
 		return NULL;
 	}
-	return _method_list_flatten(cl->class_methods);
+	return objc_method_list_flatten(cl->class_methods);
+}
+Method *objc_class_get_instance_method_list(Class cl){
+	if (cl == Nil){
+		return NULL;
+	}
+	return objc_method_list_flatten(cl->instance_methods);
 }
 Class *objc_class_get_list(void){
 	unsigned int count = 0;
@@ -1369,6 +1288,11 @@ Class *objc_class_get_list(void){
 }
 Class objc_class_for_name(const char *name){
 	Class c;
+	
+	/** Check if the run-time has been initialized. */
+	if (!objc_runtime_has_been_initialized){
+		objc_runtime_init();
+	}
 	
 	if (name == NULL){
 		return Nil;
@@ -1491,6 +1415,12 @@ void objc_object_set_variable(id obj, Ivar ivar, void *value){
 
 Class objc_class_register_prototype(struct objc_class_prototype *prototype){
 	Class cl;
+	
+	/** Check if the run-time has been initialized. */
+	if (!objc_runtime_has_been_initialized){
+		objc_runtime_init();
+	}
+	
 	objc_rw_lock_wlock(objc_runtime_lock);
 	cl = _register_prototype(prototype);
 	objc_rw_lock_unlock(objc_runtime_lock);
@@ -1498,6 +1428,12 @@ Class objc_class_register_prototype(struct objc_class_prototype *prototype){
 }
 void objc_class_register_prototypes(struct objc_class_prototype *prototypes[]){
 	unsigned int i = 0;
+	
+	/** Check if the run-time has been initialized. */
+	if (!objc_runtime_has_been_initialized){
+		objc_runtime_init();
+	}
+	
 	objc_rw_lock_wlock(objc_runtime_lock);
 	while (prototypes[i] != NULL){
 		_register_prototype(prototypes[i]);

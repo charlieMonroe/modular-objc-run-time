@@ -8,139 +8,24 @@
 #include "classes/MRObjects.h"
 
 #include "extras/ao-ext.h"
+#include "extras/categs.h"
 
 #define DISPATCH_ITERATIONS 10000000
 #define ALLOCATION_ITERATIONS 10000000
 
-typedef struct {
-	Class isa;
-	id proxy_object;
-	int i;
-} MyClass;
+#define OBJC_HAS_AO_EXTENSION 0
+#define OBJC_HAS_CATEGORIES_EXTENSION 0
 
-id _MyClass_alloc(id self, SEL _cmd, ...){
-	return objc_class_create_instance((Class)self);
-}
+#include "testing.h"
 
-id _MyClass_log(MyClass *self, SEL _cmd, ...){
-	++self->i;
-	return nil;
-}
-
-id _MySubclass_log(MyClass *self, SEL _cmd, ...){
-	/* i.e. [super _cmd]; */
-	objc_super super;
-	IMP super_imp;
-	super.receiver = (id)self;
-	super.class = objc_class_get_superclass(self->isa);
-	super_imp = objc_object_lookup_impl_super(&super, _cmd);
-	super_imp((id)self, _cmd);
-	
-	++self->i;
-	
-	return nil;
-}
-
-id _MyClass_increase_via_setters_and_getters(MyClass *self, SEL _cmd, ...){
-	int *old_value_ptr;
-	int new_value;
-	Ivar i_ivar = objc_class_get_ivar(objc_object_get_class((id)self), "i");
-	
-	old_value_ptr = objc_object_get_variable((id)self, i_ivar);
-	new_value = *old_value_ptr + 1;
-	objc_object_set_variable((id)self, i_ivar, &new_value);
-	return nil;
-}
-
-id _MyClass_increase_via_ao(MyClass *self, SEL _cmd, ...){
-	unsigned int old_value = (unsigned int)objc_object_get_associated_object((id)self, (void*)_cmd);
-	objc_object_set_associated_object((id)self, (void*)_cmd, (id)(old_value + 1));
-	return nil;
-}
-
-Method _MyClass_forwarded_method(MyClass *self, SEL _cmd, SEL selector){
-	return objc_object_lookup_method(self->proxy_object, selector);
-	/**
-	printf("Class %s supports forwarding methods - would return method for selector %s.\n", objc_class_get_name(self->isa), objc_selector_get_name(selector));
-	return NULL;
-	 */
-}
-
-BOOL _MyClass_drop_message(id self, SEL _cmd, SEL selector){
-	printf("Class %s supports message dropping - dropped call with selector %s.\n", objc_class_get_name(self->isa), objc_selector_get_name(selector));
-	return YES;
-}
-
-static Class my_class;
-static Class my_subclass;
-
-static SEL alloc_selector;
-static SEL log_selector;
-static SEL increase_via_gs_selector;
-static SEL increase_via_ao_selector;
-static SEL forwarding_selector;
-static SEL call_dropping_selector;
-
-static Method alloc_method;
-static Method log_method;
-static Method increase_via_gs_method;
-static Method increase_via_ao_method;
-static Method forwarding_method;
-static Method call_dropping_method;
-
-static IMP alloc_impl;
-
-
-static void create_classes(void){
-	SEL second_alloc_selector;
-	
-	my_class = objc_class_create(Nil, "MyClass");
-	
-	alloc_selector = objc_selector_register("alloc");
-	log_selector = objc_selector_register("log");
-	increase_via_gs_selector = objc_selector_register("increaseViaGS");
-	increase_via_ao_selector = objc_selector_register("increaseViaAO");
-	forwarding_selector = objc_selector_register("forwardedMethodForSelector:");
-	call_dropping_selector = objc_selector_register("dropsUnrecognizedMessage:");
-	
-	second_alloc_selector = objc_selector_register("alloc");
-	if (second_alloc_selector != alloc_selector){
-		printf("alloc selector (%p) != second_alloc_selector (%p)!", alloc_selector, second_alloc_selector);
-		
-		/* Force-crash */
-		((IMP)(NULL))(nil, NULL);
-	}
-	
-	objc_class_add_ivar(my_class, "isa", sizeof(Class), __alignof(Class), "#");
-	objc_class_add_ivar(my_class, "proxy_object", sizeof(id), __alignof(id), "@");
-	objc_class_add_ivar(my_class, "i", sizeof(int), __alignof(int), "i");
-	objc_class_finish(my_class);
-	(void)objc_class_create(Nil, "MyClass");
-	
-	my_subclass = objc_class_create(my_class, "MySubclass");
-	objc_class_finish(my_subclass);
+static void register_classes(void){
+	objc_class_register_prototype(&MyClass_class);
+	objc_class_register_prototype(&MySubclass_class);
 	
 	
-	alloc_method = objc_method_create(alloc_selector, "^@:", _MyClass_alloc);
-	objc_class_add_class_method(my_class, alloc_method);
-	
-	log_method = objc_method_create(log_selector, "^@:", (IMP)_MyClass_log);
-	objc_class_add_instance_method(my_class, log_method);
-	
-	increase_via_gs_method = objc_method_create(increase_via_gs_selector, "^@:", (IMP)_MyClass_increase_via_setters_and_getters);
-	objc_class_add_instance_method(my_class, increase_via_gs_method);
-	
-	increase_via_ao_method = objc_method_create(increase_via_ao_selector, "^@:", (IMP)_MyClass_increase_via_ao);
-	objc_class_add_instance_method(my_class, increase_via_ao_method);
-	
-	forwarding_method = objc_method_create(forwarding_selector, "^@::", (IMP)_MyClass_forwarded_method);
-	objc_class_add_instance_method(my_class, forwarding_method);
-	
-	call_dropping_method = objc_method_create(call_dropping_selector, "B@::", (IMP)_MyClass_drop_message);
-	objc_class_add_instance_method(my_class, call_dropping_method);
-	
-	alloc_impl = objc_object_lookup_impl((id)my_subclass, alloc_selector);
-	
+#if OBJC_HAS_CATEGORIES_EXTENSION
+	objc_class_register_category_prototype(&_MyClass_Privates_category_prototype_);
+#endif
 }
 
 static void print_method_list(Method *methods){
@@ -155,12 +40,42 @@ static void print_ivar_list(Ivar *ivars){
 		++ivars;
 	}
 }
+
+#if OBJC_HAS_CATEGORIES_EXTENSION
+static void print_categories(Class cl){
+	Category *categories = objc_class_get_category_list(cl);
+	Category *orig_ptr = categories;
+	while (*categories != NULL){
+		Method *class_methods = objc_category_get_class_methods(*categories);
+		Method *instance_methods = objc_category_get_instance_methods(*categories);
+		
+		printf("** %s - Class category methods:\n", objc_category_get_name(*categories));
+		print_method_list(class_methods);
+		
+		printf("** %s - Instance category methods:\n", objc_category_get_name(*categories));
+		print_method_list(instance_methods);
+		
+		objc_dealloc(class_methods);
+		objc_dealloc(instance_methods);
+		
+		++categories;
+	}
+	objc_dealloc(orig_ptr);
+}
+#endif
+
 static void print_class(Class cl){
 	printf("******** Class %s ********\n", objc_class_get_name(cl));
 	printf("**** Class methods:\n");
 	print_method_list(objc_class_get_class_method_list(cl));
 	printf("**** Instance methods:\n");
 	print_method_list(objc_class_get_instance_method_list(cl));
+	
+#if OBJC_HAS_CATEGORIES_EXTENSION
+	printf("**** Categories:\n");
+	print_categories(cl);
+#endif
+	
 	printf("**** Ivars:\n");
 	print_ivar_list(objc_class_get_ivar_list(cl));
 	
@@ -168,11 +83,14 @@ static void print_class(Class cl){
 }
 static void list_classes(void){
 	Class *classes = objc_class_get_list();
+	Class *orig_ptr = classes;
 	while (*classes != NULL){
 		print_class(*classes);
 		++classes;
 	}
+	objc_dealloc(orig_ptr);
 }
+
 static void method_dispatch_test(void){
 	MyClass *instance;
 	clock_t c1, c2;
@@ -180,7 +98,7 @@ static void method_dispatch_test(void){
 	int *result;
 	Ivar i_ivar;
 	
-	instance = (MyClass*)alloc_impl((id)my_subclass, alloc_selector);
+	instance = (MyClass*)objc_object_lookup_impl((id)my_subclass, alloc_selector)((id)my_subclass, alloc_selector);
 	
 	objc_object_lookup_impl((id)instance, objc_selector_register("some_selector"))((id)instance, objc_selector_register("some_selector"));
 	
@@ -211,7 +129,7 @@ static void super_method_dispatch_test(void){
 	/** Adds a new method to the subclass. */
 	objc_class_replace_instance_method_implementation(my_subclass, log_selector, (IMP)&_MySubclass_log, "^@:");
 	
-	instance = (MyClass*)alloc_impl((id)my_subclass, alloc_selector);
+	instance = (MyClass*)objc_object_lookup_impl((id)my_subclass, alloc_selector)((id)my_subclass, alloc_selector);
 	
 	c1 = clock();
 	for (i = 0; i < DISPATCH_ITERATIONS; ++i){
@@ -237,7 +155,7 @@ static void method_dispatch_test_via_ivar_setters(void){
 	int *result;
 	Ivar i_ivar;
 	
-	instance = (MyClass*)alloc_impl((id)my_subclass, alloc_selector);
+	instance = (MyClass*)objc_object_lookup_impl((id)my_subclass, alloc_selector)((id)my_subclass, alloc_selector);
 	
 	c1 = clock();
 	for (i = 0; i < DISPATCH_ITERATIONS; ++i){
@@ -261,7 +179,7 @@ static void method_dispatch_test_via_ao(void){
 	int i;
 	int result;
 	
-	instance = (MyClass*)alloc_impl((id)my_subclass, alloc_selector);
+	instance = (MyClass*)objc_object_lookup_impl((id)my_subclass, alloc_selector)((id)my_subclass, alloc_selector);
 	
 	c1 = clock();
 	for (i = 0; i < DISPATCH_ITERATIONS; ++i){
@@ -331,19 +249,14 @@ static void forwarding_test(void){
 }
 
 int main(int argc, const char * argv[]){
-	id my_string;
-	
 	create_classes();
-	list_classes();
-	
-	OBJC_STRING(my_string, "Hello");
-	__MRConstString_instance_t *inst = (__MRConstString_instance_t *)my_string;
+	//list_classes();
 	
 	method_dispatch_test();
-	method_dispatch_test_via_ivar_setters();
-	method_dispatch_test_via_ao();
+	//method_dispatch_test_via_ivar_setters();
+	//method_dispatch_test_via_ao();
 	object_creation_test();
-	super_method_dispatch_test();
+	//super_method_dispatch_test();
 	forwarding_test();
 	
 	return 0;

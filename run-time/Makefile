@@ -1,5 +1,5 @@
 
-CFLAGS=-std=c99 -O3 -Winline -DUSES_C89=0 -DHAS_ALWAYS_INLINE_ATTRIBUTE=0 -DOBJC_USES_INLINE_FUNCTIONS=1
+CFLAGS=-std=c99 -O3 -DUSES_C89=0 -DHAS_ALWAYS_INLINE_ATTRIBUTE=1 -DOBJC_USES_INLINE_FUNCTIONS=0
 LINKER=`x=\`uname\`; \
 		if [ $${x} = Darwin ]; then \
 		  	echo ld; \
@@ -25,9 +25,13 @@ test-with-lto : static
 main.o : main.c
 	cc -c main.c
 
-static: class.o method.o runtime.o selector.o array.o holder.o ao.o posix.o
-	$(LINKER) class.o method.o runtime.o selector.o array.o holder.o ao.o posix.o $(LFLAGS) -o libobjc-runtime.a
+static: class.o method.o runtime.o selector.o array.o holder.o ao.o posix.o MRObjects.o MRObjectMethods.o
+	$(LINKER) class.o method.o runtime.o selector.o array.o holder.o ao.o posix.o MRObjects.o MRObjectMethods.o $(LFLAGS) -o libobjc-runtime.a
 
+MRObjectMethods.o : classes/MRObjectMethods.c
+	cc $(CFLAGS) -c classes/MRObjectMethods.c -o MRObjectMethods.o
+MRObjects.o : classes/MRObjects.c
+	cc $(CFLAGS) -c classes/MRObjects.c -o MRObjects.o
 class.o : class.c
 	cc $(CFLAGS) -c class.c
 method.o : method.c

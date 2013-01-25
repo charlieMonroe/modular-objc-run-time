@@ -2,8 +2,8 @@
  * A basic object class with R/R methods.
  */
 
-#include "private.h"
-#include "types.h"
+#include "../private.h"
+#include "../types.h"
 
 #include "MRObjectMethods.h"
 

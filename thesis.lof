@@ -11,12 +11,13 @@
 \contentsline {figure}{\numberline {5.5}{\ignorespaces Example of a custom deallocator.}}{52}{figure.5.5}
 \contentsline {figure}{\numberline {5.6}{\ignorespaces Example of how class extensions use memory within an object.}}{53}{figure.5.6}
 \contentsline {figure}{\numberline {5.7}{\ignorespaces Example of a class extension - associated objects.}}{56}{figure.5.7}
-\contentsline {figure}{\numberline {5.8}{\ignorespaces Default list of vtable selectors in Apple's run-time.}}{58}{figure.5.8}
-\contentsline {figure}{\numberline {5.9}{\ignorespaces Diagram of a hidden reference count variable.}}{59}{figure.5.9}
-\contentsline {figure}{\numberline {5.10}{\ignorespaces \_\_MRConstString class export.}}{61}{figure.5.10}
-\contentsline {figure}{\numberline {5.11}{\ignorespaces \_\_MRConstString static instance creation.}}{61}{figure.5.11}
-\contentsline {figure}{\numberline {5.12}{\ignorespaces The modular run-time running on Windows 3.11 in a DOSBox emulator.}}{63}{figure.5.12}
-\contentsline {figure}{\numberline {5.13}{\ignorespaces The only lines that needed to be added in order for the run-time to run on kalisto HeSiVa.}}{64}{figure.5.13}
-\contentsline {figure}{\numberline {5.14}{\ignorespaces The modular run-time running on kalisto HeSiVa.}}{65}{figure.5.14}
+\contentsline {figure}{\numberline {5.8}{\ignorespaces Structures used as prototypes for class and method declarations.}}{58}{figure.5.8}
+\contentsline {figure}{\numberline {5.9}{\ignorespaces Default list of vtable selectors in Apple's run-time.}}{60}{figure.5.9}
+\contentsline {figure}{\numberline {5.10}{\ignorespaces Diagram of a hidden reference count variable.}}{62}{figure.5.10}
+\contentsline {figure}{\numberline {5.11}{\ignorespaces \_\_MRConstString class export.}}{63}{figure.5.11}
+\contentsline {figure}{\numberline {5.12}{\ignorespaces \_\_MRConstString static instance creation.}}{63}{figure.5.12}
+\contentsline {figure}{\numberline {5.13}{\ignorespaces The modular run-time running on Windows 3.11 in a DOSBox emulator.}}{65}{figure.5.13}
+\contentsline {figure}{\numberline {5.14}{\ignorespaces The only lines that needed to be added in order for the run-time to run on kalisto HeSiVa.}}{67}{figure.5.14}
+\contentsline {figure}{\numberline {5.15}{\ignorespaces The modular run-time running on kalisto HeSiVa.}}{68}{figure.5.15}
 \addvspace {10\p@ }
 \addvspace {10\p@ }

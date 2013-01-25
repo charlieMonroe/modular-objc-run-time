@@ -2,7 +2,7 @@
 #ifndef _MRObjectMethods_H_
 #define _MRObjectMethods_H_
 
-#include "types.h"
+#include "../types.h"
 #include "MRObjects.h"
 
 extern id _C_MRObject_alloc_(id self, SEL _cmd);

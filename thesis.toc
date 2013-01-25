@@ -71,20 +71,23 @@
 \contentsline {subsection}{\numberline {5.7.4}Modular run-time implementation}{55}{subsection.5.7.4}
 \contentsline {subsection}{\numberline {5.7.5}Categories}{57}{subsection.5.7.5}
 \contentsline {section}{\numberline {5.8}Creating Prototypes and Registering Them}{57}{section.5.8}
-\contentsline {section}{\numberline {5.9}Internal Classes}{57}{section.5.9}
-\contentsline {subsection}{\numberline {5.9.1}MRObject}{57}{subsection.5.9.1}
-\contentsline {paragraph}{Reference counting in traditional run-times}{57}{section*.21}
-\contentsline {subparagraph}{Upsides}{58}{section*.22}
-\contentsline {subparagraph}{Downsides}{58}{section*.23}
-\contentsline {subparagraph}{Possible solutions}{59}{section*.24}
-\contentsline {subsection}{\numberline {5.9.2}\_\_MRConstString}{60}{subsection.5.9.2}
-\contentsline {section}{\numberline {5.10}Ports}{60}{section.5.10}
-\contentsline {subsection}{\numberline {5.10.1}Windows 3.11}{60}{subsection.5.10.1}
-\contentsline {subsection}{\numberline {5.10.2}HeSiVa}{62}{subsection.5.10.2}
-\contentsline {chapter}{\numberline {6}Known Issues}{66}{chapter.6}
-\contentsline {chapter}{\numberline {7}Future Work}{67}{chapter.7}
-\contentsline {chapter}{Conclusion}{68}{chapter*.25}
-\contentsline {chapter}{Bibliography}{69}{chapter*.26}
-\contentsline {chapter}{List of Figures}{70}{chapter*.26}
-\contentsline {chapter}{List of Abbreviations}{71}{chapter*.28}
-\contentsline {chapter}{Attachments}{72}{chapter*.29}
+\contentsline {subsection}{\numberline {5.8.1}Issues with generating static structures}{57}{subsection.5.8.1}
+\contentsline {subsection}{\numberline {5.8.2}Used prototype structures}{58}{subsection.5.8.2}
+\contentsline {section}{\numberline {5.9}Internal Classes}{59}{section.5.9}
+\contentsline {subsection}{\numberline {5.9.1}MRObject}{60}{subsection.5.9.1}
+\contentsline {paragraph}{Reference counting in traditional run-times}{60}{section*.21}
+\contentsline {subparagraph}{Upsides}{60}{section*.22}
+\contentsline {subparagraph}{Downsides}{61}{section*.23}
+\contentsline {subparagraph}{Possible solutions}{61}{section*.24}
+\contentsline {subsection}{\numberline {5.9.2}\_\_MRConstString}{61}{subsection.5.9.2}
+\contentsline {section}{\numberline {5.10}Benchmarks}{62}{section.5.10}
+\contentsline {section}{\numberline {5.11}Ports}{64}{section.5.11}
+\contentsline {subsection}{\numberline {5.11.1}Windows 3.11}{64}{subsection.5.11.1}
+\contentsline {subsection}{\numberline {5.11.2}HeSiVa}{64}{subsection.5.11.2}
+\contentsline {chapter}{\numberline {6}Known Issues}{69}{chapter.6}
+\contentsline {chapter}{\numberline {7}Future Work}{70}{chapter.7}
+\contentsline {chapter}{Conclusion}{71}{chapter*.25}
+\contentsline {chapter}{Bibliography}{72}{chapter*.26}
+\contentsline {chapter}{List of Figures}{73}{chapter*.26}
+\contentsline {chapter}{List of Abbreviations}{74}{chapter*.28}
+\contentsline {chapter}{Attachments}{75}{chapter*.29}
