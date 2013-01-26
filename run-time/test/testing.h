@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include <time.h>
 
+#if OBJC_HAS_AO_EXTENSION
+	#include "../extras/ao-ext.h"
+#endif
+
 typedef struct {
 	Class isa;
 	id proxyObject;
@@ -236,7 +240,7 @@ static struct objc_category_prototype _MyClass_Privates_category_prototype_ = {
 		printf("Correctness condition false for test " #TEST_NAME "!\n");\
 	}\
 	\
-	printf("%f\n", ((double)c2 - (double)c1)/ (double)CLOCKS_PER_SEC);\
+	printf("%lu\n", (c2 - c1));\
 }
 
 static void register_classes(void){
