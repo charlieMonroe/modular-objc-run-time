@@ -56,7 +56,6 @@ void objc_associated_object_register_extension(void){
 	objc_class_add_extension(&ao_extension);
 }
 
-static void objc_associated_object_register_initializer(void) __attribute__((constructor));
 static void objc_associated_object_register_initializer(void){
 	objc_runtime_register_initializer(objc_associated_object_register_extension);
 }

@@ -10,17 +10,11 @@ LFLAGS=`x=\`uname\`; \
 		fi`
 
 
-all : test-no-lto test-with-lto test-cocoa
+all : dispatch-test test-with-lto
 	echo "Done."
 
-test-cocoa : main.m
-	cc -lobjc main.m -o objc_test_cocoa
-
-test-no-lto : static
-	cc -L/usr/lib/ -L. -lobjc-runtime main.c -o objc_test_no_lto
-
-test-with-lto : static
-	cc -L/usr/lib/ -L. -lobjc-runtime -flto main.c -o objc_test_with_lto
+dispatch-test : static
+	cc -L/usr/lib/ -L. -lobjc-runtime -flto test/dispatch-test.c -o dispatch-test
 
 main.o : main.c
 	cc -c main.c
@@ -50,5 +44,5 @@ posix.o : extras/posix.c
 	cc $(CFLAGS) -c extras/posix.c -o posix.o
 
 clean: 
-	rm *.o *.a objc_test_no_lto objc_test_with_lto objc_test_cocoa
+	rm *.o *.a objc_test_no_lto objc_test_with_lto objc_test_cocoa ; rm test/*.o test/dispatch-test
 

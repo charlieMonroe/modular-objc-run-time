@@ -194,7 +194,6 @@ void objc_categories_register_extension(void){
 	objc_class_add_extension(&categories_extension);
 }
 
-static void objc_categories_register_initializer(void) __attribute__((constructor));
 static void objc_categories_register_initializer(void){
 	objc_runtime_register_initializer(objc_categories_register_extension);
 }

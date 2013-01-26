@@ -2,7 +2,9 @@
 #ifndef RUNTIME_TEST_CLASSES_H_
 #define RUNTIME_TEST_CLASSES_H_
 
-#include "types.h"
+#include "../objc.h"
+#include <stdio.h>
+#include <time.h>
 
 typedef struct {
 	Class isa;
@@ -79,7 +81,7 @@ static struct objc_method_prototype _I_MyClass_incrementViaAO_mp_ = {
 #endif
 
 static struct objc_method_prototype _I_MyClass_forwardedMethod_mp_ = {
-	"forwardedMethod:",
+	"forwardedMethodForSelector:",
 	"^@::",
 	(IMP)_I_MyClass_forwardedMethod_,
 	0
@@ -125,7 +127,8 @@ static struct objc_method_prototype *_MyClass_instance_methods[] = {
 
 static Ivar _MyClass_ivars_[] = {
 	&_MyClass_isa_proxyObject_ivar_,
-	&_MyClass_isa_i_ivar_
+	&_MyClass_isa_i_ivar_,
+	NULL
 };
 
 static struct objc_class_prototype MyClass_class = {
@@ -212,6 +215,104 @@ static struct objc_category_prototype _MyClass_Privates_category_prototype_ = {
 };
 
 #endif
+
+
+#define GENERATE_TEST(TEST_NAME, INSTANCE_CLASS_NAME, PREFLIGHT, ITERATIONS, INNER_CYCLE, CORRECTNESS_TEST) static void TEST_NAME##_test(void){\
+	MyClass *instance;\
+	clock_t c1, c2;\
+	int i;\
+	\
+	PREFLIGHT\
+	\
+	instance = (MyClass*)objc_object_lookup_impl((id)objc_class_for_name(INSTANCE_CLASS_NAME), objc_selector_register("alloc"))((id)objc_class_for_name(INSTANCE_CLASS_NAME), objc_selector_register("alloc"));\
+	\
+	c1 = clock();\
+	for (i = 0; i < ITERATIONS; ++i){\
+		INNER_CYCLE\
+	}\
+	c2 = clock();\
+	\
+	if (!(CORRECTNESS_TEST)){\
+		printf("Correctness condition false for test " #TEST_NAME "!\n");\
+	}\
+	\
+	printf("%f\n", ((double)c2 - (double)c1)/ (double)CLOCKS_PER_SEC);\
+}
+
+static void register_classes(void){
+	objc_class_register_prototype(&MyClass_class);
+	objc_class_register_prototype(&MySubclass_class);
+	
+#if OBJC_HAS_CATEGORIES_EXTENSION
+	objc_class_register_category_prototype(&_MyClass_Privates_category_prototype_);
+#endif
+}
+
+static void print_method_list(Method *methods){
+	while (*methods != NULL){
+		printf("\t%s - %p\n", (*methods)->selector->name, (*methods)->implementation);
+		++methods;
+	}
+}
+static void print_ivar_list(Ivar *ivars){
+	while (*ivars != NULL){
+		printf("\t%s - %s - size: %d offset: %d\n", (*ivars)->name, (*ivars)->type, (*ivars)->size, (*ivars)->offset);
+		++ivars;
+	}
+}
+
+#if OBJC_HAS_CATEGORIES_EXTENSION
+static void print_categories(Class cl){
+	Category *categories = objc_class_get_category_list(cl);
+	Category *orig_ptr = categories;
+	while (*categories != NULL){
+		Method *class_methods = objc_category_get_class_methods(*categories);
+		Method *instance_methods = objc_category_get_instance_methods(*categories);
+		
+		printf("** %s - Class category methods:\n", objc_category_get_name(*categories));
+		print_method_list(class_methods);
+		
+		printf("** %s - Instance category methods:\n", objc_category_get_name(*categories));
+		print_method_list(instance_methods);
+		
+		objc_dealloc(class_methods);
+		objc_dealloc(instance_methods);
+		
+		++categories;
+	}
+	objc_dealloc(orig_ptr);
+}
+#endif
+
+static void print_class(Class cl){
+	printf("******** Class %s ********\n", objc_class_get_name(cl));
+	printf("**** Class methods:\n");
+	print_method_list(objc_class_get_class_method_list(cl));
+	printf("**** Instance methods:\n");
+	print_method_list(objc_class_get_instance_method_list(cl));
+	
+#if OBJC_HAS_CATEGORIES_EXTENSION
+	printf("**** Categories:\n");
+	print_categories(cl);
+#endif
+	
+	printf("**** Ivars:\n");
+	print_ivar_list(objc_class_get_ivar_list(cl));
+	
+	printf("\n\n");
+}
+static void list_classes(void){
+	Class *classes = objc_class_get_list();
+	Class *orig_ptr = classes;
+	while (*classes != NULL){
+		print_class(*classes);
+		++classes;
+	}
+	objc_dealloc(orig_ptr);
+}
+
+#define DISPATCH_ITERATIONS 10000000
+#define ALLOCATION_ITERATIONS 10000000
 
 
 #endif /* RUNTIME_TEST_CLASSES_H_ */

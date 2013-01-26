@@ -43,14 +43,13 @@ static id _second_log(id self, SEL _cmd, ...){
 }
 
 static void dispatch_test(void){
-	SEL log_selector = sel_registerName("log");
 	id instance = class_createInstance(objc_getClass("MySubclass"), 0);
 	printf("Created an object instance: %p\n", instance);
 	
 	clock_t c1, c2;
 	c1 = clock();
 	for (int i = 0; i < 10000000; ++i){
-		objc_msgSend(instance, log_selector);
+		objc_msgSend(instance, sel_registerName("log"));
 	}
 	
 	c2 = clock();
