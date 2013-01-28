@@ -5,8 +5,9 @@ GENERATE_TEST(super_dispatch, "MySubclass", {
 	m->selector = objc_selector_register(_I_MySubclass_increment_mp_.selector_name);
 	objc_class_add_instance_method(objc_class_for_name("MySubclass"), m);
 }, DISPATCH_ITERATIONS, {
-	SEL selector = objc_selector_register("increment");
-	IMP impl = objc_object_lookup_impl((id)instance, selector);
+	SEL selector = NULL;
+	IMP impl = NULL;
+	OBJC_GET_IMP((id)instance, "increment", selector, impl);
 	impl((id)instance, selector);
 }, (*((int*)(objc_object_get_variable((id)instance, objc_class_get_ivar(objc_class_for_name("MySubclass"), "i")))) == 2 * DISPATCH_ITERATIONS))
 

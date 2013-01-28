@@ -14,7 +14,7 @@ objc_run_test() {
 	fi
 	
 	TIME=`./${TEST_NAME}`
-	echo "${TEST_NAME}[${COUNTER}] - 0.$TIME"
+	echo "${TEST_NAME}[${COUNTER}] - ${TIME}µs"
 	
 	COUNTER="`expr "${COUNTER}" + 1`"
 	
@@ -33,8 +33,8 @@ for TEST in ./*-test; do
 	TIME="`cat $TEMPFILE`"
 	TIME="`expr "$TIME" / "${LOOP_COUNT}"`"
 	
-	echo "$TEST[average] = 0.$TIME"
-	echo "$TEST[average] = 0.$TIME" >> $TEMPFILETOTALS
+	echo "$TEST[average] = ${TIME}µs"
+	echo "$TEST[average] = ${TIME}µs" >> $TEMPFILETOTALS
 done
 
 echo "======================"

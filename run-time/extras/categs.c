@@ -1,8 +1,8 @@
 #include "categs.h"
-#include "classext.h"
-#include "utils.h"
-#include "selector.h"
-#include "method.h"
+#include "../classext.h"
+#include "../utils.h"
+#include "../selector.h"
+#include "../method.h"
 
 objc_class_extension categories_extension;
 

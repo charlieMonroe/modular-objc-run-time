@@ -266,7 +266,7 @@ At the core of the run-time lies a structure representing a class. Like the \'Et
 
 The class structure begins with an \verb=isa= pointer, which points to itself - a class is hence its own instance. This allows a quick detection of a class in the method dispatch - \verb+obj->isa == obj+ - macros \verb=OBJC_OBJ_IS_CLASS= and \newline{}\verb=OBJC_OBJ_IS_INSTANCE= are included.
 
-\begin{figure}[htbp] 
+\begin{figure}[H] 
   
     \begin{verbatim}
       struct objc_class {
@@ -361,8 +361,13 @@ The cache hence keeps track of the readers, using a simple \verb=unsigned int= -
 
 \section{Forwarding}
 
+The dynamic nature of the language allows you to send messages (call methods) that aren't implemented on the objects. When such a scenario happens, the run-time should provide a mechanism to forward such a call to a different object, or handle such an error on its own.
+
 \subsection{Apple Run-Time}
-In a traditional run-time, such as Apple's, when an object is sent a message it does not recognize, i.e.\ it doesn't implement a method with such a selector, a method called \verb=forwardInvocation:= is invoked, the argument being an object of class \verb=NSInvocation=, a class that serves as a wrapper around method invocations, holding parameters and their types.
+
+Apple's run-time allows installing a forwarding handler using a private run-time function. If no such function is installed, it calls \verb=forward::= method on the object, where the first argument is the selector and the second argument are the arguments on the stack. The idea behind this was to simply resend the arguments to \verb=objc_msgSendv=, which accepted, as an argument the method arguments, however, this function is deprecated and most importantly there were never implemented variants of this function that would return structures, or floating points.
+
+Nevertheless, the Foundation framework installs a forwarding handler (which really means that the previously described mechanism is unavailable), anyway, which calls a method called \verb=forwardInvocation:=, the argument being an object of class \verb=NSInvocation=, a class that serves as a wrapper around method invocations, holding parameters and their types.
 
 This, however, as Apple's selectors aren't typed, requires you to implement another method - \verb=methodSignatureForSelector:= which should return an instance of a class \verb=NSMethodSignature=, which should carry the types required by the method implementation.
 
@@ -386,7 +391,7 @@ Creating and draining the autorelease pool, however, puts another overhead in th
 
 The GCC run-time doesn't need any additional classes, instead it has two forwarding hooks (functions) which both get the selector as an argument and should return an \verb=IMP= pointer. The second hook also takes the receiver object as an argument.
 
-If neither hook is installed, or neither returns a valid implementation pointer, the run-time goes on, trying to send a \verb=forward::= message to the object. If the object doesn't implement this method, the run-time tries to call \verb=doesNotRecognize:=. If that isn't implemented as well, the program aborts.
+If neither hook is installed, or neither returns a valid implementation pointer, the run-time goes on, trying to send a \verb=forward::= message to the object. If the object doesn't implement this method, the run-time tries to call \verb=doesNotRecognize:=. If that isn't implemented as well, the program aborts. In general, very similar to Apple's implementation.
 
 \subsection{Modular Run-Time}
  
@@ -406,7 +411,7 @@ The run-time base class \verb=MRObject= implements both methods, the first one a
 
 Figure ~\ref{fig:forwarding_proxy_class} shows how a proxy class could be implemented. Using this mechanism, proxy calls are only 5 times slower than direct calls.
 
-\begin{figure}[htbp] 
+\begin{figure}[H] 
   \begin{verbatim}
     @interface MRProxy : MRObject {
       id _proxyObject;
@@ -423,7 +428,7 @@ Figure ~\ref{fig:forwarding_proxy_class} shows how a proxy class could be implem
     
     -(Method)forwardedMethodForSelector:(SEL)selector{
       /** 
-       * Simply call the lookup method, targetting
+       * Simply call the lookup method, targeting
        * the proxy object instead. If the proxy object
        * doesn't implement it, NULL is returned.
        *
@@ -482,7 +487,7 @@ A class extension may get registered using the \verb=objc_class_add_extension()=
 
 This function has a single argument: a pointer to a \verb=objc_class_extension= structure:
 
-\begin{figure}[htbp] 
+\begin{figure}[H] 
   \begin{verbatim}
     typedef struct _objc_class_extension {
 
@@ -520,7 +525,7 @@ Unfortunately, this field has to be included directly in the structure, as at th
 
 The preferred way to handle this is to declare a static variable of type \newline{}\verb=objc_class_extension= which is then passed to the registering function by reference. An example can be seen in figure~\ref{fig:class_ext_struct_example}.
 
-\begin{figure}[here] 
+\begin{figure}[H] 
   \begin{verbatim}
     objc_class_extension ao_extension = { 
         /** ... */ 
@@ -557,7 +562,7 @@ Here is a quick overview of each field within the extensions structure other tha
 There are two static inline functions \texttt{objc\_class\_extensions\_beginning} \newline{}and \texttt{objc\_object\_extensions\_beginning} which return the pointer to the extra space of the class structure, or after the object variables. For a better understanding, see the picture in figure~\ref{fig:class_ext_mem_usage_img}. Another two functions \newline{}\texttt{objc\_class\_extensions\_beginning\_for\_extension} and \newline{}\texttt{objc\_object\_extensions\_beginning\_for\_extension} are included that compute the precise pointer to the memory dedicated for that particular class extension on either the class or object.
 
 
-\begin{figure}[htbp] 
+\begin{figure}[H] 
   \begin{verbatim}
     struct obj_MyClass {
       id isa;
@@ -594,7 +599,7 @@ There are two static inline functions \texttt{objc\_class\_extensions\_beginning
   \label{fig:class_ext_dealloc_example}
 \end{figure}
 
-\begin{figure}[htbp] 
+\begin{figure}[H] 
   
   \includegraphics[width=\textwidth]{img/class_extensions.png}
   
@@ -652,7 +657,7 @@ The \verb=instance_lookup_function= may be \verb=NULL= as well, unless you want 
 
 Then you can create some getter and setter functions for associated objects. To access the hash-table from an \verb=id object=, you can use code similar to the example shown in figure ~\ref{fig:class_ext_ao}.
 
-\begin{figure}[htbp] 
+\begin{figure}[H] 
 \begin{verbatim}
   
   // It is much easier to pretend that
@@ -730,7 +735,7 @@ While the idea of creating class structures and registering them with the run-ti
 
 The run-time uses prototype structures that can be seen in figure ~\ref{fig:objc_prototypes}.
 
-\begin{figure}
+\begin{figure}[H]
   \begin{verbatim}
     struct objc_method_prototype {
       const char *selector_name;
@@ -788,7 +793,7 @@ In the latest versions, however, Apple has started moving the \verb=NSObject= cl
 
 In particular, the \verb=retain= and \verb=release= methods are implemented in most cases only on the root class - \verb=NSObject=. This way, in Apple's run-time, each class marks whether it has implemented its own retain/release methods and if it hasn't, the run-time may directly invoke the retain/release implementation without even looking into the cache, or climbing up the class hierarchy, looking for a method that is certainly at the root of the tree. Most importantly, these two methods are one of the most frequently used methods - Apple supports a so-called vtable, a set of 16 \verb=IMP= functions that are used most and their implementation \emph{usually isn't overridden} (this is an important condition!) - the default list of selectors can be viewed in figure ~\ref{fig:vtable_def_sels} - comments where such methods are usually implemented have been added.
 
-\begin{figure}
+\begin{figure}[H]
   \begin{verbatim}
     static const char * const defaultVtable[] = {
       "allocWithZone:", /** +NSObject, allocating objects. */
@@ -838,7 +843,7 @@ The run-time hence includes a basic object class called \verb=MRObject= (\verb=M
   \item{\bf{A hidden reference count ivar}} This could be solved using a hidden ivar that would be ``in front" of the actual object. While the function \verb=class_createInstance= would allocate memory at address \verb=X=, it would return an address \verb=X + sizeof(int)= (note that it should be a signed integer type since an unsigned could underflow into high numbers, making it undetectable), or similar, and the reference count variable would be at address \verb=X=. See figure ~\ref{fig:ref_cnt_hidden_ivar} for a diagram. This could be an issue is with statically created objects, like constant strings, however, these objects usually have the retain and release methods overridden to do nothing, their reference count being the maximum integer of that size possible. Of course, it would require all objects to be created using the run-time function for creating instances.
 \end{itemize}
 
-\begin{figure}
+\begin{figure}[H]
   \includegraphics[width=\textwidth]{img/hidden_ref_cnt_var.png}
   
   \centering{}
@@ -862,7 +867,7 @@ The question with creating static Objective-C variables is getting the isa point
 
 The solution to this is to export a class prototype structure as can be seen on figure ~\ref{fig:mr_const_str_export}.
 
-\begin{figure}
+\begin{figure}[H]
   \begin{verbatim}
     /** In the header file. */
     extern struct objc_class_prototype __MRConstString_class;
@@ -892,7 +897,7 @@ The solution to this is to export a class prototype structure as can be seen on 
 
 Since the prototype is exported, which is the same as the future class, since the prototype is only modified to become a real class, you can actually place \verb=&__MRConstString_class= in place of the isa pointer and everything works out. The run-time comes with a macro for creating such structures - see figure ~\ref{fig:mr_const_str_creation}.
 
-\begin{figure}
+\begin{figure}[H]
   \begin{verbatim}
    #define OBJC_STRING(VAR_NAME, STR) \
          static __MRConstString_instance_t VAR_NAME##_stat_str = 
@@ -919,12 +924,312 @@ Since the prototype is exported, which is the same as the future class, since th
 
 While achieving the modularity, it is also important to keep the speed of the run-time. Several tests have been performed, comparing the speed of the modular run-time with Apple run-time on OS X 10.8.
 
+The following tests count with this scenario: there are two classes, \verb=MyClass= and \verb=MySubclass=, where \verb=MySubclass= is a subclass of \verb=MyClass=. The \verb=MySubclass= class has no methods implemented, not does it have any ivars declared - all declarations are made on \verb=MyClass=. This is to verify the functionality of the caching mechanism. \verb=MyClass= has two ivars (plus an inherited \verb=isa= ivar from \verb=MRObject=), an integer \verb=i= and an \verb=id proxyObject= which gets to be used in the proxy test. The tests performed are listed below.
+
+Each test has been run in several variants:
+
+\begin{itemize}
+	\item{\bf{No inline caching}} The selectors are fetched from the run-time with each call, method implementation doesn't get cached either.
+	\item{\bf{Selector caching}} The selector is fetched only once, then a cached pointer is used.
+	\item{\bf{Complete inline caching}} The selector is cached, as well as the method.
+	\item{\bf{Function pointers vs. Inline functions}} Each of the above has also a sub-variant, depending on whether the run-time has been compiled with function pointers, or inline functions.
+\end{itemize}
+
+The following abbreviations are used:
+\begin{itemize}
+  \item{\bf{MR FP NIC}} - Modular run-time, function pointers, no inline caching (selector and implementation function is looked up each time, class cache may be used)
+  \item{\bf{MR FP SIC}} - Modular run-time, function pointers, selector inline caching (implementation function is looked up each time, class cache may be used, selector is inline cached)
+  \item{\bf{MR FP CIC}} - Modular run-time, function pointers, complete inline caching (both implementation function and selector are cached)
+  \item{\bf{MR IF NIC}} - Modular run-time, inline functions, no inline caching (selector and implementation function is looked up each time, class cache may be used)
+  \item{\bf{MR IF SIC}} - Modular run-time, inline functions, selector inline caching (implementation function is looked up each time, class cache may be used, selector is inline cached)
+  \item{\bf{MR IF CIC}} - Modular run-time, inline functions, complete inline caching (both implementation function and selector are cached)
+  \item{\bf{Apple NC}} - Apple's run-time, no caching (i.e.\ \verb=objc_msgSend(obj,=\newline{}\verb=sel_registerName("method"))=)
+  \item{\bf{Apple SC}} - Apple's run-time, selector caching 
+\end{itemize}
+
 \subsection{Dispatch test}
 
-The first test focuses on the speed of the method dispatch.
+An instance of \verb=MySubclass= is created and 10,000,000 calls to its method \verb=increment= are made. The method does nothing but increments the variable \verb=i=. This is simply to later verify that all these calls have been performed.
+
+Figure ~\ref{fig:dispatch_test} shows results.
+
+Observation:
+
+\begin{itemize}
+  \item Using inline caching, speeds at half the direct C calls can be achieved, just like in \'Etoil\'e run-time.
+  \item Apple's run-time is really slow at registering and fetching an already-registered selector.
+  \item Compiling the run-time using inline functions will only give a few percent boost in performance, if any.
+\end{itemize}
+
+\begin{figure}[H]
+  \begin{tikzpicture}
+    \begin{axis}[
+      ybar,
+      width=\textwidth,
+      height=8cm,
+      enlargelimits=0.15,
+      legend style={at={(0.5,-0.2)},
+        anchor=north, legend columns=-1},
+       ylabel={seconds},
+      symbolic x coords={Direct C call, MR FP NIC, MR FP SIC, MR FP CIC, MR IF NIC, MR IF SIC, MR IF CIC, Apple NC, Apple SC},
+      xtick=data, nodes near coords, nodes near coords align={vertical},
+      x tick label style={rotate=45,anchor=east},
+      ]
+      \addplot coordinates {
+        (Direct C call, 0.019575)
+        (MR FP NIC, 0.297504)
+        (MR FP SIC, 0.138847)
+        (MR FP CIC, 0.041436)
+        (MR IF NIC, 0.258808)
+        (MR IF SIC, 0.107387)
+        (MR IF CIC, 0.047765)
+        (Apple NC, 0.491493)
+        (Apple SC, 0.061953)
+      };
+      
+    \end{axis}
+  \end{tikzpicture}
+  \centering{}
+  \caption{Dispatch test.}
+  \label{fig:dispatch_test}
+\end{figure}
+
+\subsection{Super dispatch test}
+
+The method \verb=increment= is added to \verb=MySubclass= as well (overriding the \verb=MyClass=' implementation) and increments the variable \verb=i= as well, while calling \verb=[super increment]=, too. This test is designed to test the speed of calls to \verb=super=.
+
+Results may be seen in figure ~\ref{fig:super_dispatch_test}. Note that the modular run-time doesn't inline-cache super calls which could probably cut the time in half, beating Apple's run-time, which now beats the modular run-time by 0.03s.
+
+\begin{figure}[H]
+  \begin{tikzpicture}
+    \begin{axis}[
+      ybar,
+      width=\textwidth,
+      height=8cm,
+      enlargelimits=0.15,
+      legend style={at={(0.5,-0.2)},
+        anchor=north, legend columns=-1},
+       ylabel={seconds},
+      symbolic x coords={MR FP NIC, MR FP SIC, MR FP CIC, MR IF NIC, MR IF SIC, MR IF CIC, Apple NC, Apple SC},
+      xtick=data, nodes near coords, nodes near coords align={vertical},
+      x tick label style={rotate=45,anchor=east},
+      ]
+      \addplot coordinates {
+        (MR FP NIC, 0.408744)
+        (MR FP SIC, 0.273624)
+        (MR FP CIC, 0.170102)
+        (MR IF NIC, 0.358048)
+        (MR IF SIC, 0.214007)
+        (MR IF CIC, 0.148308)
+        (Apple NC, 1.363145)
+        (Apple SC, 0.119756)
+      };
+      
+    \end{axis}
+  \end{tikzpicture}
+  \centering{}
+  \caption{Super dispatch test.}
+  \label{fig:super_dispatch_test}
+\end{figure}
+
+\subsection{Categories dispatch test}
+
+A new method called \verb=incrementViaCategoryMethod=, incrementing the \verb=i= variable in the same way as \verb=increment=, is added to \verb=MyClass= via a class category, which in the modular run-time is implemented as a class extension. This method gets called 10,000,000 times, as in the previous cases.
+
+The results in figure ~\ref{fig:categories_dispatch_test} prove that even class extensions with lookup functions do not slow down the run-time, but even can actually speed up the run-time a little, since the category has only one method, therefore the run-time doesn't have to go through a method list to fetch the correct method before it caches it for the first time (which can be seen even on Apple's results, being faster by about 0.001s).
+
+\begin{figure}[H]
+  \begin{tikzpicture}
+    \begin{axis}[
+      ybar,
+      width=\textwidth,
+      height=8cm,
+      enlargelimits=0.15,
+      legend style={at={(0.5,-0.2)},
+        anchor=north, legend columns=-1},
+       ylabel={seconds},
+      symbolic x coords={MR FP NIC, MR FP SIC, MR FP CIC, MR IF NIC, MR IF SIC, MR IF CIC, Apple NC, Apple SC},
+      xtick=data, nodes near coords, nodes near coords align={vertical},
+      x tick label style={rotate=45,anchor=east},
+      ]
+      \addplot coordinates {
+        (MR FP NIC, 0.477686)
+        (MR FP SIC, 0.130696)
+        (MR FP CIC, 0.032238)
+        (MR IF NIC, 0.491530)
+        (MR IF SIC, 0.105227)
+        (MR IF CIC, 0.038727)
+        (Apple NC, 1.540786)
+        (Apple SC, 0.060773)
+      };
+      
+    \end{axis}
+  \end{tikzpicture}
+  \centering{}
+  \caption{Categories dispatch test.}
+  \label{fig:categories_dispatch_test}
+\end{figure}
 
 
-// TODO
+\subsection{Allocation test}
+
+In a cycle, an instance of \verb=MyClass= is allocated and immediately deallocated for 10,000,000 times.
+
+Since this test doesn't use the dispatch, inline caching has no effect on the results as can be seen on figure ~\ref{fig:alloc_test}. You can see, however, the benefit of function inlining here, which completes the allocation test 0.01s faster than using function pointers.
+
+\begin{figure}[H]
+  \begin{tikzpicture}
+    \begin{axis}[
+      ybar,
+      width=\textwidth,
+      height=8cm,
+      enlargelimits=0.15,
+      legend style={at={(0.5,-0.2)},
+        anchor=north, legend columns=-1},
+       ylabel={seconds},
+      symbolic x coords={MR FP NIC, MR FP SIC, MR FP CIC, MR IF NIC, MR IF SIC, MR IF CIC, Apple NC, Apple SC},
+      xtick=data, nodes near coords, nodes near coords align={vertical},
+      x tick label style={rotate=45,anchor=east},
+      ]
+      \addplot coordinates {
+        (MR FP NIC, 0.838515)
+        (MR FP SIC, 0.838344)
+        (MR FP CIC, 0.836304)
+        (MR IF NIC, 0.827963)
+        (MR IF SIC, 0.827077)
+        (MR IF CIC, 0.827730)
+        (Apple NC, 1.512136)
+        (Apple SC, 1.515067)
+      };
+      
+    \end{axis}
+  \end{tikzpicture}
+  \centering{}
+  \caption{Allocation test.}
+  \label{fig:alloc_test}
+\end{figure}
+
+
+\subsection{Ivar test}
+
+An instance of \verb=MySubclass= is created and 10,000,000 times, its method \verb=incrementViaSettersAndGetters= is called. This method doesn't directly access the \verb=i= ivar, but rather uses run-time functions to modify it.
+
+This test interlaces the dispatch test with calling run-time functions, which, as can be seen on figure ~\ref{fig:ivar_test}, again proves that Apple's run-time is incredibly slow at fetching selectors and at using the ivar fetching functions. Note that as it is fetching ivars, which cannot be added after the class has been registered with the run-time, no locks should be necessary.
+
+\begin{figure}[H]
+  \begin{tikzpicture}
+    \begin{axis}[
+      ybar,
+      width=\textwidth,
+      height=8cm,
+      enlargelimits=0.15,
+      legend style={at={(0.5,-0.2)},
+        anchor=north, legend columns=-1},
+       ylabel={seconds},
+      symbolic x coords={MR FP NIC, MR FP SIC, MR FP CIC, MR IF NIC, MR IF SIC, MR IF CIC, Apple NC, Apple SC},
+      xtick=data, nodes near coords, nodes near coords align={vertical},
+      x tick label style={rotate=45,anchor=east},
+      ]
+      \addplot coordinates {
+        (MR FP NIC, 0.685918)
+        (MR FP SIC, 0.286989)
+        (MR FP CIC, 0.189485)
+        (MR IF NIC, 0.631897)
+        (MR IF SIC, 0.235848)
+        (MR IF CIC, 0.171315)
+        (Apple NC, 3.128281)
+        (Apple SC, 1.677492)
+      };
+      
+    \end{axis}
+  \end{tikzpicture}
+  \centering{}
+  \caption{Ivar test.}
+  \label{fig:ivar_test}
+\end{figure}
+
+
+\subsection{Forwarding test}
+
+A third class \verb=NewClass= is created with a single method \verb=unknownSelector:=. An instance of \verb=MySubclass= is created and the \verb=proxyObject= ivar is set to an instance of \verb=NewClass=. \verb=MyClass= implements the run-time's forwarding mechanism and all unknown calls are directed to the \verb=proxyObject=. This test compares the direct calls to the \verb=NewClass= instance with proxy calls.
+
+As has been noted above, Apple has two forwarding mechanisms, one obsolete, using the \verb=forward::= method, the other introduced by the Foundation framework and generally the only one you should be using, since the \verb=objc_msgSendv=, which would accept the arguments list, is deprecated with no alternative. This test, nevertheless, is also testing this deprecated method, in tests marked as \verb=Apple NC 2= and \verb=Apple SC 2=. As can be seen, figure ~\ref{fig:forwarding_test}, wrapping the calls in \verb=NSInvocation= objects is very costly and makes the calls extremely slow. Note that the inner cycle body needed to be wrapped in a \verb=@autorelease= block to prevent excess memory usage.
+
+Note that the complete inline caching versions of the test achieve nearly the speed of the regular dispatch test, since the \verb=objc_object_lookup_method= function returns directly the forwarded method.
+
+\begin{figure}[H]
+  \begin{tikzpicture}
+    \begin{axis}[
+      ybar,
+      width=\textwidth,
+      height=10cm,
+      enlargelimits=0.15,
+      legend style={at={(0.5,-0.2)},
+        anchor=south, legend columns=-1},
+       ylabel={seconds},
+      symbolic x coords={MR FP NIC, MR FP SIC, MR FP CIC, MR IF NIC, MR IF SIC, MR IF CIC, Apple NC, Apple NC 2, Apple SC, Apple SC 2},
+      xtick=data, nodes near coords, nodes near coords align={vertical},
+      x tick label style={rotate=45,anchor=east},
+      ]
+      \addplot coordinates {
+        (MR FP NIC, 0.986567)
+        (MR FP SIC, 0.753183)
+        (MR FP CIC, 0.044599)
+        (MR IF NIC, 0.828377)
+        (MR IF SIC, 0.587162)
+        (MR IF CIC, 0.049587)
+        (Apple NC, 10.363347)
+        (Apple NC 2, 1.515108)
+        (Apple SC, 8.649404)
+        (Apple SC 2, 0.307977)
+      };
+      
+    \end{axis}
+  \end{tikzpicture}
+  \centering{}
+  \caption{Forwarding test.}
+  \label{fig:forwarding_test}
+\end{figure}
+
+\subsection{Associated objects test}
+
+This test uses associated objects, to store an integer value (\verb=i=) and increment it 10,000,000 times.
+
+Figure ~\ref{fig:ao_test} proves the suspicion that Apple's implementation of associated objects has a bottle neck in the spin lock and external structure.
+
+\begin{figure}[H]
+  \begin{tikzpicture}
+    \begin{axis}[
+      ybar,
+      width=\textwidth,
+      height=8cm,
+      enlargelimits=0.15,
+      legend style={at={(0.5,-0.2)},
+        anchor=north, legend columns=-1, /pgf/number format/.cd precision=3},
+       ylabel={seconds},
+      symbolic x coords={MR FP NIC, MR FP SIC, MR FP CIC, MR IF NIC, MR IF SIC, MR IF CIC, Apple NC, Apple SC},
+      xtick=data, nodes near coords, nodes near coords align={vertical},
+      x tick label style={rotate=45,anchor=east},
+      ]
+      \addplot coordinates {
+        (MR FP NIC, 0.442383)
+        (MR FP SIC, 0.210939)
+        (MR FP CIC, 0.117460)
+        (MR IF NIC, 0.419079)
+        (MR IF SIC, 0.180105)
+        (MR IF CIC, 0.110694)
+        (Apple NC, 2.091337)
+        (Apple SC, 1.515067)
+      };
+      
+    \end{axis}
+  \end{tikzpicture}
+  \centering{}
+  \caption{Associated objects test.}
+  \label{fig:ao_test}
+\end{figure}
+
+
 
 \section{Ports}
 
@@ -948,7 +1253,7 @@ Surprisingly enough, the Turbo C++ supplies basic C libraries with \verb=malloc=
   \item{\bf{No pthread}} As there isn't much documentation for Windows 3.11 anymore, mostly due to the fact that back in the day most documentation was printed, not online or distributed in any digital form, it cannot be said for sure that Windows 3.11 did not have threading support, but all RW locking had to be thrown away and no-op'ed. 
 \end{itemize}
 
-\begin{figure}
+\begin{figure}[H]
   \includegraphics[width=\textwidth]{img/dos_box_3_11.png}
   
   \centering{}
@@ -964,7 +1269,7 @@ When designing some tests for the modular run-time, this ``operating system" has
 
 Interestingly, it took less work than porting it to Windows 3.11. The \verb=posix.c= file has been left out and it took only 32 lines of code (including some white space) to get the run-time running on such an operating system. The lines of code that were inserted can be seen in figure ~\ref{fig:hesiva_code}.
 
-\begin{figure}
+\begin{figure}[H]
   \begin{verbatim}
   static void *_zero_alloc(unsigned long size){
     void *memory = malloc(size);
@@ -1006,7 +1311,7 @@ Interestingly, it took less work than porting it to Windows 3.11. The \verb=posi
   \label{fig:hesiva_code}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[H]
   \includegraphics[width=\textwidth]{img/hesiva.png}
   
   \centering{}

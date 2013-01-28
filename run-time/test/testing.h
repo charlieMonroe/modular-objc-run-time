@@ -10,6 +10,10 @@
 	#include "../extras/ao-ext.h"
 #endif
 
+#if OBJC_HAS_CATEGORIES_EXTENSION
+	#include "../extras/categs.h"
+#endif
+
 typedef struct {
 	Class isa;
 	id proxyObject;
@@ -17,10 +21,6 @@ typedef struct {
 } MyClass;
 
 static id _C_MyClass_alloc_(id self, SEL _cmd, ...){
-#if OBJC_HAS_CATEGORIES_EXTENSION
-	printf("Shouldn't be here!\n");
-	objc_abort("Category should override this method.");
-#endif
 	return objc_class_create_instance((Class)self);
 }
 
@@ -190,60 +190,40 @@ static struct objc_class_prototype MySubclass_class = {
 
 #if OBJC_HAS_CATEGORIES_EXTENSION
 
-static id _C_MyClassCategoryPrivate_alloc_(id self, SEL _cmd){
-	static BOOL firstCallPassed;
-	if (!firstCallPassed){
-		printf("Allocating via class category!\n");
-		firstCallPassed = YES;
-	}
-	return objc_class_create_instance((Class)self);
+static void _I_MyClassCategoryPrivate_incrementViaCategoryMethod_(MyClass *self, SEL _cmd){
+	++self->i;
 }
 
-static struct objc_method_prototype _C_MyClassCategoryPrivate_alloc_mp_ = {
-	"alloc",
-	"@@:",
-	(IMP)_C_MyClassCategoryPrivate_alloc_,
+static struct objc_method_prototype _I_MyClassCategoryPrivate_incrementViaCategoryMethod_mp_ = {
+	"incrementViaCategoryMethod",
+	"v@:",
+	(IMP)_I_MyClassCategoryPrivate_incrementViaCategoryMethod_,
 	0
 };
 
-static struct objc_method_prototype *MyClass_Private_category_class_methods[] = {
-	&_C_MyClassCategoryPrivate_alloc_mp_,
+static struct objc_method_prototype *MyClass_Private_category_instance_methods[] = {
+	&_I_MyClassCategoryPrivate_incrementViaCategoryMethod_mp_,
 	NULL
 };
 
 static struct objc_category_prototype _MyClass_Privates_category_prototype_ = {
 	"MyClass",
 	"Privates",
-	MyClass_Private_category_class_methods,
-	NULL
+	NULL,
+	MyClass_Private_category_instance_methods
 };
 
 #endif
 
 
-#define GENERATE_TEST(TEST_NAME, INSTANCE_CLASS_NAME, PREFLIGHT, ITERATIONS, INNER_CYCLE, CORRECTNESS_TEST) static void TEST_NAME##_test(void){\
-	MyClass *instance;\
-	clock_t c1, c2;\
-	int i;\
-	\
-	PREFLIGHT\
-	\
-	instance = (MyClass*)objc_object_lookup_impl((id)objc_class_for_name(INSTANCE_CLASS_NAME), objc_selector_register("alloc"))((id)objc_class_for_name(INSTANCE_CLASS_NAME), objc_selector_register("alloc"));\
-	\
-	c1 = clock();\
-	for (i = 0; i < ITERATIONS; ++i){\
-		INNER_CYCLE\
-	}\
-	c2 = clock();\
-	\
-	if (!(CORRECTNESS_TEST)){\
-		printf("Correctness condition false for test " #TEST_NAME "!\n");\
-	}\
-	\
-	printf("%lu\n", (c2 - c1));\
-}
-
 static void register_classes(void){
+	#if OBJC_HAS_AO_EXTENSION
+		objc_associated_object_register_extension();
+	#endif
+	#if OBJC_HAS_CATEGORIES_EXTENSION
+		objc_categories_register_extension();
+	#endif
+	
 	objc_class_register_prototype(&MyClass_class);
 	objc_class_register_prototype(&MySubclass_class);
 	
@@ -314,6 +294,82 @@ static void list_classes(void){
 	}
 	objc_dealloc(orig_ptr);
 }
+
+#define OBJC_INLINE_CACHING_NONE 0
+#define OBJC_INLINE_CACHING_SELECTOR 1
+#define OBJC_INLINE_CACHING_COMPLETE 2
+
+#if OBJC_INLINE_CACHING == OBJC_INLINE_CACHING_NONE
+#define OBJC_GET_IMP(obj, sel_name, sel_var, imp_var) {\
+	sel_var = objc_selector_register(sel_name);\
+	imp_var = objc_object_lookup_impl(obj, sel_var);\
+}
+#elif OBJC_INLINE_CACHING == OBJC_INLINE_CACHING_SELECTOR
+#define OBJC_GET_IMP(obj, sel_name, sel_var, imp_var) {\
+	static SEL sel_var##sel_var;\
+	if (sel_var##sel_var == NULL){\
+		sel_var##sel_var = objc_selector_register(sel_name);\
+	}\
+	sel_var = sel_var##sel_var;\
+	imp_var = objc_object_lookup_impl(obj, sel_var);\
+}
+#elif OBJC_INLINE_CACHING == OBJC_INLINE_CACHING_COMPLETE
+#define OBJC_GET_IMP(obj, sel_name, sel_var, imp_var) {\
+	static SEL sel_var##sel_var;\
+	static struct {\
+		Method m;\
+		Class isa;\
+		unsigned int version;\
+	} cache;\
+	\
+	if (sel_var##sel_var == NULL){\
+		sel_var##sel_var = objc_selector_register(sel_name);\
+	}\
+	sel_var = sel_var##sel_var;\
+	\
+	if (cache.m == NULL || \
+		(((id)obj)->isa != cache.isa || cache.version != cache.m->version)\
+		){\
+		cache.m = objc_object_lookup_method(obj, sel_var##sel_var);\
+		cache.version = cache.m->version;\
+		cache.isa = ((id)obj)->isa;\
+		imp_var = cache.m->implementation;\
+	}else{\
+		imp_var = cache.m->implementation;\
+	}\
+}
+#else
+#error Unknown type of caching.
+#endif
+
+
+#define GENERATE_TEST(TEST_NAME, INSTANCE_CLASS_NAME, PREFLIGHT, ITERATIONS, INNER_CYCLE, CORRECTNESS_TEST) static void TEST_NAME##_test(void){\
+	MyClass *instance;\
+	SEL alloc_selector = NULL;\
+	IMP alloc_impl = NULL;\
+	Class cl = Nil;\
+	clock_t c1, c2;\
+	int i;\
+	\
+	PREFLIGHT\
+	\
+	cl = objc_class_for_name(INSTANCE_CLASS_NAME);\
+	OBJC_GET_IMP((id)cl, "alloc", alloc_selector, alloc_impl);\
+	instance = (MyClass*)alloc_impl((id)cl, alloc_selector);\
+	\
+	c1 = clock();\
+	for (i = 0; i < ITERATIONS; ++i){\
+		INNER_CYCLE\
+	}\
+	c2 = clock();\
+	\
+	if (!(CORRECTNESS_TEST)){\
+		printf("Correctness condition false for test " #TEST_NAME "!\n");\
+	}\
+	\
+	printf("%06lu\n", (c2 - c1));\
+}
+
 
 #define DISPATCH_ITERATIONS 10000000
 #define ALLOCATION_ITERATIONS 10000000

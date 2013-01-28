@@ -62,12 +62,12 @@
 \contentsline {section}{\numberline {5.5}Forwarding}{44}{section.5.5}
 \contentsline {subsection}{\numberline {5.5.1}Apple Run-Time}{44}{subsection.5.5.1}
 \contentsline {subsection}{\numberline {5.5.2}GCC Run-Time}{45}{subsection.5.5.2}
-\contentsline {subsection}{\numberline {5.5.3}Modular Run-Time}{45}{subsection.5.5.3}
-\contentsline {section}{\numberline {5.6}Compatibility}{46}{section.5.6}
+\contentsline {subsection}{\numberline {5.5.3}Modular Run-Time}{46}{subsection.5.5.3}
+\contentsline {section}{\numberline {5.6}Compatibility}{48}{section.5.6}
 \contentsline {section}{\numberline {5.7}Extensibility of Classes}{48}{section.5.7}
-\contentsline {subsection}{\numberline {5.7.1}Performance}{53}{subsection.5.7.1}
-\contentsline {subsection}{\numberline {5.7.2}Associated Objects}{54}{subsection.5.7.2}
-\contentsline {subsection}{\numberline {5.7.3}Apple's implementation}{54}{subsection.5.7.3}
+\contentsline {subsection}{\numberline {5.7.1}Performance}{54}{subsection.5.7.1}
+\contentsline {subsection}{\numberline {5.7.2}Associated Objects}{55}{subsection.5.7.2}
+\contentsline {subsection}{\numberline {5.7.3}Apple's implementation}{55}{subsection.5.7.3}
 \contentsline {subsection}{\numberline {5.7.4}Modular run-time implementation}{55}{subsection.5.7.4}
 \contentsline {subsection}{\numberline {5.7.5}Categories}{57}{subsection.5.7.5}
 \contentsline {section}{\numberline {5.8}Creating Prototypes and Registering Them}{57}{section.5.8}
@@ -79,15 +79,21 @@
 \contentsline {subparagraph}{Upsides}{60}{section*.22}
 \contentsline {subparagraph}{Downsides}{61}{section*.23}
 \contentsline {subparagraph}{Possible solutions}{61}{section*.24}
-\contentsline {subsection}{\numberline {5.9.2}\_\_MRConstString}{61}{subsection.5.9.2}
-\contentsline {section}{\numberline {5.10}Benchmarks}{62}{section.5.10}
-\contentsline {section}{\numberline {5.11}Ports}{64}{section.5.11}
-\contentsline {subsection}{\numberline {5.11.1}Windows 3.11}{64}{subsection.5.11.1}
-\contentsline {subsection}{\numberline {5.11.2}HeSiVa}{64}{subsection.5.11.2}
-\contentsline {chapter}{\numberline {6}Known Issues}{69}{chapter.6}
-\contentsline {chapter}{\numberline {7}Future Work}{70}{chapter.7}
-\contentsline {chapter}{Conclusion}{71}{chapter*.25}
-\contentsline {chapter}{Bibliography}{72}{chapter*.26}
-\contentsline {chapter}{List of Figures}{73}{chapter*.26}
-\contentsline {chapter}{List of Abbreviations}{74}{chapter*.28}
-\contentsline {chapter}{Attachments}{75}{chapter*.29}
+\contentsline {subsection}{\numberline {5.9.2}\_\_MRConstString}{62}{subsection.5.9.2}
+\contentsline {section}{\numberline {5.10}Benchmarks}{64}{section.5.10}
+\contentsline {subsection}{\numberline {5.10.1}Dispatch test}{65}{subsection.5.10.1}
+\contentsline {subsection}{\numberline {5.10.2}Super dispatch test}{66}{subsection.5.10.2}
+\contentsline {subsection}{\numberline {5.10.3}Categories dispatch test}{67}{subsection.5.10.3}
+\contentsline {subsection}{\numberline {5.10.4}Allocation test}{68}{subsection.5.10.4}
+\contentsline {subsection}{\numberline {5.10.5}Ivar test}{69}{subsection.5.10.5}
+\contentsline {subsection}{\numberline {5.10.6}Forwarding test}{70}{subsection.5.10.6}
+\contentsline {subsection}{\numberline {5.10.7}Associated objects test}{71}{subsection.5.10.7}
+\contentsline {section}{\numberline {5.11}Ports}{72}{section.5.11}
+\contentsline {subsection}{\numberline {5.11.1}Windows 3.11}{72}{subsection.5.11.1}
+\contentsline {subsection}{\numberline {5.11.2}HeSiVa}{73}{subsection.5.11.2}
+\contentsline {chapter}{\numberline {6}Future Work}{76}{chapter.6}
+\contentsline {chapter}{Conclusion}{78}{chapter*.25}
+\contentsline {chapter}{Bibliography}{79}{chapter*.26}
+\contentsline {chapter}{List of Figures}{80}{chapter*.26}
+\contentsline {chapter}{List of Abbreviations}{81}{chapter*.28}
+\contentsline {chapter}{Attachments}{82}{chapter*.29}

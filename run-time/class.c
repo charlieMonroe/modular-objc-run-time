@@ -696,10 +696,26 @@ OBJC_INLINE Method _lookup_method(id obj, SEL selector){
 	
 	if (OBJC_OBJ_IS_CLASS(obj)){
 		/* Class method */
+		method = _lookup_cached_method(((Class)obj)->class_cache, selector);
+		if (method != NULL){
+			return method;
+		}
+		
 		method = _lookup_class_method((Class)obj, selector);
+		if (method != NULL){
+			_cache_method(&((Class)obj)->class_cache, method);
+		}
 	}else{
 		/* Instance method. */
+		method = _lookup_cached_method(obj->isa->instance_cache, selector);
+		if (method != NULL){
+			return method;
+		}
+		
 		method = _lookup_instance_method(obj->isa, selector);
+		if (method != NULL){
+			_cache_method(&obj->isa->instance_cache, method);
+		}
 	}
 	
 	if (method == NULL){

@@ -196,7 +196,6 @@ void objc_runtime_init(void){
 #define objc_runtime_create_getter_setter_function_body(type, name, struct_path)\
 	void objc_runtime_set_##name(type name){\
 		if (OBJC_USES_INLINE_FUNCTIONS){\
-			objc_log("The run-time uses inline functions. Setting the function pointer " #struct_path " has no effect.\n");\
 			return;\
 		}\
 		if (objc_runtime_has_been_initialized){\

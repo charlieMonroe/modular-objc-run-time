@@ -11,7 +11,7 @@ static void allocation_test(void){
 	}
 	c2 = clock();
 	
-	printf("%f\n", ((double)c2 - (double)c1)/ (double)CLOCKS_PER_SEC);
+	printf("%06lu\n", (c2 - c1));
 }
 
 

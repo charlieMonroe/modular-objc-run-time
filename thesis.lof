@@ -15,9 +15,15 @@
 \contentsline {figure}{\numberline {5.9}{\ignorespaces Default list of vtable selectors in Apple's run-time.}}{60}{figure.5.9}
 \contentsline {figure}{\numberline {5.10}{\ignorespaces Diagram of a hidden reference count variable.}}{62}{figure.5.10}
 \contentsline {figure}{\numberline {5.11}{\ignorespaces \_\_MRConstString class export.}}{63}{figure.5.11}
-\contentsline {figure}{\numberline {5.12}{\ignorespaces \_\_MRConstString static instance creation.}}{63}{figure.5.12}
-\contentsline {figure}{\numberline {5.13}{\ignorespaces The modular run-time running on Windows 3.11 in a DOSBox emulator.}}{65}{figure.5.13}
-\contentsline {figure}{\numberline {5.14}{\ignorespaces The only lines that needed to be added in order for the run-time to run on kalisto HeSiVa.}}{67}{figure.5.14}
-\contentsline {figure}{\numberline {5.15}{\ignorespaces The modular run-time running on kalisto HeSiVa.}}{68}{figure.5.15}
-\addvspace {10\p@ }
+\contentsline {figure}{\numberline {5.12}{\ignorespaces \_\_MRConstString static instance creation.}}{64}{figure.5.12}
+\contentsline {figure}{\numberline {5.13}{\ignorespaces Dispatch test.}}{66}{figure.5.13}
+\contentsline {figure}{\numberline {5.14}{\ignorespaces Super dispatch test.}}{67}{figure.5.14}
+\contentsline {figure}{\numberline {5.15}{\ignorespaces Categories dispatch test.}}{68}{figure.5.15}
+\contentsline {figure}{\numberline {5.16}{\ignorespaces Allocation test.}}{69}{figure.5.16}
+\contentsline {figure}{\numberline {5.17}{\ignorespaces Ivar test.}}{70}{figure.5.17}
+\contentsline {figure}{\numberline {5.18}{\ignorespaces Forwarding test.}}{71}{figure.5.18}
+\contentsline {figure}{\numberline {5.19}{\ignorespaces Associated objects test.}}{72}{figure.5.19}
+\contentsline {figure}{\numberline {5.20}{\ignorespaces The modular run-time running on Windows 3.11 in a DOSBox emulator.}}{73}{figure.5.20}
+\contentsline {figure}{\numberline {5.21}{\ignorespaces The only lines that needed to be added in order for the run-time to run on kalisto HeSiVa.}}{74}{figure.5.21}
+\contentsline {figure}{\numberline {5.22}{\ignorespaces The modular run-time running on kalisto HeSiVa.}}{75}{figure.5.22}
 \addvspace {10\p@ }

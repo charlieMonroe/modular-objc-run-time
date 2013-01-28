@@ -26,4 +26,7 @@ extern Method *objc_category_get_class_methods(Category category);
 extern Method *objc_category_get_instance_methods(Category category);
 extern const char *objc_category_get_name(Category category);
 
+
+extern void objc_categories_register_extension(void);
+
 #endif /* _OBJC_CATEGORIES_H_ */

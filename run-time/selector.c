@@ -19,17 +19,6 @@ SEL objc_selector_register(const char *name){
 	return selector;
 }
 
-BOOL objc_selectors_equal(SEL selector1, SEL selector2){
-	if (selector1 == NULL && selector2 == NULL){
-		return YES;
-	}
-	if (selector1 == NULL || selector2 == NULL){
-		return NO;
-	}
-	
-	return selector1 == selector2 || objc_strings_equal(selector1->name, selector2->name);
-}
-
 const char *objc_selector_get_name(SEL selector){
 	if (selector == NULL){
 		return "((null))";
