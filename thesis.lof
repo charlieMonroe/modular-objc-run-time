@@ -24,27 +24,34 @@
 \contentsline {figure}{\numberline {3.1}{\ignorespaces An example of toll-free bridging.}}{27}{figure.3.1}
 \addvspace {10\p@ }
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {5.1}{\ignorespaces \'Etoil\'e run-time's inline cache.}}{35}{figure.5.1}
+\contentsline {figure}{\numberline {5.2}{\ignorespaces \'Etoil\'e run-time's \texttt {CALL} structure.}}{36}{figure.5.2}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {6.1}{\ignorespaces Class structure.}}{47}{figure.6.1}
-\contentsline {figure}{\numberline {6.2}{\ignorespaces A sample proxy class.}}{53}{figure.6.2}
-\contentsline {figure}{\numberline {6.3}{\ignorespaces Class extension structure.}}{55}{figure.6.3}
-\contentsline {figure}{\numberline {6.4}{\ignorespaces Example of registering a class extension.}}{56}{figure.6.4}
-\contentsline {figure}{\numberline {6.5}{\ignorespaces Example of a custom deallocator.}}{58}{figure.6.5}
-\contentsline {figure}{\numberline {6.6}{\ignorespaces Example of how class extensions use memory within an object.}}{59}{figure.6.6}
-\contentsline {figure}{\numberline {6.7}{\ignorespaces Example of a class extension - associated objects.}}{62}{figure.6.7}
-\contentsline {figure}{\numberline {6.8}{\ignorespaces Structures used as prototypes for class and method declarations.}}{64}{figure.6.8}
-\contentsline {figure}{\numberline {6.9}{\ignorespaces Default list of vtable selectors in Apple's run-time.}}{66}{figure.6.9}
-\contentsline {figure}{\numberline {6.10}{\ignorespaces Diagram of a hidden reference count variable.}}{68}{figure.6.10}
-\contentsline {figure}{\numberline {6.11}{\ignorespaces \_\_MRConstString class export.}}{69}{figure.6.11}
-\contentsline {figure}{\numberline {6.12}{\ignorespaces \_\_MRConstString static instance creation.}}{70}{figure.6.12}
-\contentsline {figure}{\numberline {6.13}{\ignorespaces Dispatch test.}}{72}{figure.6.13}
-\contentsline {figure}{\numberline {6.14}{\ignorespaces Super dispatch test.}}{73}{figure.6.14}
-\contentsline {figure}{\numberline {6.15}{\ignorespaces Categories dispatch test.}}{74}{figure.6.15}
-\contentsline {figure}{\numberline {6.16}{\ignorespaces Allocation test.}}{75}{figure.6.16}
-\contentsline {figure}{\numberline {6.17}{\ignorespaces Ivar test.}}{76}{figure.6.17}
-\contentsline {figure}{\numberline {6.18}{\ignorespaces Forwarding test.}}{77}{figure.6.18}
-\contentsline {figure}{\numberline {6.19}{\ignorespaces Associated objects test.}}{78}{figure.6.19}
-\contentsline {figure}{\numberline {6.20}{\ignorespaces The modular run-time running on Windows 3.11 in a DOSBox emulator.}}{79}{figure.6.20}
-\contentsline {figure}{\numberline {6.21}{\ignorespaces The only lines that needed to be added in order for the run-time to run on kalisto HeSiVa.}}{80}{figure.6.21}
-\contentsline {figure}{\numberline {6.22}{\ignorespaces The modular run-time running on kalisto HeSiVa.}}{81}{figure.6.22}
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {7.1}{\ignorespaces A rough sketch of how inline functions should be supplied.}}{42}{figure.7.1}
+\contentsline {figure}{\numberline {7.2}{\ignorespaces Example of function pointers.}}{44}{figure.7.2}
+\contentsline {figure}{\numberline {7.3}{\ignorespaces The run-time setup structure.}}{45}{figure.7.3}
+\contentsline {figure}{\numberline {7.4}{\ignorespaces The memory setup structure.}}{45}{figure.7.4}
+\contentsline {figure}{\numberline {7.5}{\ignorespaces Class structure.}}{48}{figure.7.5}
+\contentsline {figure}{\numberline {7.6}{\ignorespaces A sample proxy class.}}{54}{figure.7.6}
+\contentsline {figure}{\numberline {7.7}{\ignorespaces Class extension structure.}}{56}{figure.7.7}
+\contentsline {figure}{\numberline {7.8}{\ignorespaces Example of registering a class extension.}}{57}{figure.7.8}
+\contentsline {figure}{\numberline {7.9}{\ignorespaces Example of a custom deallocator.}}{59}{figure.7.9}
+\contentsline {figure}{\numberline {7.10}{\ignorespaces Example of how class extensions use memory within an object.}}{60}{figure.7.10}
+\contentsline {figure}{\numberline {7.11}{\ignorespaces Example of a class extension - associated objects.}}{63}{figure.7.11}
+\contentsline {figure}{\numberline {7.12}{\ignorespaces Structures used as prototypes for class and method declarations.}}{65}{figure.7.12}
+\contentsline {figure}{\numberline {7.13}{\ignorespaces Default list of vtable selectors in Apple's run-time.}}{67}{figure.7.13}
+\contentsline {figure}{\numberline {7.14}{\ignorespaces Diagram of a hidden reference count variable.}}{69}{figure.7.14}
+\contentsline {figure}{\numberline {7.15}{\ignorespaces \_\_MRConstString class export.}}{70}{figure.7.15}
+\contentsline {figure}{\numberline {7.16}{\ignorespaces \_\_MRConstString static instance creation.}}{71}{figure.7.16}
+\contentsline {figure}{\numberline {7.17}{\ignorespaces Dispatch test.}}{73}{figure.7.17}
+\contentsline {figure}{\numberline {7.18}{\ignorespaces Super dispatch test.}}{74}{figure.7.18}
+\contentsline {figure}{\numberline {7.19}{\ignorespaces Categories dispatch test.}}{75}{figure.7.19}
+\contentsline {figure}{\numberline {7.20}{\ignorespaces Allocation test.}}{76}{figure.7.20}
+\contentsline {figure}{\numberline {7.21}{\ignorespaces Ivar test.}}{77}{figure.7.21}
+\contentsline {figure}{\numberline {7.22}{\ignorespaces Forwarding test.}}{78}{figure.7.22}
+\contentsline {figure}{\numberline {7.23}{\ignorespaces Associated objects test.}}{79}{figure.7.23}
+\contentsline {figure}{\numberline {7.24}{\ignorespaces The modular run-time running on Windows 3.11 in a DOSBox emulator.}}{80}{figure.7.24}
+\contentsline {figure}{\numberline {7.25}{\ignorespaces The only lines that needed to be added in order for the run-time to run on kalisto HeSiVa.}}{81}{figure.7.25}
+\contentsline {figure}{\numberline {7.26}{\ignorespaces The modular run-time running on kalisto HeSiVa.}}{82}{figure.7.26}
 \addvspace {10\p@ }

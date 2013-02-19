@@ -39,65 +39,65 @@
 \contentsline {subsection}{\numberline {4.1.3}Typed Selectors}{31}{subsection.4.1.3}
 \contentsline {section}{\numberline {4.2}Portability and Limitations}{31}{section.4.2}
 \contentsline {chapter}{\numberline {5}\'Etoil\'e}{33}{chapter.5}
-\contentsline {section}{\numberline {5.1}What is \'Etoil\'e}{33}{section.5.1}
-\contentsline {section}{\numberline {5.2}Slots}{33}{section.5.2}
-\contentsline {section}{\numberline {5.3}Inline Caching}{34}{section.5.3}
-\contentsline {section}{\numberline {5.4}Message Sending}{36}{section.5.4}
-\contentsline {section}{\numberline {5.5}Tags}{36}{section.5.5}
-\contentsline {section}{\numberline {5.6}Metaclasses}{36}{section.5.6}
-\contentsline {chapter}{\numberline {6}Modular Run-Time}{38}{chapter.6}
-\contentsline {section}{\numberline {6.1}Objectives}{38}{section.6.1}
-\contentsline {section}{\numberline {6.2}Run-time Setup}{40}{section.6.2}
-\contentsline {subsection}{\numberline {6.2.1}Implementation}{42}{subsection.6.2.1}
+\contentsline {section}{\numberline {5.1}Slots}{33}{section.5.1}
+\contentsline {section}{\numberline {5.2}Inline Caching}{34}{section.5.2}
+\contentsline {section}{\numberline {5.3}Message Sending}{36}{section.5.3}
+\contentsline {section}{\numberline {5.4}Tags}{36}{section.5.4}
+\contentsline {section}{\numberline {5.5}Metaclasses}{37}{section.5.5}
+\contentsline {chapter}{\numberline {6}Modular Run-Time Design}{38}{chapter.6}
+\contentsline {section}{\numberline {6.1}Initialization of the Run-time}{39}{section.6.1}
+\contentsline {section}{\numberline {6.2}Modifying the Run-time at Run Time}{40}{section.6.2}
+\contentsline {chapter}{\numberline {7}Modular Run-Time Implementation}{42}{chapter.7}
+\contentsline {section}{\numberline {7.1}Run-time Setup}{42}{section.7.1}
 \contentsline {paragraph}{Inlining}{42}{section*.10}
-\contentsline {paragraph}{Function Pointers}{43}{section*.11}
-\contentsline {paragraph}{Memory}{44}{section*.12}
-\contentsline {paragraph}{Execution}{45}{section*.13}
-\contentsline {paragraph}{Synchronization}{45}{section*.14}
-\contentsline {subparagraph}{Read-Write Locks}{45}{section*.15}
-\contentsline {paragraph}{Logging}{45}{section*.16}
-\contentsline {paragraph}{Class Holder}{45}{section*.17}
-\contentsline {paragraph}{Selector Holder}{46}{section*.18}
-\contentsline {paragraph}{Arrays}{46}{section*.19}
-\contentsline {paragraph}{Cache}{46}{section*.20}
-\contentsline {section}{\numberline {6.3}Class}{46}{section.6.3}
-\contentsline {subsection}{\numberline {6.3.1}Structure of a Class}{47}{subsection.6.3.1}
-\contentsline {section}{\numberline {6.4}Dynamic Dispatch and Caching}{48}{section.6.4}
-\contentsline {section}{\numberline {6.5}Forwarding}{50}{section.6.5}
-\contentsline {subsection}{\numberline {6.5.1}Apple Run-Time}{50}{subsection.6.5.1}
-\contentsline {subsection}{\numberline {6.5.2}GCC Run-Time}{51}{subsection.6.5.2}
-\contentsline {subsection}{\numberline {6.5.3}Modular Run-Time}{52}{subsection.6.5.3}
-\contentsline {section}{\numberline {6.6}Compatibility}{54}{section.6.6}
-\contentsline {section}{\numberline {6.7}Extensibility of Classes}{54}{section.6.7}
-\contentsline {subsection}{\numberline {6.7.1}Performance}{60}{subsection.6.7.1}
-\contentsline {subsection}{\numberline {6.7.2}Associated Objects}{61}{subsection.6.7.2}
-\contentsline {subsection}{\numberline {6.7.3}Apple's implementation}{61}{subsection.6.7.3}
-\contentsline {subsection}{\numberline {6.7.4}Modular run-time implementation}{61}{subsection.6.7.4}
-\contentsline {subsection}{\numberline {6.7.5}Categories}{63}{subsection.6.7.5}
-\contentsline {section}{\numberline {6.8}Creating Prototypes and Registering Them}{63}{section.6.8}
-\contentsline {subsection}{\numberline {6.8.1}Issues with generating static structures}{63}{subsection.6.8.1}
-\contentsline {subsection}{\numberline {6.8.2}Used prototype structures}{64}{subsection.6.8.2}
-\contentsline {section}{\numberline {6.9}Internal Classes}{65}{section.6.9}
-\contentsline {subsection}{\numberline {6.9.1}MRObject}{66}{subsection.6.9.1}
-\contentsline {paragraph}{Reference counting in traditional run-times}{66}{section*.21}
-\contentsline {subparagraph}{Upsides}{66}{section*.22}
-\contentsline {subparagraph}{Downsides}{67}{section*.23}
-\contentsline {subparagraph}{Possible solutions}{67}{section*.24}
-\contentsline {subsection}{\numberline {6.9.2}\_\_MRConstString}{68}{subsection.6.9.2}
-\contentsline {section}{\numberline {6.10}Benchmarks}{70}{section.6.10}
-\contentsline {subsection}{\numberline {6.10.1}Dispatch test}{71}{subsection.6.10.1}
-\contentsline {subsection}{\numberline {6.10.2}Super dispatch test}{72}{subsection.6.10.2}
-\contentsline {subsection}{\numberline {6.10.3}Categories dispatch test}{73}{subsection.6.10.3}
-\contentsline {subsection}{\numberline {6.10.4}Allocation test}{74}{subsection.6.10.4}
-\contentsline {subsection}{\numberline {6.10.5}Ivar test}{75}{subsection.6.10.5}
-\contentsline {subsection}{\numberline {6.10.6}Forwarding test}{76}{subsection.6.10.6}
-\contentsline {subsection}{\numberline {6.10.7}Associated objects test}{77}{subsection.6.10.7}
-\contentsline {section}{\numberline {6.11}Ports}{78}{section.6.11}
-\contentsline {subsection}{\numberline {6.11.1}Windows 3.11}{78}{subsection.6.11.1}
-\contentsline {subsection}{\numberline {6.11.2}HeSiVa}{79}{subsection.6.11.2}
-\contentsline {chapter}{\numberline {7}Future Work}{82}{chapter.7}
-\contentsline {chapter}{Conclusion}{84}{chapter*.25}
-\contentsline {chapter}{Bibliography}{85}{chapter*.26}
-\contentsline {chapter}{List of Figures}{86}{chapter*.26}
-\contentsline {chapter}{List of Abbreviations}{88}{chapter*.28}
-\contentsline {chapter}{Attachments}{89}{chapter*.29}
+\contentsline {paragraph}{Function Pointers}{44}{section*.11}
+\contentsline {paragraph}{Memory}{45}{section*.12}
+\contentsline {paragraph}{Execution}{46}{section*.13}
+\contentsline {paragraph}{Synchronization}{46}{section*.14}
+\contentsline {subparagraph}{Read-Write Locks}{46}{section*.15}
+\contentsline {paragraph}{Logging}{46}{section*.16}
+\contentsline {paragraph}{Class Holder}{46}{section*.17}
+\contentsline {paragraph}{Selector Holder}{47}{section*.18}
+\contentsline {paragraph}{Arrays}{47}{section*.19}
+\contentsline {paragraph}{Cache}{47}{section*.20}
+\contentsline {section}{\numberline {7.2}Class}{47}{section.7.2}
+\contentsline {subsection}{\numberline {7.2.1}Structure of a Class}{47}{subsection.7.2.1}
+\contentsline {section}{\numberline {7.3}Dynamic Dispatch and Caching}{49}{section.7.3}
+\contentsline {section}{\numberline {7.4}Forwarding}{51}{section.7.4}
+\contentsline {subsection}{\numberline {7.4.1}Apple Run-Time}{51}{subsection.7.4.1}
+\contentsline {subsection}{\numberline {7.4.2}GCC Run-Time}{52}{subsection.7.4.2}
+\contentsline {subsection}{\numberline {7.4.3}Modular Run-Time}{52}{subsection.7.4.3}
+\contentsline {section}{\numberline {7.5}Compatibility}{55}{section.7.5}
+\contentsline {section}{\numberline {7.6}Extensibility of Classes}{55}{section.7.6}
+\contentsline {subsection}{\numberline {7.6.1}Performance}{61}{subsection.7.6.1}
+\contentsline {subsection}{\numberline {7.6.2}Associated Objects}{62}{subsection.7.6.2}
+\contentsline {subsection}{\numberline {7.6.3}Apple's implementation}{62}{subsection.7.6.3}
+\contentsline {subsection}{\numberline {7.6.4}Modular run-time implementation}{62}{subsection.7.6.4}
+\contentsline {subsection}{\numberline {7.6.5}Categories}{64}{subsection.7.6.5}
+\contentsline {section}{\numberline {7.7}Creating Prototypes and Registering Them}{64}{section.7.7}
+\contentsline {subsection}{\numberline {7.7.1}Issues with generating static structures}{64}{subsection.7.7.1}
+\contentsline {subsection}{\numberline {7.7.2}Used prototype structures}{65}{subsection.7.7.2}
+\contentsline {section}{\numberline {7.8}Internal Classes}{66}{section.7.8}
+\contentsline {subsection}{\numberline {7.8.1}MRObject}{67}{subsection.7.8.1}
+\contentsline {paragraph}{Reference counting in traditional run-times}{67}{section*.21}
+\contentsline {subparagraph}{Upsides}{67}{section*.22}
+\contentsline {subparagraph}{Downsides}{68}{section*.23}
+\contentsline {subparagraph}{Possible solutions}{68}{section*.24}
+\contentsline {subsection}{\numberline {7.8.2}\_\_MRConstString}{69}{subsection.7.8.2}
+\contentsline {section}{\numberline {7.9}Benchmarks}{71}{section.7.9}
+\contentsline {subsection}{\numberline {7.9.1}Dispatch test}{72}{subsection.7.9.1}
+\contentsline {subsection}{\numberline {7.9.2}Super dispatch test}{73}{subsection.7.9.2}
+\contentsline {subsection}{\numberline {7.9.3}Categories dispatch test}{74}{subsection.7.9.3}
+\contentsline {subsection}{\numberline {7.9.4}Allocation test}{75}{subsection.7.9.4}
+\contentsline {subsection}{\numberline {7.9.5}Ivar test}{76}{subsection.7.9.5}
+\contentsline {subsection}{\numberline {7.9.6}Forwarding test}{77}{subsection.7.9.6}
+\contentsline {subsection}{\numberline {7.9.7}Associated objects test}{78}{subsection.7.9.7}
+\contentsline {section}{\numberline {7.10}Ports}{79}{section.7.10}
+\contentsline {subsection}{\numberline {7.10.1}Windows 3.11}{79}{subsection.7.10.1}
+\contentsline {subsection}{\numberline {7.10.2}HeSiVa}{80}{subsection.7.10.2}
+\contentsline {chapter}{\numberline {8}Future Work}{83}{chapter.8}
+\contentsline {chapter}{Conclusion}{85}{chapter*.25}
+\contentsline {chapter}{Bibliography}{86}{chapter*.26}
+\contentsline {chapter}{List of Figures}{87}{chapter*.26}
+\contentsline {chapter}{List of Abbreviations}{89}{chapter*.28}
+\contentsline {chapter}{Attachments}{90}{chapter*.29}
