@@ -1,47 +1,103 @@
-\chapter{GCC Implementation}
+\chapter{Apple's Implementation}
 
-GCC stands for, as probably everyone knows, a GNU C compiler, hence this run-time implementation is often referred to as the GNU(Step) Objective-C run-time. It is bundled with the GCC compiler, allowing non-Apple systems to run Objective-C code as well.
+A lot of Apple's source code is \href{''http://www.opensource.apple.com''}{open-sourced} which includes their implementation of the Objective-C run-time among others.
 
-In comparison with Apple's source codes, GCC's code is much cleaner and much better documented - even every \verb=#include= is commented why and which functions from that file are used. Aside from this code-style aspect, there are multiple API differences between the Apple and GCC implementations of the run-time.
+First thing that comes across mind when studying Apple's source codes is its history - there's a lot of historical code that ensures backward compatibility. You can find, for example, some code from the NeXT era and a port to Windows - NeXT had a set of APIs called OpenStep (which is the predecessor of today's Cocoa framework on OS X), which was written in Objective-C and was aiming to run on virtually any reasonable system\footnote{http://en.wikipedia.org/wiki/OpenStep}. Also, some of Apple's own software for Windows, such as Safari, is written in Objective-C, hence the run-time needed to be compatible with Windows as well\footnote{http://jongampark.wordpress.com/2009/02/24/safari-4-beta-for-windows/}.
 
-\section{API Differences from Apple's Implementation}
-\subsection{Message Sending}
-Apple's run-time uses the \verb=objc_msgSend= function to send messages to objects. This function needs to handle finding the correct \verb=IMP= function for the selector, passing all the arguments to it, executing it and returning the return value of the function. This, unfortunately, has a slight disadvantage - on some architectures, some values (\verb=double= and \verb=struct= values, for example) get returned in a different way - using a different register, or altogether on the stack as a hidden argument, which needs to be taken into account. Hence Apple's implementation contains several other functions, such as \verb=objc_msgSend_stret= for structures and \verb=objc_msgSend_fpret= for float values. On i386 computers, the \verb=*_fpret= function is used for \verb=double= values, on x86-64, just for \verb=long double= values. The \verb=*_stret= function has, unlike other \verb=objc_msgSend= functions, a pointer to the structure address as a first argument and returns void (just as the regular C compiler in fact does for functions returning structures - they are compiled into functions having one extra argument and void return value). Other arguments follow the structure pointer.
+While the legacy code is understandable as it is required to maintain binary compatibility of all existing binaries and the portability is generally an objective of this work, neither is done in a very clean fashion.
 
-The GCC implementation takes another approach, which requires no specialized functions. A \verb=[receiver method]= call gets compiled to the following two lines:
+The code that was used by the run-time before introduction of Objective-C 2.0 in 2007, is referred to as the \emph{old run-time}. The code that is part of the Objective-C 2.0 (and later) if referred to as the \emph{new run-time}.
+
+All code is duplicated, one part serving compilation of the old run-time and the second part serving compilation of the new run-time. For example, you can find files such as \verb=objc-runtime-old.m= and \verb=objc-runtime-new.mm= (note the \verb=.mm= file extension on the new run-time file suggesting presence of C++, which will be described later).
+
+\section{Portability}
+
+The portability of the run-time can be divided in two parts - portability in terms of operating systems and in terms of the CPU architecture.
+
+\subsection{CPU Portability}
+
+Historically, Objective-C has been run on quite a few architectures - Intel x86, and Sun microchips from the NeXT era, PPC, Intel x86-64 and more recently ARM chips.
+
+The \verb=objc_msgSend= function and its relatives are written in assembly and hence has to be rewritten for each new architecture.
+
+The OS portability is ensured by rather a large \verb=#ifdef= - \verb=#else= - \verb=#endif= statement that uses macros and static inline functions to define aliases to some OS X-specific functions on Windows, such as \verb=malloc_zone_malloc= or even POSIX-specific functions, like \verb=issetguid=. Two examples follow.
+
+\subsection{Example 1 - malloc}
+On OS X, the malloc function is extended to support memory zones\footnote{http://developer.apple.com/library/Mac/\#documentation/Darwin/Reference/
+
+ManPages/man3/malloc\_zone\_malloc.3.html}. By creating a zone, a new heap is created. The heap can be destroyed entirely at once. It has a very limited usage nowadays, but back in the day when computers had only a little memory, it was useful to allocate temporary objects (e.g.\ during a specific calculation) in its own zone, freeing it as a whole when you were done with these objects. For example, the \verb=NSMenu=, which is a class representing a menu on OS X, implements a class method \verb=+menuZone= which returns a zone that is used for menu allocations - considering that a menu is an UI element that gets displayed on the screen for only a short period of time, it is a good idea to store all memory used to represent it in a separate zone, freeing all the memory when the menu is dismissed and hence preventing memory fragmentation. Unfortunately, when releasing a chunk of memory like this at once, the \verb=-dealloc= method doesn't get called, which could result in memory leaks. The zones were also supposed to be used to add garbage collection support to Objective-C back in the NeXT days, which never happened, though.
+
+As Windows supports only the regular \verb=malloc= function, this had to be solved - and it has been solved rather radically, by defining the \verb=malloc_*= functions as static inline functions that call the Windows API functions. The following lines of code may be found in file \verb=objc-os.h=:
 
 \begin{verbatim}
-IMP function = objc_msg_lookup(receiver, @selector(method));id result = function(receiver, @selector(method));
+static inline void *malloc_zone_malloc(malloc_zone_t z, 
+                                              size_t size) { 
+    return malloc(size); 
+}
 \end{verbatim}
 
-Going back to the example in \ref{Code example}, this would get translated to
+While it is functional, if Microsoft ever decided to implement zones into its version of malloc, it would break the code as it would result in duplicate symbol definition. Moreover, there is another function defined in the source code file \verb=objc-class.m=:
 
 \begin{verbatim}
-id obj1 = (id)objc_getClass("SomeClass");
-IMP function1 = objc_msg_lookup(class, @selector("alloc"));
-id obj2 = function1(obj1, @selector("alloc"));
-IMP function2 = objc_msg_lookup(obj2, @selector("init"));
-SomeClass *myObj = function2(obj2, @selector("init"));
+void *_malloc_internal(size_t size) {
+    return malloc_zone_malloc(_objc_internal_zone(), size);
+}
 \end{verbatim}
 
-While this solution has a disadvantage that several calls to Objective-C objects cannot be chained as in the example in Chapter 1, it is just a cosmatic disadvantage as this code is very rarely written by the developer by hand and chaining function calls requires the C compiler to place the value into temporary variables anyway, so there isn't any performance cost - if any, it may be one instruction of fetching an extra variable - the function, but this is asymptotically outweighed by the message lookup mechanism anyways.
+It would make much more sense to simply declare functions that would deal with the portability issue themselves, i.e.\ moving the \verb=#if=-\verb=#else= construct inside each function which would result in a more readable code.
 
-\subsection{Module Loading}
+\subsection{Example 2 - issetguid}
+The other example is how is the \verb=issetguid= function ported to the Windows environment:
 
-The GCC run-time does provide an interface to copy over class structures from elsewhere in the memory, but unlike Apple's implementation this isn't tied to any specific dynamic loader. The run-time only defines a set of structures in \verb=module-abi-8.h=, such as \verb=objc_module= and \verb=objc_symtab=, which describe structures the compiler should generate for each selector, class or category, etc.\ and the dynamic loader can then call a number of functions, passing those structures that may be loaded from any part of the file, be it a Mach-O file, or ELF file, or any other executable file type.
+\begin{verbatim}
+#define issetugid() 0
+\end{verbatim}
 
-Simply said, the GCC run-time provides an API for the dynamic loader to use, whereas Apple's run-time takes some of the loader's work, going through the Mach-O headers and looking for the classes to load.
+\section{Limitations}
+There are several limitations that can be found in the code that may present an obstacle when compiling the run-time on a new platform.
 
-\subsection{Typed Selectors}
+\subsection{16B Object Minimum Size}
+Apple supplies several large libraries (or as they call them, frameworks), that a vast majority of applications build upon. In particular, the CoreFoundation and Foundation frameworks are used basically by every application in the system (if not directly, then at least indirectly).
 
-In Apple's implementation, selectors (\verb=SEL=) are pointers to a structure with just one field - a \verb=char *= field which includes the selector's name. Whenever you want to send a message to an object, you need to retrieve a selector for the method's name (using the \verb=sel_registerName= function). As the run-time needs the message sending to be as fast as possible, it hashes the selector in order to find the \verb=IMP= for that particular object. Thanks to registering the selectors, each selector is unique and there can't be two selectors with the same name in the run-time. This allows the message lookup mechanism to simply create a hash from the selector pointer itself and find a method by a simple pointer comparison, without actually reading the string.
+CoreFoundation, although it implements many Objective-C classes as can be easily verified using the class-dump tool\footnote{http://www.codethecode.com/projects/class-dump/}, only provides C exports and headers, with the Objective-C classes being used privately.
 
-GCC's implementation extends the selectors into typed selectors - the selector structure has a second field which also contains \verb=char *=, but this time, there are encoded types of the method's arguments. This means that \verb=-(void)hello:(int)anInt;= and \verb=-(void)hello:(id)anObject;= have different selectors, while they yield in the same selectors in Apple's implementation. This, of course, requires introduction of new run-time functions, such as \verb=sel_registerTypedName=.
+On the other hand, the Foundation framework, CoreFoundation's counterpart, is mainly an Objective-C framework, providing object-oriented access to the mainly C-based CoreFoundation and officially allows access to some Objective-C classes declared in CoreFoundation.
 
-While it is a nice idea to bring a little more type-safety into the Objective-C world, it just brings mess into the run-time, in my opinion. The GCC run-time tries keep ABI compatibility with Apple's run-time, which doesn't have typed selectors. So, suddenly, there is a mix of typed and untyped selectors, while the typed selectors are the preferred ones and should be used, however, the run-time doesn't require this (though requiring this could actually introduce method overloading in Objective-C).
+For example, \verb=CFStringRef= is a pointer to a structure used by the CoreFoundation framework to represent a string. The Foundation framework has a \verb=NSString= class, which does generally the same. In order to prevent unnecessary code duplication as well as data conversions when using CoreFoundation functions (which accept \verb=CFStringRef=) from Objective-C code, toll-free bridging has been introduced.
 
-\section{Portability and Limitations}
+There is an intricate mechanism behind it, which requires direct support from both the Foundation and CoreFoundation frameworks (so one cannot create toll-free bridge of other (Core)Foundation classes that aren't bridged yet himself or herself)\footnote{You can read more about it here: http://www.mikeash.com/pyblog/friday-qa-2010-01-22-toll-free-bridging-internals.html}, but instances of classes that do support toll-free bridging, can be simply casted to their CoreFoundation counterparts and vice versa. Using the \verb=CFStringRef=/\verb=NSString= couple, this code if fully valid:
 
-The portability of the run-time is its only limitation and is defined simply: it requires a POSIX layer - on non-POSIX systems, it requires an additional POSIX layer, for example, on Windows, it requires Cygwin or MinGW. Most of the files import at least one POSIX file, usually \verb=<string.h>= for \verb=memcpy= function and its relatives.
+\begin{figure}[H]
+\begin{verbatim}
+NSString *myString = @"Hello World!";
+CFStringRef duplicatedString = CFStringCreateCopy(NULL, 
+                                    (CFStringRef)myString);
+NSString *duplicatedString2 = (NSString*)duplicatedString;
+\end{verbatim}
+  \centering{}
+  \caption{An example of toll-free bridging.}
+  \label{fig:toll_free_bridging}
+\end{figure}
 
-Another issue is that it relies on the \verb=gthread= library instead of \verb=pthread=. All threading support in this run-time is just a wrapper around \verb=gthread= that are part of GCC. While this allows some more efficient threading support on systems that natively do not use \verb=pthread= structures, it ties the run-time to GCC itself. Also, the run-time uses thread-local storage using \verb=__thread= keyword, which isn't supported on all systems as it requires support from the linker, dynamic loader and system libraries\footnote{http://gcc.gnu.org/onlinedocs/gcc-4.3.2/gcc/Thread\_002dLocal.html}.
+While this is very convenient to every OS X (or iOS) developer, it poses an unexpected limitation: all object instances need to have the same minimum size as CoreFoundation ``objects" - 16 bytes, which is noted in a comment in \verb=objc-class.m= file within the \verb=_class_createInstancesFromZone= function. True that 16 bytes isn't that much in these days, but given that you could fit 4 regular objects into one on a 32-bit computer, the space adds up.
+
+\subsection{Dynamic Loader Support}
+As it is faster to simply copy the class data from the binary than to construct the classes using run-time functions (on OS X from the \verb=__OBJC= section in particular), Apple's implementation contains a set of functions that are called by the dynamic loader (\verb=dyld=) to load classes from the binary image, link them to their superclasses and to register them with the run-time.
+
+This, however, adds \verb=dyld= to the list of library dependencies, which is transitively required by \verb=libSystem=\footnote{Basic system library on OS X that every application needs to be linked to.} anyway, but it adds dependencies to the code itself.
+
+More portable code would declare structures to be passed to the run-time when loading a binary, and the dynamic loader would pass those to the run-time. Instead, the dynamic loader passes the binary image header pointer to the run-time, making the run-time crawl through the binary image headers for Objective-C data.
+
+In general, the dynamic loader support in Apple's run-time poses a question, which party is responsible exactly for what part of the binary loading. It also puts a light on the binary compatibility question. If the internal structures representing a class change, the binary will not launch.
+
+Creating classes manually using the run-time methods ensures binary compatibility, while slows down binary loading significantly and makes one ask where should be the class information stored. One option would be for the compiler to generate a function with a specific name that would get called by the dynamic loader, or called it manually before anything else in the \verb=main= of your program (which might interfere with the \verb=__attribute__((constructor))= functions, though).
+
+\subsection{C++ Influences}
+The newest parts of the Objective-C run-time use many C++ features, such as methods on structures, some C++ classes, e.g. \verb=vector= and the run-time tries to unify Objective-C and C++ exceptions using the \verb=unwind= library.
+
+While this may help to clean up the code a little, it adds additional dependencies on C++ libraries.
+
+\section{Summary}
+Apple's implementation is riddled with a lot of obscure code and other very specific details - for example, when the class images are stored in the \verb=__OBJC= binary section, the superclass field is pointing to a string containing the name of that superclass - when the run-time is connecting the images, it is casting the superclasses pointer to char*, to read the superclass name, which is not a very clean solution. For example, the \'Etoil'e run-time uses two differently named structures for a cleaner cast. 
+
+Moreover, the documentation is very brief, not every function has a description of what it exactly does, or only has a very short note that it is used from a different function somewhere else in the code. As will be described below, the GCC version of the run-time is much better documented in this matter.

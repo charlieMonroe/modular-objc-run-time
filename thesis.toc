@@ -1,99 +1,103 @@
 \contentsline {chapter}{Introduction}{3}{chapter*.2}
-\contentsline {section}{\numberline {0.1}What is a run-time?}{3}{section.0.1}
-\contentsline {section}{\numberline {0.2}Goal}{4}{section.0.2}
-\contentsline {chapter}{\numberline {1}Objective-C}{6}{chapter.1}
-\contentsline {section}{\numberline {1.1}Brief history of Objective-C}{6}{section.1.1}
-\contentsline {section}{\numberline {1.2}Compilation of Objective-C}{7}{section.1.2}
-\contentsline {subsection}{\numberline {1.2.1}Calling methods}{7}{subsection.1.2.1}
-\contentsline {paragraph}{Example}{7}{section*.3}
-\contentsline {subparagraph}{GCC Run-time}{8}{section*.4}
-\contentsline {paragraph}{Calls to super}{9}{section*.5}
-\contentsline {subparagraph}{Example}{9}{section*.6}
-\contentsline {subsection}{\numberline {1.2.2}Object Model}{10}{subsection.1.2.2}
-\contentsline {paragraph}{Root Class}{10}{section*.7}
-\contentsline {subsection}{\numberline {1.2.3}Creating Classes Programmatically}{14}{subsection.1.2.3}
-\contentsline {subsection}{\numberline {1.2.4}Translating Methods to Functions}{14}{subsection.1.2.4}
-\contentsline {subsection}{\numberline {1.2.5}Synchronization}{15}{subsection.1.2.5}
-\contentsline {subsection}{\numberline {1.2.6}Protocols}{16}{subsection.1.2.6}
-\contentsline {subsection}{\numberline {1.2.7}Required Classes}{17}{subsection.1.2.7}
-\contentsline {paragraph}{Strings}{17}{section*.8}
-\contentsline {paragraph}{Blocks}{18}{section*.9}
-\contentsline {chapter}{\numberline {2}Apple's Implementation}{20}{chapter.2}
-\contentsline {section}{\numberline {2.1}Portability}{20}{section.2.1}
-\contentsline {subsection}{\numberline {2.1.1}CPU Portability}{20}{subsection.2.1.1}
-\contentsline {subsection}{\numberline {2.1.2}Example 1 - malloc}{21}{subsection.2.1.2}
-\contentsline {subsection}{\numberline {2.1.3}Example 2 - issetguid}{21}{subsection.2.1.3}
-\contentsline {section}{\numberline {2.2}Limitations}{22}{section.2.2}
-\contentsline {subsection}{\numberline {2.2.1}16B Object Minimum Size}{22}{subsection.2.2.1}
-\contentsline {subsection}{\numberline {2.2.2}Dynamic Loader Support}{22}{subsection.2.2.2}
-\contentsline {subsection}{\numberline {2.2.3}C++ Influences}{23}{subsection.2.2.3}
-\contentsline {section}{\numberline {2.3}Summary}{23}{section.2.3}
-\contentsline {chapter}{\numberline {3}GCC Implementation}{24}{chapter.3}
-\contentsline {section}{\numberline {3.1}API Differences from Apple's Implementation}{24}{section.3.1}
-\contentsline {subsection}{\numberline {3.1.1}Message Sending}{24}{subsection.3.1.1}
-\contentsline {subsection}{\numberline {3.1.2}Module Loading}{25}{subsection.3.1.2}
-\contentsline {subsection}{\numberline {3.1.3}Typed Selectors}{25}{subsection.3.1.3}
-\contentsline {section}{\numberline {3.2}Portability and Limitations}{26}{section.3.2}
-\contentsline {chapter}{\numberline {4}\'Etoil\'e}{27}{chapter.4}
-\contentsline {section}{\numberline {4.1}What is \'Etoil\'e}{27}{section.4.1}
-\contentsline {section}{\numberline {4.2}Slots}{27}{section.4.2}
-\contentsline {section}{\numberline {4.3}Inline Caching}{28}{section.4.3}
-\contentsline {section}{\numberline {4.4}Message Sending}{30}{section.4.4}
-\contentsline {section}{\numberline {4.5}Tags}{30}{section.4.5}
-\contentsline {section}{\numberline {4.6}Metaclasses}{30}{section.4.6}
-\contentsline {chapter}{\numberline {5}Modular Run-Time}{32}{chapter.5}
-\contentsline {section}{\numberline {5.1}Objectives}{32}{section.5.1}
-\contentsline {section}{\numberline {5.2}Run-time Setup}{34}{section.5.2}
-\contentsline {subsection}{\numberline {5.2.1}Implementation}{36}{subsection.5.2.1}
-\contentsline {paragraph}{Inlining}{36}{section*.10}
-\contentsline {paragraph}{Function Pointers}{37}{section*.11}
-\contentsline {paragraph}{Memory}{38}{section*.12}
-\contentsline {paragraph}{Execution}{39}{section*.13}
-\contentsline {paragraph}{Synchronization}{39}{section*.14}
-\contentsline {subparagraph}{Read-Write Locks}{39}{section*.15}
-\contentsline {paragraph}{Logging}{39}{section*.16}
-\contentsline {paragraph}{Class Holder}{39}{section*.17}
-\contentsline {paragraph}{Selector Holder}{40}{section*.18}
-\contentsline {paragraph}{Arrays}{40}{section*.19}
-\contentsline {paragraph}{Cache}{40}{section*.20}
-\contentsline {section}{\numberline {5.3}Class}{40}{section.5.3}
-\contentsline {subsection}{\numberline {5.3.1}Structure of a Class}{41}{subsection.5.3.1}
-\contentsline {section}{\numberline {5.4}Dynamic Dispatch and Caching}{42}{section.5.4}
-\contentsline {section}{\numberline {5.5}Forwarding}{44}{section.5.5}
-\contentsline {subsection}{\numberline {5.5.1}Apple Run-Time}{44}{subsection.5.5.1}
-\contentsline {subsection}{\numberline {5.5.2}GCC Run-Time}{45}{subsection.5.5.2}
-\contentsline {subsection}{\numberline {5.5.3}Modular Run-Time}{46}{subsection.5.5.3}
-\contentsline {section}{\numberline {5.6}Compatibility}{48}{section.5.6}
-\contentsline {section}{\numberline {5.7}Extensibility of Classes}{48}{section.5.7}
-\contentsline {subsection}{\numberline {5.7.1}Performance}{54}{subsection.5.7.1}
-\contentsline {subsection}{\numberline {5.7.2}Associated Objects}{55}{subsection.5.7.2}
-\contentsline {subsection}{\numberline {5.7.3}Apple's implementation}{55}{subsection.5.7.3}
-\contentsline {subsection}{\numberline {5.7.4}Modular run-time implementation}{55}{subsection.5.7.4}
-\contentsline {subsection}{\numberline {5.7.5}Categories}{57}{subsection.5.7.5}
-\contentsline {section}{\numberline {5.8}Creating Prototypes and Registering Them}{57}{section.5.8}
-\contentsline {subsection}{\numberline {5.8.1}Issues with generating static structures}{57}{subsection.5.8.1}
-\contentsline {subsection}{\numberline {5.8.2}Used prototype structures}{58}{subsection.5.8.2}
-\contentsline {section}{\numberline {5.9}Internal Classes}{59}{section.5.9}
-\contentsline {subsection}{\numberline {5.9.1}MRObject}{60}{subsection.5.9.1}
-\contentsline {paragraph}{Reference counting in traditional run-times}{60}{section*.21}
-\contentsline {subparagraph}{Upsides}{60}{section*.22}
-\contentsline {subparagraph}{Downsides}{61}{section*.23}
-\contentsline {subparagraph}{Possible solutions}{61}{section*.24}
-\contentsline {subsection}{\numberline {5.9.2}\_\_MRConstString}{62}{subsection.5.9.2}
-\contentsline {section}{\numberline {5.10}Benchmarks}{64}{section.5.10}
-\contentsline {subsection}{\numberline {5.10.1}Dispatch test}{65}{subsection.5.10.1}
-\contentsline {subsection}{\numberline {5.10.2}Super dispatch test}{66}{subsection.5.10.2}
-\contentsline {subsection}{\numberline {5.10.3}Categories dispatch test}{67}{subsection.5.10.3}
-\contentsline {subsection}{\numberline {5.10.4}Allocation test}{68}{subsection.5.10.4}
-\contentsline {subsection}{\numberline {5.10.5}Ivar test}{69}{subsection.5.10.5}
-\contentsline {subsection}{\numberline {5.10.6}Forwarding test}{70}{subsection.5.10.6}
-\contentsline {subsection}{\numberline {5.10.7}Associated objects test}{71}{subsection.5.10.7}
-\contentsline {section}{\numberline {5.11}Ports}{72}{section.5.11}
-\contentsline {subsection}{\numberline {5.11.1}Windows 3.11}{72}{subsection.5.11.1}
-\contentsline {subsection}{\numberline {5.11.2}HeSiVa}{73}{subsection.5.11.2}
-\contentsline {chapter}{\numberline {6}Future Work}{76}{chapter.6}
-\contentsline {chapter}{Conclusion}{78}{chapter*.25}
-\contentsline {chapter}{Bibliography}{79}{chapter*.26}
-\contentsline {chapter}{List of Figures}{80}{chapter*.26}
-\contentsline {chapter}{List of Abbreviations}{81}{chapter*.28}
-\contentsline {chapter}{Attachments}{82}{chapter*.29}
+\contentsline {chapter}{\numberline {1}What Is a Run-Time?}{4}{chapter.1}
+\contentsline {section}{\numberline {1.1}Existing Objective-C Run-Time Implementations}{5}{section.1.1}
+\contentsline {chapter}{\numberline {2}Objective-C}{7}{chapter.2}
+\contentsline {section}{\numberline {2.1}Objective-C Syntax in a Nutshell}{8}{section.2.1}
+\contentsline {subsection}{\numberline {2.1.1}Class Declaration}{8}{subsection.2.1.1}
+\contentsline {subsection}{\numberline {2.1.2}Declaring Methods}{9}{subsection.2.1.2}
+\contentsline {subsection}{\numberline {2.1.3}Calling Methods}{9}{subsection.2.1.3}
+\contentsline {subsection}{\numberline {2.1.4}Miscellaneous}{10}{subsection.2.1.4}
+\contentsline {section}{\numberline {2.2}Compilation of Objective-C}{10}{section.2.2}
+\contentsline {subsection}{\numberline {2.2.1}Calling methods}{10}{subsection.2.2.1}
+\contentsline {paragraph}{Example}{11}{section*.3}
+\contentsline {subparagraph}{GCC Run-time}{11}{section*.4}
+\contentsline {paragraph}{Calls to super}{12}{section*.5}
+\contentsline {subparagraph}{Example}{13}{section*.6}
+\contentsline {subsection}{\numberline {2.2.2}Object Model}{13}{subsection.2.2.2}
+\contentsline {paragraph}{Root Class}{14}{section*.7}
+\contentsline {subsection}{\numberline {2.2.3}Creating Classes Programmatically}{18}{subsection.2.2.3}
+\contentsline {subsection}{\numberline {2.2.4}Translating Methods to Functions}{18}{subsection.2.2.4}
+\contentsline {subsection}{\numberline {2.2.5}Synchronization and Exceptions}{19}{subsection.2.2.5}
+\contentsline {subsection}{\numberline {2.2.6}Protocols}{20}{subsection.2.2.6}
+\contentsline {subsection}{\numberline {2.2.7}Required Classes}{21}{subsection.2.2.7}
+\contentsline {paragraph}{Strings}{21}{section*.8}
+\contentsline {paragraph}{Blocks}{22}{section*.9}
+\contentsline {chapter}{\numberline {3}Apple's Implementation}{25}{chapter.3}
+\contentsline {section}{\numberline {3.1}Portability}{25}{section.3.1}
+\contentsline {subsection}{\numberline {3.1.1}CPU Portability}{25}{subsection.3.1.1}
+\contentsline {subsection}{\numberline {3.1.2}Example 1 - malloc}{26}{subsection.3.1.2}
+\contentsline {subsection}{\numberline {3.1.3}Example 2 - issetguid}{26}{subsection.3.1.3}
+\contentsline {section}{\numberline {3.2}Limitations}{27}{section.3.2}
+\contentsline {subsection}{\numberline {3.2.1}16B Object Minimum Size}{27}{subsection.3.2.1}
+\contentsline {subsection}{\numberline {3.2.2}Dynamic Loader Support}{28}{subsection.3.2.2}
+\contentsline {subsection}{\numberline {3.2.3}C++ Influences}{28}{subsection.3.2.3}
+\contentsline {section}{\numberline {3.3}Summary}{28}{section.3.3}
+\contentsline {chapter}{\numberline {4}GCC Implementation}{30}{chapter.4}
+\contentsline {section}{\numberline {4.1}Differences from Apple's Implementation}{30}{section.4.1}
+\contentsline {subsection}{\numberline {4.1.1}Message Sending}{30}{subsection.4.1.1}
+\contentsline {subsection}{\numberline {4.1.2}Module Loading}{31}{subsection.4.1.2}
+\contentsline {subsection}{\numberline {4.1.3}Typed Selectors}{31}{subsection.4.1.3}
+\contentsline {section}{\numberline {4.2}Portability and Limitations}{31}{section.4.2}
+\contentsline {chapter}{\numberline {5}\'Etoil\'e}{33}{chapter.5}
+\contentsline {section}{\numberline {5.1}What is \'Etoil\'e}{33}{section.5.1}
+\contentsline {section}{\numberline {5.2}Slots}{33}{section.5.2}
+\contentsline {section}{\numberline {5.3}Inline Caching}{34}{section.5.3}
+\contentsline {section}{\numberline {5.4}Message Sending}{36}{section.5.4}
+\contentsline {section}{\numberline {5.5}Tags}{36}{section.5.5}
+\contentsline {section}{\numberline {5.6}Metaclasses}{36}{section.5.6}
+\contentsline {chapter}{\numberline {6}Modular Run-Time}{38}{chapter.6}
+\contentsline {section}{\numberline {6.1}Objectives}{38}{section.6.1}
+\contentsline {section}{\numberline {6.2}Run-time Setup}{40}{section.6.2}
+\contentsline {subsection}{\numberline {6.2.1}Implementation}{42}{subsection.6.2.1}
+\contentsline {paragraph}{Inlining}{42}{section*.10}
+\contentsline {paragraph}{Function Pointers}{43}{section*.11}
+\contentsline {paragraph}{Memory}{44}{section*.12}
+\contentsline {paragraph}{Execution}{45}{section*.13}
+\contentsline {paragraph}{Synchronization}{45}{section*.14}
+\contentsline {subparagraph}{Read-Write Locks}{45}{section*.15}
+\contentsline {paragraph}{Logging}{45}{section*.16}
+\contentsline {paragraph}{Class Holder}{45}{section*.17}
+\contentsline {paragraph}{Selector Holder}{46}{section*.18}
+\contentsline {paragraph}{Arrays}{46}{section*.19}
+\contentsline {paragraph}{Cache}{46}{section*.20}
+\contentsline {section}{\numberline {6.3}Class}{46}{section.6.3}
+\contentsline {subsection}{\numberline {6.3.1}Structure of a Class}{47}{subsection.6.3.1}
+\contentsline {section}{\numberline {6.4}Dynamic Dispatch and Caching}{48}{section.6.4}
+\contentsline {section}{\numberline {6.5}Forwarding}{50}{section.6.5}
+\contentsline {subsection}{\numberline {6.5.1}Apple Run-Time}{50}{subsection.6.5.1}
+\contentsline {subsection}{\numberline {6.5.2}GCC Run-Time}{51}{subsection.6.5.2}
+\contentsline {subsection}{\numberline {6.5.3}Modular Run-Time}{52}{subsection.6.5.3}
+\contentsline {section}{\numberline {6.6}Compatibility}{54}{section.6.6}
+\contentsline {section}{\numberline {6.7}Extensibility of Classes}{54}{section.6.7}
+\contentsline {subsection}{\numberline {6.7.1}Performance}{60}{subsection.6.7.1}
+\contentsline {subsection}{\numberline {6.7.2}Associated Objects}{61}{subsection.6.7.2}
+\contentsline {subsection}{\numberline {6.7.3}Apple's implementation}{61}{subsection.6.7.3}
+\contentsline {subsection}{\numberline {6.7.4}Modular run-time implementation}{61}{subsection.6.7.4}
+\contentsline {subsection}{\numberline {6.7.5}Categories}{63}{subsection.6.7.5}
+\contentsline {section}{\numberline {6.8}Creating Prototypes and Registering Them}{63}{section.6.8}
+\contentsline {subsection}{\numberline {6.8.1}Issues with generating static structures}{63}{subsection.6.8.1}
+\contentsline {subsection}{\numberline {6.8.2}Used prototype structures}{64}{subsection.6.8.2}
+\contentsline {section}{\numberline {6.9}Internal Classes}{65}{section.6.9}
+\contentsline {subsection}{\numberline {6.9.1}MRObject}{66}{subsection.6.9.1}
+\contentsline {paragraph}{Reference counting in traditional run-times}{66}{section*.21}
+\contentsline {subparagraph}{Upsides}{66}{section*.22}
+\contentsline {subparagraph}{Downsides}{67}{section*.23}
+\contentsline {subparagraph}{Possible solutions}{67}{section*.24}
+\contentsline {subsection}{\numberline {6.9.2}\_\_MRConstString}{68}{subsection.6.9.2}
+\contentsline {section}{\numberline {6.10}Benchmarks}{70}{section.6.10}
+\contentsline {subsection}{\numberline {6.10.1}Dispatch test}{71}{subsection.6.10.1}
+\contentsline {subsection}{\numberline {6.10.2}Super dispatch test}{72}{subsection.6.10.2}
+\contentsline {subsection}{\numberline {6.10.3}Categories dispatch test}{73}{subsection.6.10.3}
+\contentsline {subsection}{\numberline {6.10.4}Allocation test}{74}{subsection.6.10.4}
+\contentsline {subsection}{\numberline {6.10.5}Ivar test}{75}{subsection.6.10.5}
+\contentsline {subsection}{\numberline {6.10.6}Forwarding test}{76}{subsection.6.10.6}
+\contentsline {subsection}{\numberline {6.10.7}Associated objects test}{77}{subsection.6.10.7}
+\contentsline {section}{\numberline {6.11}Ports}{78}{section.6.11}
+\contentsline {subsection}{\numberline {6.11.1}Windows 3.11}{78}{subsection.6.11.1}
+\contentsline {subsection}{\numberline {6.11.2}HeSiVa}{79}{subsection.6.11.2}
+\contentsline {chapter}{\numberline {7}Future Work}{82}{chapter.7}
+\contentsline {chapter}{Conclusion}{84}{chapter*.25}
+\contentsline {chapter}{Bibliography}{85}{chapter*.26}
+\contentsline {chapter}{List of Figures}{86}{chapter*.26}
+\contentsline {chapter}{List of Abbreviations}{88}{chapter*.28}
+\contentsline {chapter}{Attachments}{89}{chapter*.29}
