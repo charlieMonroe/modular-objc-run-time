@@ -5,3 +5,13 @@
  * in the .c file.
  */
 
+#include "types.h"
+
+
+/**
+ * An example porting the sel_registerName function
+ * from Apple's run-time.
+ */
+extern SEL sel_registerName(const char *str);
+
+

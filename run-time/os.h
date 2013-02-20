@@ -38,7 +38,7 @@
 
 /* Fallback to false. */
 #if !defined(OBJC_USES_INLINE_FUNCTIONS)
-	#define OBJC_USES_INLINE_FUNCTIONS 0
+	#define OBJC_USES_INLINE_FUNCTIONS 1
 #endif
 
 #if OBJC_USES_INLINE_FUNCTIONS

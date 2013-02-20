@@ -8,6 +8,16 @@
 #include <string.h>
 #include "../types.h"
 
+/**
+ * Inline functions. Defines should be avoided in most cases.
+ */
+
+/**
+ * Using a define to simplify dealing with the variadic function parameters.
+ *
+ * The declarations here, however, should indeed be functions as they
+ * may be referenced.
+ */
 #define objc_log printf
 
 OBJC_INLINE void objc_abort(const char *reason) OBJC_ALWAYS_INLINE;

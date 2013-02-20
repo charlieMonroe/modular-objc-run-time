@@ -23,8 +23,10 @@ static void _rw_lock_destroyer(objc_rw_lock lock){
 	free(lock);
 }
 
+/**
+ * Populates the run-time setup with function pointers.
+ */
 static void _objc_posix_init(void){
-	
 	objc_runtime_set_allocator(malloc);
 	objc_runtime_set_deallocator(free);
 	objc_runtime_set_zero_allocator(_zero_alloc);
@@ -40,6 +42,9 @@ static void _objc_posix_init(void){
 	objc_runtime_set_rw_lock_unlock((objc_rw_lock_unlock_f)pthread_rwlock_unlock);
 }
 
+/**
+ * Registers the posix_init function.
+ */
 static void _objc_posix_register_initializer(void) __attribute__((constructor));
 static void _objc_posix_register_initializer(void){
 	objc_runtime_register_initializer(_objc_posix_init);

@@ -4,6 +4,8 @@
 
 static objc_selector_holder selector_cache;
 
+/* Public functions, documented in the header file. */
+
 SEL objc_selector_register(const char *name){
 	SEL selector = objc_selector_holder_lookup(selector_cache, name);
 	if (selector == NULL){

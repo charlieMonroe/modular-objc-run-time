@@ -1,7 +1,9 @@
+/**
+ * This header should contain all public header includes.
+*/
+
 #ifndef _OBJC_H_
 #define _OBJC_H_
-
-#include "os.h"
 
 #include "class.h"
 #include "classext.h"
@@ -10,6 +12,5 @@
 #include "runtime.h"
 #include "selector.h"
 #include "types.h"
-#include "utils.h"
 
 #endif /* _OBJC_H_ */

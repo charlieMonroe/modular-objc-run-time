@@ -55,17 +55,28 @@ typedef struct _holder_str {
 } *_holder;
 
 
+/**
+ * Allocates buckets in the holder.
+ */
 OBJC_INLINE void _holder_initialize_buckets(_holder holder) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _holder_initialize_buckets(_holder holder){
 	holder->buckets = objc_zero_alloc(HOLDER_BUCKET_COUNT * sizeof(_bucket*));
 }
 
+/**
+ * Returns an index in the buckets for a key. The key is either
+ * hashed as a pointer, or as a string, depending 
+ * on holder->pointer_equality.
+ */
 OBJC_INLINE unsigned int _bucket_index_for_key(_holder holder, const void *key) OBJC_ALWAYS_INLINE;
 OBJC_INLINE unsigned int _bucket_index_for_key(_holder holder, const void *key){
 	unsigned long hash = holder->pointer_equality ? (unsigned long)key : objc_hash_string((const char*)key);
 	return hash & (HOLDER_BUCKET_COUNT - 1);
 }
 
+/**
+ * Looks for an object in a bucket. If not found, NULL is returned.
+ */
 OBJC_INLINE void *_holder_object_in_bucket(_holder holder, _bucket *bucket, void *obj) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void *_holder_object_in_bucket(_holder holder, _bucket *bucket, void *obj){
 	while (bucket != NULL) {
@@ -79,11 +90,17 @@ OBJC_INLINE void *_holder_object_in_bucket(_holder holder, _bucket *bucket, void
 	return NULL;
 }
 
+/**
+ * Returns YES if the bucket contains obj.
+ */
 OBJC_INLINE BOOL _holder_contains_object_in_bucket(_holder holder, _bucket *bucket, void *obj) OBJC_ALWAYS_INLINE;
 OBJC_INLINE BOOL _holder_contains_object_in_bucket(_holder holder, _bucket *bucket, void *obj){
 	return (BOOL)(_holder_object_in_bucket(holder, bucket, obj) != NULL);
 }
 
+/**
+ * Deallocates bucket and all the next buckets.
+ */
 OBJC_INLINE void _holder_deallocate_bucket(_holder holder, _bucket *bucket) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _holder_deallocate_bucket(_holder holder, _bucket *bucket){
 	_bucket *next_bucket = bucket;
@@ -99,6 +116,9 @@ OBJC_INLINE void _holder_deallocate_bucket(_holder holder, _bucket *bucket){
 	}
 }
 
+/**
+ * Deallocates the holder completely.
+ */
 OBJC_INLINE void _holder_deallocate(_holder holder) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _holder_deallocate(_holder holder){
 	unsigned int index = 0;
@@ -117,6 +137,9 @@ OBJC_INLINE void _holder_deallocate(_holder holder){
 	objc_rw_lock_destroy(holder->lock);
 }
 
+/**
+ * Returns an object for key.
+ */
 OBJC_INLINE void *_holder_object_in_bucket_for_key(_holder holder, _bucket *bucket, const void *key) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void *_holder_object_in_bucket_for_key(_holder holder, _bucket *bucket, const void *key){
 	while (bucket != NULL) {
@@ -132,6 +155,9 @@ OBJC_INLINE void *_holder_object_in_bucket_for_key(_holder holder, _bucket *buck
 	return NULL;
 }
 
+/**
+ * Inserts an object into holder.
+ */
 OBJC_INLINE void holder_insert_object_internal(_holder holder, void *obj) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void holder_insert_object_internal(_holder holder, void *obj){
 	unsigned int bucket_index;
@@ -172,6 +198,9 @@ OBJC_INLINE void holder_insert_object_internal(_holder holder, void *obj){
 	objc_rw_lock_unlock(holder->lock);
 }
 
+/**
+ * Fetches an object for key.
+ */
 OBJC_INLINE void *holder_fetch_object(_holder holder, const void *key) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void *holder_fetch_object(_holder holder, const void *key) {
 	_bucket *bucket;
@@ -204,6 +233,10 @@ OBJC_INLINE void *holder_fetch_object(_holder holder, const void *key) {
 	return result;
 }
 
+/**
+ * Marks the holder as to be deallocated. If no readers are present,
+ * it is deallocated at the moment.
+ */
 OBJC_INLINE void holder_mark_to_deallocate(_holder holder) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void holder_mark_to_deallocate(_holder holder){
 	holder->dealloc_mark = YES;
@@ -212,6 +245,10 @@ OBJC_INLINE void holder_mark_to_deallocate(_holder holder){
 	}
 }
 
+/**
+ * Allocates the holder structure and populates
+ * private fields.
+ */
 OBJC_INLINE _holder holder_create_internal(holder_type type) OBJC_ALWAYS_INLINE;
 OBJC_INLINE _holder holder_create_internal(holder_type type){
 	_holder holder = (_holder)(objc_alloc(sizeof(struct _holder_str)));

@@ -88,7 +88,7 @@ OBJC_INLINE BOOL objc_strings_equal(const char *str1, const char *str2){
 }
 
 /*
- * Caches string str.
+ * Hashes string str.
  */
 OBJC_INLINE unsigned int objc_hash_string(const char *str) OBJC_ALWAYS_INLINE;
 OBJC_INLINE unsigned int objc_hash_string(const char *str){
