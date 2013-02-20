@@ -64,7 +64,10 @@ static struct objc_method _objc_nil_receiver_method = {
  */
 #define OBJC_MAX_CLASS_VERSION_SUPPORTED ((unsigned int)0)
 
-/***** PRIVATE FUNCTIONS *****/
+
+#pragma mark -
+#pragma mark -
+#pragma mark Private Functions
 
 /**
  * Returns the extra space needed in the class structure by
@@ -326,6 +329,9 @@ OBJC_INLINE IMP _lookup_instance_method_impl(Class cl, SEL selector){
 	return m->implementation;
 }
 
+/**
+ * Returns whether cl is a subclass of superclass_candidate.
+ */
 OBJC_INLINE BOOL _class_is_subclass_of_class(Class cl, Class superclass_candidate) OBJC_ALWAYS_INLINE;
 OBJC_INLINE BOOL _class_is_subclass_of_class(Class cl, Class superclass_candidate){
 	while (cl != Nil) {
@@ -606,6 +612,9 @@ OBJC_INLINE void _finalize_object(id obj){
 	}
 }
 
+/**
+ * Looks for an ivar named name in ivar_list.
+ */
 OBJC_INLINE Ivar _ivar_named_in_ivar_list(objc_array ivar_list, const char *name) OBJC_ALWAYS_INLINE;
 OBJC_INLINE Ivar _ivar_named_in_ivar_list(objc_array ivar_list, const char *name){
 	objc_array_enumerator en;
@@ -645,6 +654,10 @@ OBJC_INLINE Ivar _ivar_named(Class cl, const char *name){
 	return NULL;
 }
 
+/**
+ * Returns number of ivars on class cl. Used only
+ * by the functions copying ivar lists.
+ */
 OBJC_INLINE unsigned int _ivar_count(Class cl) OBJC_ALWAYS_INLINE;
 OBJC_INLINE unsigned int _ivar_count(Class cl){
 	unsigned int count = 0;
@@ -662,6 +675,9 @@ OBJC_INLINE unsigned int _ivar_count(Class cl){
 	return count;
 }
 
+/**
+ * Copies over ivars declared on cl into list.
+ */
 OBJC_INLINE void _ivars_copy_to_list(Class cl, Ivar *list, unsigned int max_count) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _ivars_copy_to_list(Class cl, Ivar *list, unsigned int max_count){
 	unsigned int counter = 0;
@@ -684,6 +700,11 @@ OBJC_INLINE void _ivars_copy_to_list(Class cl, Ivar *list, unsigned int max_coun
 	list[max_count] = NULL;
 }
 
+/**
+ * Looks up method. If obj is nil, returns the nil receiver method.
+ *
+ * If the method is not found, forwarding takes place.
+ */
 OBJC_INLINE Method _lookup_method(id obj, SEL selector) OBJC_ALWAYS_INLINE;
 OBJC_INLINE Method _lookup_method(id obj, SEL selector){
 	Method method = NULL;
@@ -744,6 +765,9 @@ OBJC_INLINE Method _lookup_method(id obj, SEL selector){
 	return method;
 }
 
+/**
+ * The same scenario as above, but in this case a call to the superclass.
+ */
 OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector) OBJC_ALWAYS_INLINE;
 OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector){
 	Method method;
@@ -778,6 +802,9 @@ OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector){
 	return method;
 }
 
+/**
+ * Calls the class_initializer on each extension for cl.
+ */
 OBJC_INLINE void _register_class_with_extensions(Class cl) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _register_class_with_extensions(Class cl){
 	objc_class_extension *ext;
@@ -797,6 +824,9 @@ OBJC_INLINE void _register_class_with_extensions(Class cl){
 	}
 }
 
+/**
+ * Validates the class prototype.
+ */
 OBJC_INLINE BOOL _validate_prototype(struct objc_class_prototype *prototype) OBJC_ALWAYS_INLINE;
 OBJC_INLINE BOOL _validate_prototype(struct objc_class_prototype *prototype){
 	if (prototype->name == NULL || objc_strlen(prototype->name) == 0){
@@ -832,6 +862,9 @@ OBJC_INLINE BOOL _validate_prototype(struct objc_class_prototype *prototype){
 	return YES;
 }
 
+/**
+ * Adds an ivar to class from ivar prototype list.
+ */
 OBJC_INLINE void _add_ivars_from_prototype(Class cl, Ivar *ivars) OBJC_ALWAYS_INLINE;
 OBJC_INLINE void _add_ivars_from_prototype(Class cl, Ivar *ivars){
 	if (cl->super_class != Nil){
@@ -853,6 +886,9 @@ OBJC_INLINE void _add_ivars_from_prototype(Class cl, Ivar *ivars){
 	}
 }
 
+/**
+ * Registers a prototype and returns the resulting Class.
+ */
 OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype) OBJC_ALWAYS_INLINE;
 OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype){
 	Class cl;
@@ -916,6 +952,11 @@ OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype){
 	return cl;
 }
 
+/**
+ * Returns the allocator for class. If a class extension
+ * returns a valid allocator, then it is returned.
+ * Otherwise objc_zero_alloc.
+ */
 OBJC_INLINE objc_allocator_f _allocator_for_class(Class cl, unsigned int size) OBJC_ALWAYS_INLINE;
 OBJC_INLINE objc_allocator_f _allocator_for_class(Class cl, unsigned int size){
 	objc_allocator_f allocator = objc_zero_alloc;
@@ -939,6 +980,7 @@ OBJC_INLINE objc_allocator_f _allocator_for_class(Class cl, unsigned int size){
 
 
 /***** PUBLIC FUNCTIONS *****/
+/* Documentation in the header file. */
 
 #pragma mark -
 #pragma mark Adding methods
@@ -1522,6 +1564,9 @@ void objc_class_flush_class_cache(Class cl){
 #pragma mark -
 #pragma mark Initializator-related
 
+/**
+ * Initializes the class extensions and internal class structures.
+ */
 void objc_class_init(void){
 	/* Cache the extension offsets */
 	objc_class_extension *ext = class_extensions;
