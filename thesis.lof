@@ -1,57 +1,59 @@
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {1.1}{\ignorespaces Structures representing an object and a class.}}{4}{figure.1.1}
-\contentsline {figure}{\numberline {1.2}{\ignorespaces Declaring two classes.}}{5}{figure.1.2}
+\contentsline {figure}{\numberline {1.1}{\ignorespaces Structures representing an object and a class.}}{5}{figure.1.1}
+\contentsline {figure}{\numberline {1.2}{\ignorespaces Declaring two classes.}}{6}{figure.1.2}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {2.1}{\ignorespaces Declaration of an Objective-C class.}}{8}{figure.2.1}
-\contentsline {figure}{\numberline {2.2}{\ignorespaces Implementation of an Objective-C class.}}{9}{figure.2.2}
-\contentsline {figure}{\numberline {2.3}{\ignorespaces Method declaration with a single argument.}}{9}{figure.2.3}
-\contentsline {figure}{\numberline {2.4}{\ignorespaces Method declaration with multiple arguments.}}{9}{figure.2.4}
-\contentsline {figure}{\numberline {2.5}{\ignorespaces Calling methods on a class and an object.}}{10}{figure.2.5}
-\contentsline {figure}{\numberline {2.6}{\ignorespaces Objective-C message calls translated to run-time function calls.}}{11}{figure.2.6}
-\contentsline {figure}{\numberline {2.7}{\ignorespaces Objective-C message calls translated to run-time function calls in GCC run-time.}}{12}{figure.2.7}
-\contentsline {figure}{\numberline {2.8}{\ignorespaces Objective-C message call to super translated to a run-time function call.}}{13}{figure.2.8}
-\contentsline {figure}{\numberline {2.9}{\ignorespaces Smalltalk's object model.}}{13}{figure.2.9}
-\contentsline {figure}{\numberline {2.10}{\ignorespaces Declaring a root class in Objective-C.}}{14}{figure.2.10}
-\contentsline {figure}{\numberline {2.11}{\ignorespaces Objective-C's object definition.}}{14}{figure.2.11}
-\contentsline {figure}{\numberline {2.12}{\ignorespaces Simplified structure representing an Objective-C class.}}{15}{figure.2.12}
-\contentsline {figure}{\numberline {2.13}{\ignorespaces A graph of the class - meta-class relationship.}}{16}{figure.2.13}
-\contentsline {figure}{\numberline {2.14}{\ignorespaces Listing methods of \texttt {NSObject} class.}}{17}{figure.2.14}
-\contentsline {figure}{\numberline {2.15}{\ignorespaces Methods translated into C functions.}}{19}{figure.2.15}
-\contentsline {figure}{\numberline {2.16}{\ignorespaces The \texttt {@synchronized} construct translated into run-time functions.}}{20}{figure.2.16}
-\contentsline {figure}{\numberline {2.17}{\ignorespaces An Objective-C string literal compiled into a static object structure.}}{21}{figure.2.17}
-\contentsline {figure}{\numberline {2.18}{\ignorespaces Block declaration and usage declared.}}{23}{figure.2.18}
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Declaration of an Objective-C class.}}{9}{figure.2.1}
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Implementation of an Objective-C class.}}{10}{figure.2.2}
+\contentsline {figure}{\numberline {2.3}{\ignorespaces Method declaration with a single argument.}}{10}{figure.2.3}
+\contentsline {figure}{\numberline {2.4}{\ignorespaces Method declaration with multiple arguments.}}{10}{figure.2.4}
+\contentsline {figure}{\numberline {2.5}{\ignorespaces Calling methods on a class and an object.}}{11}{figure.2.5}
+\contentsline {figure}{\numberline {2.6}{\ignorespaces Objective-C message calls translated to run-time function calls.}}{12}{figure.2.6}
+\contentsline {figure}{\numberline {2.7}{\ignorespaces Objective-C message calls translated to run-time function calls in GCC run-time.}}{13}{figure.2.7}
+\contentsline {figure}{\numberline {2.8}{\ignorespaces Objective-C message call to super translated to a run-time function call.}}{14}{figure.2.8}
+\contentsline {figure}{\numberline {2.9}{\ignorespaces Smalltalk's object model.}}{14}{figure.2.9}
+\contentsline {figure}{\numberline {2.10}{\ignorespaces Declaring a root class in Objective-C.}}{15}{figure.2.10}
+\contentsline {figure}{\numberline {2.11}{\ignorespaces Objective-C's object definition.}}{15}{figure.2.11}
+\contentsline {figure}{\numberline {2.12}{\ignorespaces Simplified structure representing an Objective-C class.}}{16}{figure.2.12}
+\contentsline {figure}{\numberline {2.13}{\ignorespaces A graph of the class - meta-class relationship.}}{17}{figure.2.13}
+\contentsline {figure}{\numberline {2.14}{\ignorespaces Listing methods of \texttt {NSObject} class.}}{18}{figure.2.14}
+\contentsline {figure}{\numberline {2.15}{\ignorespaces Methods translated into C functions.}}{20}{figure.2.15}
+\contentsline {figure}{\numberline {2.16}{\ignorespaces The \texttt {@synchronized} construct translated into run-time functions.}}{21}{figure.2.16}
+\contentsline {figure}{\numberline {2.17}{\ignorespaces An Objective-C string literal compiled into a static object structure.}}{22}{figure.2.17}
+\contentsline {figure}{\numberline {2.18}{\ignorespaces Block declaration and usage declared.}}{24}{figure.2.18}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {3.1}{\ignorespaces An example of toll-free bridging.}}{27}{figure.3.1}
-\addvspace {10\p@ }
-\addvspace {10\p@ }
-\contentsline {figure}{\numberline {5.1}{\ignorespaces \'Etoil\'e run-time's inline cache.}}{35}{figure.5.1}
-\contentsline {figure}{\numberline {5.2}{\ignorespaces \'Etoil\'e run-time's \texttt {CALL} structure.}}{36}{figure.5.2}
+\contentsline {figure}{\numberline {3.1}{\ignorespaces An example of toll-free bridging.}}{28}{figure.3.1}
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {7.1}{\ignorespaces A rough sketch of how inline functions should be supplied.}}{42}{figure.7.1}
-\contentsline {figure}{\numberline {7.2}{\ignorespaces Example of function pointers.}}{44}{figure.7.2}
-\contentsline {figure}{\numberline {7.3}{\ignorespaces The run-time setup structure.}}{45}{figure.7.3}
-\contentsline {figure}{\numberline {7.4}{\ignorespaces The memory setup structure.}}{45}{figure.7.4}
-\contentsline {figure}{\numberline {7.5}{\ignorespaces Class structure.}}{48}{figure.7.5}
-\contentsline {figure}{\numberline {7.6}{\ignorespaces A sample proxy class.}}{54}{figure.7.6}
-\contentsline {figure}{\numberline {7.7}{\ignorespaces Class extension structure.}}{56}{figure.7.7}
-\contentsline {figure}{\numberline {7.8}{\ignorespaces Example of registering a class extension.}}{57}{figure.7.8}
-\contentsline {figure}{\numberline {7.9}{\ignorespaces Example of a custom deallocator.}}{59}{figure.7.9}
-\contentsline {figure}{\numberline {7.10}{\ignorespaces Example of how class extensions use memory within an object.}}{60}{figure.7.10}
-\contentsline {figure}{\numberline {7.11}{\ignorespaces Example of a class extension - associated objects.}}{63}{figure.7.11}
-\contentsline {figure}{\numberline {7.12}{\ignorespaces Structures used as prototypes for class and method declarations.}}{65}{figure.7.12}
-\contentsline {figure}{\numberline {7.13}{\ignorespaces Default list of vtable selectors in Apple's run-time.}}{67}{figure.7.13}
-\contentsline {figure}{\numberline {7.14}{\ignorespaces Diagram of a hidden reference count variable.}}{69}{figure.7.14}
-\contentsline {figure}{\numberline {7.15}{\ignorespaces \_\_MRConstString class export.}}{70}{figure.7.15}
-\contentsline {figure}{\numberline {7.16}{\ignorespaces \_\_MRConstString static instance creation.}}{71}{figure.7.16}
-\contentsline {figure}{\numberline {7.17}{\ignorespaces Dispatch test.}}{73}{figure.7.17}
-\contentsline {figure}{\numberline {7.18}{\ignorespaces Super dispatch test.}}{74}{figure.7.18}
-\contentsline {figure}{\numberline {7.19}{\ignorespaces Categories dispatch test.}}{75}{figure.7.19}
-\contentsline {figure}{\numberline {7.20}{\ignorespaces Allocation test.}}{76}{figure.7.20}
-\contentsline {figure}{\numberline {7.21}{\ignorespaces Ivar test.}}{77}{figure.7.21}
-\contentsline {figure}{\numberline {7.22}{\ignorespaces Forwarding test.}}{78}{figure.7.22}
-\contentsline {figure}{\numberline {7.23}{\ignorespaces Associated objects test.}}{79}{figure.7.23}
-\contentsline {figure}{\numberline {7.24}{\ignorespaces The modular run-time running on Windows 3.11 in a DOSBox emulator.}}{80}{figure.7.24}
-\contentsline {figure}{\numberline {7.25}{\ignorespaces The only lines that needed to be added in order for the run-time to run on kalisto HeSiVa.}}{81}{figure.7.25}
-\contentsline {figure}{\numberline {7.26}{\ignorespaces The modular run-time running on kalisto HeSiVa.}}{82}{figure.7.26}
+\contentsline {figure}{\numberline {5.1}{\ignorespaces \'Etoil\'e run-time's inline cache.}}{36}{figure.5.1}
+\contentsline {figure}{\numberline {5.2}{\ignorespaces \'Etoil\'e run-time's \texttt {CALL} structure.}}{37}{figure.5.2}
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {6.1}{\ignorespaces A sample proxy class.}}{47}{figure.6.1}
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {7.1}{\ignorespaces A rough sketch of how inline functions should be supplied.}}{50}{figure.7.1}
+\contentsline {figure}{\numberline {7.2}{\ignorespaces Example of function pointers.}}{52}{figure.7.2}
+\contentsline {figure}{\numberline {7.3}{\ignorespaces The run-time setup structure.}}{53}{figure.7.3}
+\contentsline {figure}{\numberline {7.4}{\ignorespaces The memory setup structure.}}{53}{figure.7.4}
+\contentsline {figure}{\numberline {7.5}{\ignorespaces Class structure.}}{56}{figure.7.5}
+\contentsline {figure}{\numberline {7.6}{\ignorespaces Class extension structure.}}{59}{figure.7.6}
+\contentsline {figure}{\numberline {7.7}{\ignorespaces Example of registering a class extension.}}{60}{figure.7.7}
+\contentsline {figure}{\numberline {7.8}{\ignorespaces Example of a custom deallocator.}}{62}{figure.7.8}
+\contentsline {figure}{\numberline {7.9}{\ignorespaces Example of how class extensions use memory within an object.}}{63}{figure.7.9}
+\contentsline {figure}{\numberline {7.10}{\ignorespaces Example of a class extension - associated objects.}}{66}{figure.7.10}
+\contentsline {figure}{\numberline {7.11}{\ignorespaces Structures used as prototypes for class and method declarations.}}{68}{figure.7.11}
+\contentsline {figure}{\numberline {7.12}{\ignorespaces Default list of vtable selectors in Apple's run-time.}}{70}{figure.7.12}
+\contentsline {figure}{\numberline {7.13}{\ignorespaces Diagram of a hidden reference count variable.}}{72}{figure.7.13}
+\contentsline {figure}{\numberline {7.14}{\ignorespaces \_\_MRConstString class export.}}{73}{figure.7.14}
+\contentsline {figure}{\numberline {7.15}{\ignorespaces \_\_MRConstString static instance creation.}}{74}{figure.7.15}
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {8.1}{\ignorespaces Dispatch test.}}{76}{figure.8.1}
+\contentsline {figure}{\numberline {8.2}{\ignorespaces Super dispatch test.}}{77}{figure.8.2}
+\contentsline {figure}{\numberline {8.3}{\ignorespaces Categories dispatch test.}}{78}{figure.8.3}
+\contentsline {figure}{\numberline {8.4}{\ignorespaces Allocation test.}}{79}{figure.8.4}
+\contentsline {figure}{\numberline {8.5}{\ignorespaces Ivar test.}}{80}{figure.8.5}
+\contentsline {figure}{\numberline {8.6}{\ignorespaces Forwarding test.}}{81}{figure.8.6}
+\contentsline {figure}{\numberline {8.7}{\ignorespaces Associated objects test.}}{82}{figure.8.7}
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {9.1}{\ignorespaces The modular run-time running on Windows 3.11 in a DOSBox emulator.}}{84}{figure.9.1}
+\contentsline {figure}{\numberline {9.2}{\ignorespaces The only lines that needed to be added in order for the run-time to run on kalisto HeSiVa.}}{85}{figure.9.2}
+\contentsline {figure}{\numberline {9.3}{\ignorespaces The modular run-time running on kalisto HeSiVa.}}{86}{figure.9.3}
 \addvspace {10\p@ }
