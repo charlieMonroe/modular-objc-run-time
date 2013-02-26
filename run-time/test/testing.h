@@ -5,6 +5,7 @@
 #include "../objc.h"
 #include <stdio.h>
 #include <time.h>
+#include <float.h>
 
 #if OBJC_HAS_AO_EXTENSION
 	#include "../extras/ao-ext.h"
@@ -343,7 +344,7 @@ static void list_classes(void){
 #endif
 
 
-#define GENERATE_TEST(TEST_NAME, INSTANCE_CLASS_NAME, PREFLIGHT, ITERATIONS, INNER_CYCLE, CORRECTNESS_TEST) static void TEST_NAME##_test(void){\
+#define GENERATE_TEST(TEST_NAME, INSTANCE_CLASS_NAME, PREFLIGHT, ITERATIONS, INNER_CYCLE, CORRECTNESS_TEST) static clock_t TEST_NAME##_test(void){\
 	MyClass *instance;\
 	SEL alloc_selector = NULL;\
 	IMP alloc_impl = NULL;\
@@ -365,14 +366,17 @@ static void list_classes(void){
 	\
 	if (!(CORRECTNESS_TEST)){\
 		printf("Correctness condition false for test " #TEST_NAME "!\n");\
+		objc_abort("");\
 	}\
 	\
-	printf("%06lu\n", (c2 - c1));\
+	return (c2 - c1);\
 }
 
 
 #define DISPATCH_ITERATIONS 10000000
 #define ALLOCATION_ITERATIONS 10000000
+
+#include "testing-common.h"
 
 
 #endif /* RUNTIME_TEST_CLASSES_H_ */

@@ -1,7 +1,7 @@
 
 CFLAGS=-std=c99 -O3 -DUSES_C89=0 -DHAS_ALWAYS_INLINE_ATTRIBUTE=1 -DOBJC_USES_INLINE_FUNCTIONS=1
 TESTMRFLAGS=-DOBJC_INLINE_CACHING=2
-TESTCOCOAFLAGS=-DOBJC_CACHING=1
+TESTCOCOAFLAGS=-DOBJC_CACHING=1 -Wno-objc-root-class -Wno-deprecated-objc-isa-usage
 LINKER=`x=\`uname\`; \
 		if [ $${x} = Darwin ]; then \
 		  	echo ld; \

@@ -1,6 +1,6 @@
 #include "testing.h"
 
-static void allocation_test(void){
+static clock_t allocation_test(void){
 	clock_t c1, c2;
 	int i;
 	
@@ -11,12 +11,12 @@ static void allocation_test(void){
 	}
 	c2 = clock();
 	
-	printf("%06lu\n", (c2 - c1));
+	return (c2 - c1);
 }
 
 
 int main(int argc, const char * argv[]){
 	register_classes();
-	allocation_test();
+	perform_tests(allocation_test);
 	return 0;
 }

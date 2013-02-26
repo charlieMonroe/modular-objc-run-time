@@ -10,6 +10,6 @@ GENERATE_TEST(dispatch, "MySubclass", {}, DISPATCH_ITERATIONS, {
 
 int main(int argc, const char * argv[]){
 	register_classes();
-	dispatch_test();
+	perform_tests(dispatch_test);
 	return 0;
 }

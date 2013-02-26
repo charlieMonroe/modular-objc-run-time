@@ -9,6 +9,6 @@ GENERATE_TEST(ivar, "MySubclass", {}, DISPATCH_ITERATIONS, {
 
 int main(int argc, const char * argv[]){
 	register_classes();
-	ivar_test();
+	perform_tests(ivar_test);
 	return 0;
 }

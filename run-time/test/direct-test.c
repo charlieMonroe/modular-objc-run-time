@@ -1,3 +1,4 @@
+#include "testing.h"
 #include <stdio.h>
 #include <time.h>
 
@@ -10,7 +11,7 @@ void direct_call(void){
 
 void(*direct_call_method)(void);
 
-void direct_call_test(void){
+clock_t direct_call_test(void){
 	clock_t c1, c2;
 	c1 = clock();
 	for (int i = 0; i < 10000000; ++i){
@@ -19,7 +20,7 @@ void direct_call_test(void){
 	
 	c2 = clock();
 	
-	printf("%06lu\n", (c2 - c1));
+	return (c2 - c1);
 }
 
 int main(int argc, const char * argv[]){
@@ -28,6 +29,6 @@ int main(int argc, const char * argv[]){
 	 * and a method is indeed called.
 	 */
 	direct_call_method = direct_call;
-	direct_call_test();
+	perform_tests(direct_call_test);
 	return 0;
 }

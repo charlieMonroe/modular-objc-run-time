@@ -11,6 +11,6 @@ GENERATE_TEST(category, "MySubclass", {}, DISPATCH_ITERATIONS, {
 
 int main(int argc, const char * argv[]){
 	register_classes();
-	category_test();
+	perform_tests(category_test);
 	return 0;
 }

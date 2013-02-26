@@ -1,8 +1,7 @@
 
 #include "testing-cocoa.h"
 
-
-void ao_test(void){
+clock_t ao_test(void){
 	clock_t c1, c2;
 	id instance = class_createInstance(objc_getClass("MyClass"), 0);
 	c1 = clock();
@@ -12,10 +11,12 @@ void ao_test(void){
 	
 	c2 = clock();
 	
-	printf("%06lu\n", (c2 - c1));
+	object_dispose(instance);
+	
+	return (c2 - c1);
 }
 
 int main(int argc, const char *argv[]){
-	ao_test();
+	perform_tests(ao_test);
 	return 0;
 }

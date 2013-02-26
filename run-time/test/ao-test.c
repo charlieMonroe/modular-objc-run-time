@@ -12,6 +12,6 @@ GENERATE_TEST(ao, "MySubclass", {}, DISPATCH_ITERATIONS, {
 
 int main(int argc, const char * argv[]){
 	register_classes();
-	ao_test();
+	perform_tests(ao_test);
 	return 0;
 }

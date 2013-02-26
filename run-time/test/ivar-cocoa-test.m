@@ -1,7 +1,7 @@
 
 #include "testing-cocoa.h"
 
-void ivar_test(void){
+clock_t ivar_test(void){
 	clock_t c1, c2;
 	id instance = class_createInstance(objc_getClass("MySubclass"), 0);
 	c1 = clock();
@@ -10,13 +10,14 @@ void ivar_test(void){
 	}
 	
 	c2 = clock();
+	object_dispose(instance);
 	
-	printf("%06lu\n", (c2 - c1));
+	return (c2 - c1);
 }
 
 
 int main(int argc, const char *argv[]){
-	ivar_test();
+	perform_tests(ivar_test);
 	return 0;
 }
 

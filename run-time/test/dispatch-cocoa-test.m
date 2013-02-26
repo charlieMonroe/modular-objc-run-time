@@ -2,7 +2,7 @@
 #include "testing-cocoa.h"
 
 
-void dispatch_test(void){
+clock_t dispatch_test(void){
 	clock_t c1, c2;
 	id instance = class_createInstance(objc_getClass("MySubclass"), 0);
 	c1 = clock();
@@ -12,11 +12,13 @@ void dispatch_test(void){
 	
 	c2 = clock();
 	
-	printf("%06lu\n", (c2 - c1));
+	object_dispose(instance);
+	
+	return (c2 - c1);
 }
 
 int main(int argc, const char *argv[]){
-	dispatch_test();
+	perform_tests(dispatch_test);
 	return 0;
 }
 

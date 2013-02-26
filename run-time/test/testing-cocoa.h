@@ -137,5 +137,7 @@
 #else
 #error Unknown caching.
 #endif
+	
+#include "testing-common.h"
 
 #endif /* _TEST_COCOA_H_ */
