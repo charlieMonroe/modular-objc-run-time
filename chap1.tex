@@ -6,7 +6,7 @@ With this in mind, a new question pops up - what are methods and how are the met
 
 In languages, such as C, it is already known which code should be executed when you call a particular function. The linker then links function calls directly to the address the function resides at. 
 
-Imagine an object-oriented language, where each class had a compile-time known number of methods, these methods could be a part of the class structure, so each method call would consist of just reaching for the correct function pointer within the object's class structure.
+Imagine an object-oriented language, where each class had a compile-time known number of methods. These methods could be a part of the class structure, so each method call would consist of just reaching for the correct function pointer within the object's class structure and calling it.
 
 This gets more complicated once we take class hierarchy into consideration. Each class can override methods of its parent class, which can be solved by using the same function 'slot'.
 
@@ -51,12 +51,12 @@ class Class2 extends Class1 {
   \label{fig:imaginary_lang_classes}
 \end{figure}
 
-In this example, \verb=method1= of \verb=Class1= would reside in \verb=Class1->functions[0]=, \verb=method2= in \verb=Class2->functions[1]=, \verb=method1= of \verb=Class2= would reside in \newline{}\verb=Class2->functions[0]=. Hence if \verb=my_obj.method1()= were to be called, it could get translated into \verb=my_obj->class->functions[0]()=.
+In this example, \verb=method1= of \verb=Class1= would reside in \verb=Class1->functions[0]=, \verb=method2= in \verb=Class1->functions[1]=, \verb=method1= of \verb=Class2= would reside in \newline{}\verb=Class2->functions[0]=. Hence if \verb=my_obj.method1()= were to be called, it could get translated into \verb=my_obj->class->functions[0]()=.
 
 This, however, brings up a few issues:
 
 \begin{itemize}
-  \item{\bf{Binary compatibility}} Linking against a framework which has \verb=method1= in \verb=functions[0]= does not mean the next version will do too - it is the compiler that would decide the order of the functions in the \verb=functions= field.
+  \item{\bf{Binary compatibility}} Linking against a framework which has \verb=method1= in \verb=functions[0]= does not mean the next version will do too - it is the compiler that decides the order of the functions in the \verb=functions= field.
   \item{\bf{No duck-typing}} If \verb=Class2= is not a subclass of \verb=Class1=, yet implements a method with the same signature - name, types - this would not work either.
   \item{\bf{Extending classes at run time}} All methods must be known at compile time. No methods may be added using e.g. categories like in Objective-C.
 \end{itemize}
@@ -66,13 +66,13 @@ The solution to these issues is to move to a dynamic dispatch - a mechanism that
 The \emph{run-time}, being responsible for this dispatch among other tasks, must hence perform this look-up as fast as possible. Other responsibilities of the run-time are to provide a reflection API to constructs of that particular language. For example, listing classes and their methods, exchanging method implementations, listing ivars, etc.
 
 
-\section{Existing Objective-C Run-Time Implementations}
+\section{Objective-C Run-Time Implementations}
 
 There are three available Objective-C run-time implementations (to my knowledge):
 
 \begin{itemize}
   \item{\bf{Apple Run-Time}} This run-time is provided by \emph{Apple} and is used in its OS X and iOS systems - there are slight differences between the iOS and OS X versions of the run-time (e.g.\ iOS doesn't support garbage collection and only the new 2.0 run-time is available). Within this thesis, when talking about Apple's implementation of the run-time, the OS X version will be the one talked about.
   \item{\bf{GCC Run-Time}} Also called GNU, or GNUstep run-time, this run-time is provided with the GCC compiler. The naming is a little confusing - the run-time is bundled with the GCC compiler, yet is often referred to as GNU run-time. In 2009, a fork of the run-time's repository has been created to add the newest run-time features and remove legacy code. This fork is called GNUstep run-time. Because both run-times are similar in many ways, both run-times are referred to as the GCC run-time within this thesis.
-  \item{\bf{\'{E}toil\'{e}}} \'{E}toil\'{e} is an experimental run-time written by David Chisnall as a part of his paper and has been an inspiration to many improvements in the GNUstep run-time\footnote{http://www.jot.fm/issues/issue\_2009\_01/article4/index.html}.
+  \item{\bf{\'{E}toil\'{e}}} \'{E}toil\'{e} is an experimental run-time written by David Chisnall as a part of his paper and has been an inspiration to many improvements in the GNUstep run-time\cite{etoile_article}.
 \end{itemize}
 

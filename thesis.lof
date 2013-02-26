@@ -24,36 +24,43 @@
 \contentsline {figure}{\numberline {3.1}{\ignorespaces An example of toll-free bridging.}}{28}{figure.3.1}
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {5.1}{\ignorespaces \'Etoil\'e run-time's inline cache.}}{36}{figure.5.1}
-\contentsline {figure}{\numberline {5.2}{\ignorespaces \'Etoil\'e run-time's \texttt {CALL} structure.}}{37}{figure.5.2}
+\contentsline {figure}{\numberline {5.1}{\ignorespaces \'Etoil\'e run-time's inline cache.}}{34}{figure.5.1}
+\contentsline {figure}{\numberline {5.2}{\ignorespaces \'Etoil\'e run-time's \texttt {CALL} structure.}}{35}{figure.5.2}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {6.1}{\ignorespaces A sample proxy class.}}{47}{figure.6.1}
+\contentsline {figure}{\numberline {6.1}{\ignorespaces A sample proxy class.}}{45}{figure.6.1}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {7.1}{\ignorespaces A rough sketch of how inline functions should be supplied.}}{50}{figure.7.1}
-\contentsline {figure}{\numberline {7.2}{\ignorespaces Example of function pointers.}}{52}{figure.7.2}
-\contentsline {figure}{\numberline {7.3}{\ignorespaces The run-time setup structure.}}{53}{figure.7.3}
-\contentsline {figure}{\numberline {7.4}{\ignorespaces The memory setup structure.}}{53}{figure.7.4}
-\contentsline {figure}{\numberline {7.5}{\ignorespaces Class structure.}}{56}{figure.7.5}
-\contentsline {figure}{\numberline {7.6}{\ignorespaces Class extension structure.}}{59}{figure.7.6}
-\contentsline {figure}{\numberline {7.7}{\ignorespaces Example of registering a class extension.}}{60}{figure.7.7}
-\contentsline {figure}{\numberline {7.8}{\ignorespaces Example of a custom deallocator.}}{62}{figure.7.8}
-\contentsline {figure}{\numberline {7.9}{\ignorespaces Example of how class extensions use memory within an object.}}{63}{figure.7.9}
-\contentsline {figure}{\numberline {7.10}{\ignorespaces Example of a class extension - associated objects.}}{66}{figure.7.10}
-\contentsline {figure}{\numberline {7.11}{\ignorespaces Structures used as prototypes for class and method declarations.}}{68}{figure.7.11}
-\contentsline {figure}{\numberline {7.12}{\ignorespaces Default list of vtable selectors in Apple's run-time.}}{70}{figure.7.12}
-\contentsline {figure}{\numberline {7.13}{\ignorespaces Diagram of a hidden reference count variable.}}{72}{figure.7.13}
-\contentsline {figure}{\numberline {7.14}{\ignorespaces \_\_MRConstString class export.}}{73}{figure.7.14}
-\contentsline {figure}{\numberline {7.15}{\ignorespaces \_\_MRConstString static instance creation.}}{74}{figure.7.15}
+\contentsline {figure}{\numberline {7.1}{\ignorespaces A rough sketch of how inline functions should be supplied.}}{49}{figure.7.1}
+\contentsline {figure}{\numberline {7.2}{\ignorespaces Example of function pointers.}}{51}{figure.7.2}
+\contentsline {figure}{\numberline {7.3}{\ignorespaces The run-time setup structure.}}{52}{figure.7.3}
+\contentsline {figure}{\numberline {7.4}{\ignorespaces The memory setup structure.}}{52}{figure.7.4}
+\contentsline {figure}{\numberline {7.5}{\ignorespaces Class structure.}}{55}{figure.7.5}
+\contentsline {figure}{\numberline {7.6}{\ignorespaces Class extension structure.}}{58}{figure.7.6}
+\contentsline {figure}{\numberline {7.7}{\ignorespaces Example of registering a class extension.}}{59}{figure.7.7}
+\contentsline {figure}{\numberline {7.8}{\ignorespaces Example of a custom deallocator.}}{61}{figure.7.8}
+\contentsline {figure}{\numberline {7.9}{\ignorespaces Example of how class extensions use memory within an object.}}{62}{figure.7.9}
+\contentsline {figure}{\numberline {7.10}{\ignorespaces Example of a class extension - associated objects.}}{65}{figure.7.10}
+\contentsline {figure}{\numberline {7.11}{\ignorespaces Structures used as prototypes for class and method declarations.}}{67}{figure.7.11}
+\contentsline {figure}{\numberline {7.12}{\ignorespaces Default list of vtable selectors in Apple's run-time.}}{69}{figure.7.12}
+\contentsline {figure}{\numberline {7.13}{\ignorespaces Diagram of a hidden reference count variable.}}{71}{figure.7.13}
+\contentsline {figure}{\numberline {7.14}{\ignorespaces \_\_MRConstString class export.}}{72}{figure.7.14}
+\contentsline {figure}{\numberline {7.15}{\ignorespaces \_\_MRConstString static instance creation.}}{73}{figure.7.15}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {8.1}{\ignorespaces Dispatch test.}}{76}{figure.8.1}
-\contentsline {figure}{\numberline {8.2}{\ignorespaces Super dispatch test.}}{77}{figure.8.2}
-\contentsline {figure}{\numberline {8.3}{\ignorespaces Categories dispatch test.}}{78}{figure.8.3}
-\contentsline {figure}{\numberline {8.4}{\ignorespaces Allocation test.}}{79}{figure.8.4}
-\contentsline {figure}{\numberline {8.5}{\ignorespaces Ivar test.}}{80}{figure.8.5}
-\contentsline {figure}{\numberline {8.6}{\ignorespaces Forwarding test.}}{81}{figure.8.6}
-\contentsline {figure}{\numberline {8.7}{\ignorespaces Associated objects test.}}{82}{figure.8.7}
+\contentsline {figure}{\numberline {8.1}{\ignorespaces Dispatch test - average times.}}{75}{figure.8.1}
+\contentsline {figure}{\numberline {8.2}{\ignorespaces Dispatch test - median times.}}{76}{figure.8.2}
+\contentsline {figure}{\numberline {8.3}{\ignorespaces Super dispatch test - average times.}}{76}{figure.8.3}
+\contentsline {figure}{\numberline {8.4}{\ignorespaces Super dispatch test - median times.}}{77}{figure.8.4}
+\contentsline {figure}{\numberline {8.5}{\ignorespaces Categories dispatch test - average times.}}{78}{figure.8.5}
+\contentsline {figure}{\numberline {8.6}{\ignorespaces Categories dispatch test - median times.}}{78}{figure.8.6}
+\contentsline {figure}{\numberline {8.7}{\ignorespaces Allocation test - average times.}}{79}{figure.8.7}
+\contentsline {figure}{\numberline {8.8}{\ignorespaces Allocation test - median times.}}{79}{figure.8.8}
+\contentsline {figure}{\numberline {8.9}{\ignorespaces Ivar test - average times.}}{80}{figure.8.9}
+\contentsline {figure}{\numberline {8.10}{\ignorespaces Ivar test - median times.}}{80}{figure.8.10}
+\contentsline {figure}{\numberline {8.11}{\ignorespaces Forwarding test - average times.}}{81}{figure.8.11}
+\contentsline {figure}{\numberline {8.12}{\ignorespaces Forwarding test - median times.}}{82}{figure.8.12}
+\contentsline {figure}{\numberline {8.13}{\ignorespaces Associated objects test - average times.}}{83}{figure.8.13}
+\contentsline {figure}{\numberline {8.14}{\ignorespaces Associated objects test - median times.}}{83}{figure.8.14}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {9.1}{\ignorespaces The modular run-time running on Windows 3.11 in a DOSBox emulator.}}{84}{figure.9.1}
-\contentsline {figure}{\numberline {9.2}{\ignorespaces The only lines that needed to be added in order for the run-time to run on kalisto HeSiVa.}}{85}{figure.9.2}
-\contentsline {figure}{\numberline {9.3}{\ignorespaces The modular run-time running on kalisto HeSiVa.}}{86}{figure.9.3}
+\contentsline {figure}{\numberline {9.1}{\ignorespaces The modular run-time running on Windows 3.11 in a DOSBox emulator.}}{85}{figure.9.1}
+\contentsline {figure}{\numberline {9.2}{\ignorespaces The only lines that needed to be added in order for the run-time to run on kalisto HeSiVa.}}{86}{figure.9.2}
+\contentsline {figure}{\numberline {9.3}{\ignorespaces The modular run-time running on kalisto HeSiVa.}}{87}{figure.9.3}
 \addvspace {10\p@ }

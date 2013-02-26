@@ -1,5 +1,5 @@
 
-CFLAGS=-std=c99 -O3 -DUSES_C89=0 -DHAS_ALWAYS_INLINE_ATTRIBUTE=1 -DOBJC_USES_INLINE_FUNCTIONS=1
+CFLAGS=-std=c99 -O3 -DUSES_C89=0 -DHAS_ALWAYS_INLINE_ATTRIBUTE=1 -DOBJC_USES_INLINE_FUNCTIONS=0
 TESTMRFLAGS=-DOBJC_INLINE_CACHING=2
 TESTCOCOAFLAGS=-DOBJC_CACHING=1 -Wno-objc-root-class -Wno-deprecated-objc-isa-usage
 LINKER=`x=\`uname\`; \
@@ -19,7 +19,7 @@ direct-test : test/direct-test.c
 	cc $(CFLAGS) test/direct-test.c -o test/direct-test
 
 
-cocoa-tests: allocation-cocoa-test ao-cocoa-test dispatch-cocoa-test forwarding-cocoa-test forwarding2-cocoa-test ivar-cocoa-test super-dispatch-cocoa-test
+cocoa-tests: allocation-cocoa-test ao-cocoa-test category-cocoa-test dispatch-cocoa-test forwarding-cocoa-test forwarding2-cocoa-test ivar-cocoa-test super-dispatch-cocoa-test
 	echo "Done Cocoa run-time tests."
 
 allocation-cocoa-test : test/allocation-cocoa-test.m

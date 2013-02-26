@@ -3,10 +3,10 @@
 
 When beginning this work, two goals were set: to make an extremely extensible and easily modifiable run-time, while maintaining the speed.
 
-The run-time indeed is flexible, allowing Objective-C features, such as class categories, associated objects, and others, to be implemented separately using class extensions, making it extensible.
+The resulting run-time prototype indeed is flexible, allowing Objective-C features, such as class categories, associated objects, and others, to be implemented separately using class extensions, making it extensible.
 
 Function pointers used by the run-time allow it to be ported to many different platforms with a great ease.
 
-The benchmarks show that using the inline caching, impressive speeds may be achieved as well, reaching about half the speed of a direct C call. Without any inline caching, the speeds are not as impressive, yet still faster than Apple's run-time when it uses no inline caching.
+The benchmarks show that using the inline caching, impressive speeds may be achieved as well, reaching about twice the speed of a direct C call. Without any inline caching, the speeds are not as impressive, yet still faster than Apple's run-time when it uses no inline caching.
 
 Altogether, I believe the goals set at the beginning of the work have been achieved.

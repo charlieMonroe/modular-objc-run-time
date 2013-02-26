@@ -45,7 +45,7 @@
 %% ale hlavně ho používáme k uložení metadat do PDF (včetně obsahu).
 %% POZOR, nezapomeňte vyplnit jméno práce a autora.
 \usepackage[ps2pdf,unicode]{hyperref}   % Musí být za všemi ostatními balíčky
-\hypersetup{pdftitle=Modular Objective-C Run-Time}
+\hypersetup{pdftitle=Modular Objective-C Run-Time Library}
 \hypersetup{pdfauthor=Bc. Kryštof Váša}
 
 %%% Drobné úpravy stylu
@@ -108,7 +108,7 @@ Faculty of Mathematics and Physics
 \vspace{15mm}
 
 % Název práce přesně podle zadání
-{\LARGE\bfseries Modular Objective-C Run-Time}
+{\LARGE\bfseries Modular Objective-C Run-Time Library}
 
 \vfill
 
@@ -120,17 +120,17 @@ Department of Distributed and Dependable Systems
 
 \begin{tabular}{rl}
 
-Supervisor of the master thesis: & Martin D\u{e}ck\'y \\
+Supervisor of the master thesis: & Mgr. Martin D\u{e}ck\'y \\
 \noalign{\vspace{2mm}}
-Study programme: & programme \\
+Study programme: & Informatics \\
 \noalign{\vspace{2mm}}
-Specialization: & specialization \\
+Specialization: & Systémové architektury \\
 \end{tabular}
 
 \vfill
 
 % Zde doplňte rok
-Prague 2012-13
+Prague 2013
 
 \end{center}
 
@@ -145,7 +145,7 @@ Prague 2012-13
 \openright
 
 \noindent
-Dedication.
+My many thanks go to my supervisor Mgr. Martin D\u{e}ck\'y for his help with this thesis and to David Chisnall for replying to my questions about his run-time.
 
 \newpage
 
@@ -181,24 +181,29 @@ signature of the author
 \setlength\parskip{5mm}
 
 Název práce:
-Název práce
+Modular Objective-C Run-time Library
 % přesně dle zadání
 
 Autor:
-Jméno a příjmení autora
+Bc. Kry\u{s}tof V\'{a}\u{s}a
 
 Katedra:  % Případně Ústav:
-Název katedry či ústavu, kde byla práce oficiálně zadána
+Department of Distributed and Dependable Systems
 % dle Organizační struktury MFF UK
 
 Vedoucí diplomové práce:
-Jméno a příjmení s tituly, pracoviště
+Mgr. Martin D\u{e}ck\'y, Department of Distributed and Dependable Systems
 % dle Organizační struktury MFF UK, případně plný název pracoviště mimo MFF UK
 
 Abstrakt:
+This thesis contains analysis of currently available Objective-C run-time libraries (from GCC, Apple and \'Etoil\'e Runtime), their prerequisites, dependencies to particular platform and operating system as well as how components of the libraries depend on each other. The result of the analysis is a design of a modular run-time library that allows dynamic configuration of each component for particular need and platform (e.g. disabling structure locks in a single-thread environment, usage of custom data structures that are needed by the run-time). 
+
+A prototype implementation of such a modular run-time for Objective-C also is included.
+
 % abstrakt v rozsahu 80-200 slov; nejedná se však o opis zadání diplomové práce
 
 Klíčová slova:
+Objective-C, run-time
 % 3 až 5 klíčových slov
 
 \vss}\nobreak\vbox to 0.49\vsize{
@@ -206,25 +211,29 @@ Klíčová slova:
 \setlength\parskip{5mm}
 
 Title:
-% přesný překlad názvu práce v angličtině
+Modular Objective-C Run-time Library
 
 Author:
-Jméno a příjmení autora
+Bc. Kry\u{s}tof V\'{a}\u{s}a
 
 Department:
 Název katedry či ústavu, kde byla práce oficiálně zadána
 % dle Organizační struktury MFF UK v angličtině
 
 Supervisor:
-Jméno a příjmení s tituly, pracoviště
+Mgr. Martin D\u{e}ck\'y, Department of Distributed and Dependable Systems
 % dle Organizační struktury MFF UK, případně plný název pracoviště
 % mimo MFF UK v angličtině
 
 Abstract:
+This thesis contains analysis of currently available Objective-C run-time libraries (from GCC, Apple and \'Etoil\'e Runtime), their prerequisites, dependencies to particular platform and operating system as well as how components of the libraries depend on each other. The result of the analysis is a design of a modular run-time library that allows dynamic configuration of each component for particular need and platform (e.g. disabling structure locks in a single-thread environment, usage of custom data structures that are needed by the run-time). 
+
+A prototype implementation of such a modular run-time for Objective-C also is included.
 % abstrakt v rozsahu 80-200 slov v angličtině; nejedná se však o překlad
 % zadání diplomové práce
 
 Keywords:
+Objective-C, run-time
 % 3 až 5 klíčových slov v angličtině
 
 \vss}
@@ -239,6 +248,8 @@ Keywords:
 \pagestyle{plain}
 \setcounter{page}{1}
 \tableofcontents
+
+\setcounter{secnumdepth}{3}
 
 %%% Jednotlivé kapitoly práce jsou pro přehlednost uloženy v samostatných souborech
 \include{preface}
@@ -265,13 +276,14 @@ Keywords:
 \addcontentsline{toc}{chapter}{\listfigurename}
 \listoffigures{}
 
-%%% Použité zkratky v diplomové práci, existují-li, včetně jejich vysvětlení.
-\chapwithtoc{List of Abbreviations}
-
 %%% Přílohy k diplomové práci, existují-li (různé dodatky jako výpisy programů,
 %%% diagramy apod.). Každá příloha musí být alespoň jednou odkazována z vlastního
 %%% textu práce. Přílohy se číslují.
 \chapwithtoc{Attachments}
+
+\section{Attachment A}
+
+DVD disc including this work written in LaTeX and source codes of the Modular Run-time prototype.
 
 \openright
 \end{document}

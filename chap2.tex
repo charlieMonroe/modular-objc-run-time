@@ -2,19 +2,19 @@
   
 In the early 1980s, Brad Cox and Tom Love decided to bring the object-oriented concept to the world of C while maintaining full backward compatibility. The result was Objective-C, a language heavily inspired by Smalltalk. At first, the language had no compiler support, but as all Objective-C code can be actually rewritten in pure C, a preprocessor was a sufficient tool.
 
-In 1988, NeXT has licensed Objective-C from Stepstone (the company Cox and Love owned), added Objective-C support to the GCC compiler and decided to use it in its OpenStep and NeXTSTEP operating systems (many classes in Apple's frameworks have a \verb=NS= prefix to the date, which stands either for NeXTSTEP, or NeXT-Sun as the OpenStep operating system had been developed in cooperation with Sun Microsystems\footnote{http://en.wikipedia.org/wiki/OpenStep}).
+In 1988, NeXT has licensed Objective-C from Stepstone (the company Cox and Love owned), added Objective-C support to the GCC compiler and decided to use it in its OpenStep and NeXTSTEP operating systems (many classes in Apple's frameworks have a \verb=NS= prefix to the date, which stands either for NeXTSTEP, or NeXT-Sun as the OpenStep operating system had been developed in cooperation with Sun Microsystems\cite{openstep_wiki}).
 
-After Apple had acquired NeXT in 1996, Objective-C stayed alive in Rhapsody\footnote{http://en.wikipedia.org/wiki/Rhapsody\_(operating\_system)} and later on in Mac OS X, where it is the preferred programming language to the date.
+After Apple acquired NeXT in 1996, Objective-C stayed alive in Rhapsody\cite{rhapsody_wiki} and later on in Mac OS X, where it is the preferred programming language to the date.
 
-For this whole time, the Objective-C language stayed almost the same without any significant changes, until 2006, when Apple announced Objective-C 2.0 (released as a part of Mac OS X 10.5 in 2007), which introduced garbage collection (since then deprecated in 10.8 in favor of more efficient ARC - automatic reference counting\footnote{http://cocoaheads.tumblr.com/post/17719985728/10-8-objective-c-enhancements}), properties (object variables with automatically generated getters and/or setters with specified memory management), fast enumeration (enumeration over collections in a foreach-style), and some other minor improvements.
+For this whole time, the Objective-C language stayed almost the same without any significant changes, until 2006, when Apple announced Objective-C 2.0 (released as a part of Mac OS X 10.5 in 2007), which introduced garbage collection (since then deprecated in 10.8 in favor of more efficient ARC - automatic reference counting\cite{mountain_lion_enhancements}), properties (object variables with automatically generated getters and/or setters with specified memory management), fast enumeration (enumeration over collections in a foreach-style), and some other minor improvements.
 
-Lately, more improvements have been made to Objective-C, most importantly the aforementioned ARC (automatic reference counting). Apple's run-time has a hardcoded set of selectors (method names) that handle the memory management, \verb=-autorelease=, \verb=-retain=, \verb=-release= (together called ARR), in particular. ARC automatically inserts these method calls and automatically generates a \verb=-dealloc= method (which is called when the object is being deallocated) - this, however, adds a heavy dependency on the compiler, though, as it needs to statically analyze the code in order to safely insert these ARR calls.
+Lately, more improvements have been made to Objective-C, most importantly the aforementioned ARC (Automatic Reference Counting). Apple's run-time has a hardcoded set of selectors (method names) that handle the memory management, \verb=-autorelease=, \verb=-retain=, \verb=-release= (together called ARR), in particular. ARC automatically inserts these method calls and automatically generates a \verb=-dealloc= method (which is called when the object is being deallocated) - this, however, adds a heavy dependency on the compiler, though, as it needs to statically analyze the code in order to safely insert these ARR calls.
 
-This, however, presents a problem - none of the ARR calls must be called directly in the code - hence all code needs to be converted to ARC\@. One disadvantage which results in a big advantage - compatibility with all existing frameworks. The backward incompatibility was a big disadvantage of garbage collection: 
+None of the ARR calls may be, however, called directly in the code - hence all code needs to be converted to ARC\@. One disadvantage which results in a big advantage - compatibility with all existing frameworks. The backward incompatibility was a big disadvantage of garbage collection: 
 
 The code could be kept as it was - the run-time itself redirects the ARR methods to a no-op function on the fly. All linked libraries / frameworks / plugins, however, needed to be recompiled with garbage collection support turned on. This caused two things: mess in the code as the code migrated to garbage-collection-enabled environment was riddled with ARR calls, but newly written code typically missed those calls, making the code inconsistent. Also, some libraries never got GC support anyway, so they couldn't be used in GC-enabled applications.
 
-In the newest release of OS X - 10.8, several more new features have been included - default synthesis of getters (in prior versions, you had to declare \verb=@property= in the header file and use \verb=@sythesize= or \verb=@dynamic= in the implementation file), type-safe enums, literals for \verb=NSArray=, \verb=NSDictionary= and \verb=NSNumber= (classes declared in Apple's Foundation framework), etc.
+In the newest release of OS X - 10.8, several more new features have been introduced - default synthesis of getters (in prior versions, one had to declare \verb=@property= in the header file and use \verb=@sythesize= or \verb=@dynamic= in the implementation file), type-safe enums, literals for \verb=NSArray=, \verb=NSDictionary= and \verb=NSNumber= (classes declared in Apple's Foundation framework), etc.
 
 \section{Objective-C Syntax in a Nutshell}
 
@@ -73,13 +73,13 @@ After declaring a class, it needs to be implemented as well:
   \label{fig:syntax_objc_class_impl}
 \end{figure}
 
-In earlier versions of the run-time (and OS), each property had to be matched with a \verb=@synthesize= construct in the implementation part of the class, which is no longer necessary as it gets generated automatically.
+In earlier versions of the run-time (and OS), each property declaration had to be matched with a \verb=@synthesize= or \verb=@dynamic= construct in the implementation part of the class, which is no longer necessary as it gets generated automatically.
 
 \subsection{Declaring Methods}
 
 As has been seen in figure ~\ref{fig:syntax_objc_class_decl}, each method declaration begins with either a \verb=+= sign (class method), or \verb=-= sign (instance method), followed by a return type, method name and potentially arguments.
 
-If the method should have an argument, it is followed by a semicolon, type of the argument and the argument name:
+If the method should have an argument, its name is followed by a semicolon, type of the argument and the argument name:
 
 \begin{figure}[H]
   \begin{verbatim}
@@ -123,7 +123,7 @@ Calling methods, or in Smalltalk's terminology sending messages, is achieved usi
 \begin{itemize}
   \item{\bf{Strings}} As regular C strings cannot be treated as an object, a special notation is introduced for Objective-C strings - \verb=@"String"=.
   \item{\bf{Synchronization}} A special synchronization construct \newline{}\verb=@synchronized(obj){ ... }= can be used for critical section code.
-  \item{\bf{Hidden variables}} In each method, three special variables may be accessed: \verb=self= (pointing to the object itself), \verb=_cmd= (the method name) and \verb=super= (allowing invocation of the superclass' implementation of methods).
+  \item{\bf{Hidden variables}} In each method, three special variables may be accessed: \verb=self= (pointing to the object itself), \verb=_cmd= (the method name) and \verb=super= (allowing invocation of the superclass' implementations of methods).
 \end{itemize}
 
 
@@ -137,11 +137,11 @@ And the other way around, all Objective-C code can be translated to calls of C r
   clang -rewrite-objc test.m
 \end{verbatim}
 
-where \verb=test.m= contains the Objective-C code, a new test.cpp is created, containing the translated code. For example, sending a message to an object is nothing else but calling a run-time function \verb=objc_msgSend=. Note that the run-time implementations may differ in the function names, or even use different structures and the way methods are invoked. The examples below will show how the code translation works with Apple's version of the run-time. These examples are here to simply illustrate the mechanism of translating Objective-C code to C constructs.
+where \verb=test.m= contains the Objective-C code, a new test.cpp is created, containing the translated code. For example, sending a message to an object is nothing else but calling a run-time function \verb=objc_msgSend=. Note that the run-time implementations may differ in the function names, or even use different structures and the way methods are invoked. The examples below show how the code translation works with Apple's version of the run-time. These examples are here to simply illustrate the mechanism of translating Objective-C code to C constructs.
 
 \subsection{Calling methods}
 
-As has been mentioned before, calling a method is not anything else than calling a \verb=objc_msgSend= variadic function, which is responsible for finding a function pointer that implements the actual method and invoking it, passing all the arguments along
+As has been mentioned before, calling a method is nothing else than calling a \verb=objc_msgSend= variadic function, which is responsible for finding a function pointer that implements the actual method and invoking it, passing all the arguments along.
 
 \paragraph{Example}
 Here is a sample code that sends two messages - each to a different object, though - each class actually consists of two classes - the meta class, which implements the \verb=+alloc= method and the regular class (an instance of the metaclass), which implements the \verb=-init= method.
@@ -171,11 +171,13 @@ Which after removing the casting and adding a little formatting is equivalent wi
   \label{fig:methods_translated_to_objcMsgSend}
 \end{figure}
 
-So it is two nested \verb=objc_msgSend= calls. There are actually specific functions for methods that return floating point numbers or structures, as these require special ABI treatment on some architectures - for example structures that do not fit into registers are returned by reference on the stack as a hidden first argument of the function. \verb=objc_msgSend= is a function that can be called the core of Objective-C run-time. It is the most used function of the run-time. Every method call in Objective-C gets translated into this variadic function call, which takes \verb=self= as the first argument (i.e.\ the object the message is sent to), the second argument is a selector (generally the method's name) and can be followed by any number arguments.
+So it is two nested \verb=objc_msgSend= calls. There are actually specific functions for methods that return floating point numbers or structures, as these require special ABI treatment on some architectures - for example structures that do not fit into registers are returned by reference on the stack as a hidden first argument of the function.
+
+\verb=objc_msgSend= is a function that can be called the core of the Objective-C run-time. It is the most used function of the run-time. Every method call in Objective-C gets translated into this function call, which takes \verb=self= as the first argument (i.e.\ the object the message is sent to), the second argument is a selector (generally the method's name) and can be followed by any number arguments.
 
 \subparagraph{GCC Run-time}
 
-The GCC run-time differs slightly from Apple's run-time - it does not have a \verb=objc_msgSend= function, but uses \verb=objc_msg_lookup= function, which rather returns a pointer to the implementation function itself (the so-called \verb=IMP=). The same example would compile under the GCC run-time into the following calls:
+The GCC run-time differs slightly from Apple's run-time - it does not have an \verb=objc_msgSend= function, but uses \verb=objc_msg_lookup= function, which rather returns a pointer to the implementation function itself (the so-called \verb=IMP=). The same example would compile under the GCC run-time into the following calls:
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -194,21 +196,21 @@ The GCC run-time differs slightly from Apple's run-time - it does not have a \ve
   \label{fig:methods_translated_to_objc_msg_lookup}
 \end{figure}
 
-As you can see, Apple's run-time differs only in the fact that the \verb=objc_msgSend= calls the function directly, whereas the GCC run-time looks up the function and then calls it. This has a small advantage that it does not require any special variants of functions, like in Apple's run-time, where the \verb=objc_msgSend= has 4 variants depending on the return type.
+Apple's run-time differs only in the fact that the \verb=objc_msgSend= calls the function directly, whereas the GCC run-time looks up the function and then calls it. This has a small advantage that it does not require any special variants of functions, like in Apple's run-time, where the \verb=objc_msgSend= has 4 variants depending on the return type.
 
 \hspace{20pt}
 
 But even so, the principe is the same as in Apple's run-time. The run-time needs to look up the object's class, find a function that implements that particular method (the so called \verb=IMP=) and the function gets called either by \verb=objc_msgSend=, or directly. There are several things to point out:
 
 \begin{itemize}
-\item method \emph{names} are used. \verb=sel_registerName= is a function that makes sure that for that particular method name only one selector pointer is kept. A selector is a pointer to a structure representing a method name. On some run-times, selectors are typed, i.e.\ methods of the same name, but with different argument types result in different selectors. While Objective-C does not support method overloading, the selector storage is program-wise, not just per class.
-\item every class consists of two classes - a class pair - one regular of which you create objects and one meta - which typically (unless you manually craft another one) has only one instance: a receiver for class methods (static methods).
-\item each of the calls is sent to a different object. The first call is sent to something returned by \verb=objc_getClass= which returns a class, which is an instance of its meta class (which is an object as well). The second call goes already to an object - instance of the class (the class hierarchy is described below).
+\item Method \emph{names} are used. \verb=sel_registerName= is a function that makes sure that for that particular method name only one selector pointer is kept. A selector is a pointer to a structure representing a method name. In some run-times, selectors are typed, i.e.\ methods of the same name, but with different argument types result in different selectors. While Objective-C does not support method overloading, the selector storage is program-wise, not just per class.
+\item Every class consists of two classes - a class pair - one regular of which you create objects and one meta - which typically (unless you manually craft another one) has only one instance: a receiver for class methods (static methods).
+\item Each of the calls is sent to a different object. The first call is sent to something returned by \verb=objc_getClass= which returns a class, which is an instance of its meta class (which is an object as well). The second call goes already to an object - instance of the class.
 \end{itemize}
 
 \paragraph{Calls to super}
 
-Objective-C, as most object-oriented languages, allows calls of the method implementations of a superclass using the keyword \verb=super=. For example, the \verb=-init= method usually starts with \verb#if ((self = [super init]) != nil)#. This is done using a special structure \verb=objc_super=, which is passed by reference to \verb=objc_msgSendSuper= (or its relatives) in case of Apple run-time, or \newline{}\verb=objc_msg_lookup_super= in case of GCC run-time.
+Objective-C, as most object-oriented languages, allows calling the method implementations of a superclass using the keyword \verb=super=. For example, the \verb=-init= method usually starts with \verb#if ((self = [super init]) != nil)#. This is done using a special structure \verb=objc_super=, which is passed by reference to \verb=objc_msgSendSuper= (or its relatives) in case of Apple run-time, or \newline{}\verb=objc_msg_lookup_super= in case of GCC run-time.
 
 \subparagraph{Example}
 
@@ -239,7 +241,7 @@ Is equivalent to:
 
 \subsection{Object Model}
 
-As Objective-C is heavily influenced by Smalltalk, let us examine the Smalltalk object model first\footnote{All copyright for this image goes to Andrew P. Black St\'{e}phane Ducasse, Oscar Nierstrasz Damien Pollet and Damien Cassou and Marcus Denker - http://pharo.gforge.inria.fr/PBE1/PBE1.html}:
+As Objective-C is heavily influenced by Smalltalk, let us examine the Smalltalk object model first\cite{smalltalk_class_diagram}:
 
 \begin{figure}[H]
 \includegraphics[width=120mm]{./img/smalltalk_class_hierarchy.png}
@@ -248,10 +250,10 @@ As Objective-C is heavily influenced by Smalltalk, let us examine the Smalltalk 
   \label{fig:smalltalk_obj_model}
 \end{figure}
 
-The model may seem complex and even a little confusing in some areas. Smalltalk's approach that everything is an instance of some class poses a question where is the end to the class hierarchy? Most languages that introduce a concept of a metaclass have to solve this by a loop: in Smalltalk's case, it is the loop between \verb=Metaclass= and \verb=Metaclass class=, where each is an instance of the other. The Objective-C object model indeed has a similar loop, however. It is not that complex and would end at the \verb=Object class= point in the Smalltalk diagram.
+The model may seem complex and even a little confusing in some areas. Smalltalk's approach that everything is an instance of some class poses a question where is the end to the class hierarchy? Most languages that introduce a concept of a metaclass have to solve this by a loop: in Smalltalk's case, it is the loop between \verb=Metaclass= and \verb=Metaclass class=, where each is an instance of the other. The Objective-C object model indeed has a similar loop. It is not that complex, however, and would end at the \verb=Object class= point in the Smalltalk diagram.
 
 \paragraph{Root Class}
-The \verb=NSObject= class is part of the Foundation framework Apple supplies. While it is often assumed to be the one and only root class in Objective-C, this is quite incorrect: there can be as many root classes in Objective-C as you wish - \verb=NSProxy= is an example and you can easily create your own:
+The \verb=NSObject= class is part of the Foundation framework Apple supplies with both OS X and iOS. While it is often assumed to be the one and only root class in Objective-C, this is quite incorrect: there can be as many root classes in Objective-C as one wishes - \verb=NSProxy= is an example of another root class and other can be easily created as well:
 
 \begin{figure}[H]
 \begin{verbatim}@interface ClassWithoutSuperclass {
@@ -280,7 +282,7 @@ typedef struct {
   \label{fig:objc_obj_def}
 \end{figure}
 
-To support the behavior that a class (\verb=Class=) is an object as well, the class structure begins with the \verb=isa= pointer, which points to its meta class. The \verb=isa= pointer is followed by a \verb=superclass= field and many others - ivars, methods, cache, dispatch table, etc. - depending also on the run-time that you are using - you should hence never rely on the class structure itself, it should be treated as an opaque structure, with the internals exposed only to the run-time itself. To simplify this example, let us use this simplified class structure:
+To support the behavior that a class (\verb=Class=) is an object, the class structure begins with the \verb=isa= pointer as well, which points to its meta class. The \verb=isa= pointer is followed by a \verb=superclass= field and many others - ivars, methods, cache, dispatch table, etc. - depending also on the run-time - the user should hence never rely on the class structure itself, it should be treated as an opaque structure, with the internals exposed only to the run-time itself. To simplify this example, let us use this simplified class structure:
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -335,10 +337,10 @@ Hence the run-time function \verb=class_createInstance= needs to be called in or
 id obj = class_createInstance(objc_getClass("Subclass"), 0);
 \end{verbatim}
 
-The \verb=objc_getClass= function returns a pointer to the class called \verb=Subclass=, the \verb=class_createInstance= function creates an instance of the \verb=Subclass= class, with \verb=0= extra bytes - the extra bytes parameter is here in case you wanted to dynamically add extra space to some of your instances, or to all by overriding the \verb=+alloc= method of the class. It is noteworthy that the \verb=+alloc= method is actually nothing else than \verb=-alloc= on the meta class - i.e.\ all class methods are in fact instance methods on the meta class.
+The \verb=objc_getClass= function returns a pointer to the class called \verb=Subclass=, the \verb=class_createInstance= function creates an instance of the \verb=Subclass= class, with \verb=0= extra bytes - the extra bytes parameter is here in case the user wants to dynamically add extra space to some instances, or to all by overriding the \verb=+alloc= method of the class. It is noteworthy that the \verb=+alloc= method is actually nothing else than \verb=-alloc= on the meta class - i.e.\ all class methods are in fact instance methods on the meta class.
 
 
-Diagram on figure ~\ref{fig:class_metaclass_graph} visualizes this situation of two classes - one root class and its subclass; and an instance of the subclass.
+Diagram in figure ~\ref{fig:class_metaclass_graph} visualizes this situation of two classes - one root class and its subclass; and an instance of the subclass.
 
 \begin{figure}[H] 
 \includegraphics[width=\textwidth]{img/metaclass_graph.png}
@@ -350,9 +352,9 @@ Diagram on figure ~\ref{fig:class_metaclass_graph} visualizes this situation of 
 It is obvious from the diagram that the Objective-C object model is far less complicated than Smalltalk's. The class hierarchy ends at the point of the root class. To sum it up:
 
 \begin{itemize}
-\item Each class consists actually of two classes: the regular class and the meta class.
+\item Each class actually consists of two classes: the regular class and the meta class.
 \item As the class hierarchy goes, the meta class hierarchy follows the regular class hierarchy up to the root class.
-\item It is easy to detect a meta class - \verb:cl->superclass == cl->isa:.
+\item It is easy to detect a meta class - \verb:cl->superclass == cl->isa:, unless it is the root meta class, in which case, \verb:cl->isa == cl:.
 \item Since the regular class is just an instance of the meta class, having a pointer to the meta class, there is no way of retrieving a pointer to the regular class. This is why the run-times store pointers to the regular classes and not their meta classes.
 \item The root class is a little special, as the meta class is an instance of itself and its superclass is the regular class (which is an instance of the meta class).
 \item This has a peculiar consequence: all instance methods of the root class are class methods as well. In the lookup chain, when the search on meta classes yields nothing, the run-time follows the \verb=superclass= pointer, which points to the regular class object. This can be easily verified:
@@ -381,13 +383,10 @@ This piece of code prints all available methods on a class. The \verb=[NSObject=
 When \verb=[NSObject class]= is replaced with
 
 \begin{verbatim}
-methods = method_ptr = class_copyMethodList(
-                                ((id)[NSObject class])->isa, 
-                                &number_of_methods
-                                           );
+  ((id)[NSObject class])->isa
 \end{verbatim}
 
-a list of methods declared directly on the meta class is printed. This list counts only 118 methods, among which, for example, is not a method \verb=isNSArray__=, which is a private \verb=NSObject= instance method for deciding whether the object is an instance of \verb=NSArray= class. While the meta class itself does not implement this method, however, calling
+a list of methods declared directly on the meta class is printed. This list counts only 118 methods, among which, for example, is not a method \verb=isNSArray__=, which is a private \verb=NSObject= instance method for deciding whether the object is an instance of \verb=NSArray= class. While the meta class itself does not implement this method, calling
 
 \begin{verbatim}
 [((id)[NSObject class])->isa isNSArray__];
@@ -395,13 +394,13 @@ a list of methods declared directly on the meta class is printed. This list coun
 
 does not yield in any run-time exception, or similar, it simply invokes the instance method. This can be further proved by exchanging the function pointer of \verb=NSObject='s \verb=isNSArray__= method with a custom function, that prints a message, for example.
 
-While this trickery might be viewed as unnecessary and almost 'insane', it has a good reasoning behind - it is mostly because of this that you can treat classes as regular objects without implementing the same methods twice - once as instance methods and once as class methods.
+While this trickery might be viewed as unnecessary and almost 'insane', it has a good reasoning behind - it is mostly because of this classes may be treated as regular objects without implementing the same methods twice - once as instance methods and once as class methods.
 
 \subsection{Creating Classes Programmatically}
 
 While this is not a feature of the run-time that would be used on a daily basis, classes can be created and inserted into the run-time at any time. There is a function called \verb=objc_allocateClassPair= which creates a brand new class and its meta class counterpart - together a class pair. All that is needed to be specified is the superclass, the new class' name and extra bytes. These extra bytes are similar to the extra bytes argument of \verb=objc_createInstance=, but this time they represent extra bytes on the class structure itself for possible class functionality extension. Run-time functions such as \verb=class_addMethod=, \verb=class_addIvar=, \verb=class_addProtocol= and \verb=class_addProperty= can be used to add methods, ivars, protocols and properties to a class.
 
-Creating the class using the \verb=objc_allocateClassPair= function is not enough in order to create an instance of this class, though. It is necessary to register the class pair with the run-time as well, using \verb=objc_registerClassPair=. This is simply to avoid creating an instance of the class before it gets fully initialized, e.g.\ from a different thread. Using these functions, the Objective-C compiler may easily be substituted, creating all classes at the beginning of the program execution programatically.
+Creating a class using the \verb=objc_allocateClassPair= function is not enough in order to create an instance of this class, though. It is necessary to register the class pair with the run-time as well, using \verb=objc_registerClassPair=. This is simply to avoid creating an instance of the class before it gets fully initialized, e.g.\ from a different thread. Using these functions, the Objective-C compiler may easily be substituted, creating all classes at the beginning of the program execution programatically.
 
 In reality, declaring a class does not cause the compiler to generate function calls. Instead, the compiler creates static class structures which are later on copied by the linker into the \verb=__OBJC= section of the Mach-O binary (on OS X), which is copied on the launch time to memory and the classes just get registered with the run-time (the dynamic loader calls some private run-time methods for copying classes from binary images), which is much faster than dynamically creating classes one by one, connecting all methods, ivars, etc. This thesis, however, focuses on the run-time methods, ignoring linker and dynamic loader dependencies.
 
@@ -484,7 +483,7 @@ The \verb=@try-@catch-@finally= is, of course, again translated into C code, to 
 
 \subsection{Protocols}
 
-Protocols are a way of declaring methods with no implementation that classes conforming to that particular protocol should implement. This mechanism is called \verb=interface= is Java, for example.
+Protocols are a way of declaring methods with no implementation that classes conforming to that particular protocol should implement. This mechanism is similar to \verb=interface=s in Java, for example.
 
 When a class conforms to a protocol, a pointer to a protocol is installed in its protocol list, which is quite obvious, but brings up a question, what is a protocol, in terms of structures.
 
@@ -521,7 +520,7 @@ but is translated into
 
 - a pointer to a certain exported protocol structure, that is part of the binary. And this is not an optimization because the protocol is declared in the same source file, the same mechanism applies when pointing to a protocol declared in an external framework.
 
-Of course, the run-time needs to populate the \verb=isa= pointers of each protocol when loading the binary.
+Of course, the run-time needs to populate the \verb=isa= pointers of each protocol when loading the binary (see \verb=objc-runtime-new.mm=, line 3124).
 
 \subsection{Required Classes}
 

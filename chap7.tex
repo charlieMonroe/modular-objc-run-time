@@ -1,6 +1,6 @@
 \chapter{Modular Run-Time Implementation}
 
-An prototype implementation of the Modular Run-Time designed in the previous chapter is included with this work. The prototype is very light feature-wise, but includes several examples of both porting the run-time to a different operation system and adding features to it, such a Objective-C categories and associated objects, which are not part of the run-time itself.
+A prototype implementation of the Modular Run-Time designed in the previous chapter is included with this work. The prototype is very light feature-wise, but includes several examples of both porting the run-time to a different operating system and adding features to it, such a Objective-C categories and associated objects, which are not part of the run-time itself.
 
 \section{Run-time Setup}
 
@@ -10,7 +10,7 @@ The key to this is the \verb=os.h= header file, which is the 'black box' referre
 
 When compiling the run-time, it is possible to switch between these two simply by redefining the \verb=OBJC_USES_INLINE_FUNCTIONS= value - \verb=0= for function pointers, \verb=1= for inline functions. This can be done in the \verb=Makefile= as can be seen in the sample \verb=Makefile= supplied.
 
-\paragraph{Inlining}
+\subsection{Inline Function}
 
 The first part of the \verb=os.h= header file is the part that should be used for static inline functions. A rough sketch of how this should be used has been included:
 
@@ -61,7 +61,7 @@ When using static inline functions, all of these need to be implemented. To use 
 
 For a detailed description of each function, see the section about function pointers.
 
-\paragraph{Function Pointers}
+\subsection{Function Pointers}
 
 If the user decides to use function pointers, he or she does not need to modify the run-time source code at all. The second part of the \verb=os.h= header file is filled with \verb=#define=s that fetch the corresponding function pointer. Such defines match the names of the inline functions so that the run-time's source code doesn't need to be modified. For example:
 
@@ -93,7 +93,7 @@ The run-time defines a private \verb=objc_setup= global variable in \verb=runtim
 objc_runtime_setup_struct objc_setup;
 \end{verbatim}
 
-While the user has no direct access to this structure as it is exported in a private header (and the \verb=os.h= header does not get exported as well), the run-time itself can access it directly for the sake of speed to eliminate unnecessary function calls that would serve just as proxy calls. The user does not have a direct access to the structure only as a security precaution, so that the structure cannot be modified from the outside during the program execution. The user, however, is free to get the setup structure using the \verb=objc_runtime_get_setup= function, which copies over the whole setup structure. The user can then cache this structure for performance, so that he or she does not have to fetch it each time he or she wants to access a run-time function.
+While the user has no direct access to this structure as it is exported in a private header (and the \verb=os.h= header does not get exported either), the run-time itself can access it directly for the sake of speed to eliminate unnecessary function calls that would serve just as proxy calls. The user does not have a direct access to the structure only as a security precaution, so that the structure cannot be modified from the outside during the program execution. The user, however, is free to get the setup structure using the \verb=objc_runtime_get_setup= function, which copies over the whole setup structure. The user can then cache this structure for performance, so that he or she does not have to fetch it each time he or she wants to access a run-time function.
 
 You can view the structure below:
 
@@ -132,15 +132,15 @@ typedef struct {
 \label{memory_setup_structure}
 \end{figure}
 
-This allows the modularity of the run-time. One can, at the beginning of his or her program (as has been described in the previous chapter), modify all of those pointers using setter functions declared in \verb=ftypes.h=. After the runtime has been initialized, however, the whole structure is sealed off changes using those setter functions to prevent any data corruption (as some data structures may be already initialized, changing these functions would most likely lead to bad memory access crashing the program). Using any of the setter functions after the run-time has been initialized will cause the program to be aborted.
+This allows the modularity of the run-time. One can, at the beginning of his or her program (as has been described in the previous chapter), modify all of those pointers using setter functions declared in \verb=runtime.h=. After the runtime has been initialized, however, the whole structure is sealed off changes using those setter functions to prevent any data corruption (as some data structures may be already initialized, changing these functions would most likely lead to bad memory access crashing the program). Using any of the setter functions after the run-time has been initialized causes the program to be aborted.
 
 A description of each section of the setup structure can be found below:
 
 \paragraph{Memory}
 
-As the run-time needs new memory for dynamic object creation, an allocator is needed. All existing run-times use \verb=malloc=, which, however, ties them to systems that use malloc.
+As the run-time needs new memory for dynamic object creation, an allocator is needed. All existing run-times use \verb=malloc=, which, however, ties them to systems that use \verb=malloc=.
 
-The Modular Run-Time lets you specify your own allocator, which can, for example, be just a wrapper around \verb=malloc= adding some debug logging, or a completely different allocator, e.g.\ a kernel allocator as has been mentioned before. It can also be just the \verb=malloc= function itself, as the function type takes just one argument - the size of the memory required and returns a \verb=void*= pointer.
+The Modular Run-time allows the user to set his or her own allocator, which can, for example, be just a wrapper around \verb=malloc= adding some debug logging, or a completely different allocator, e.g.\ a kernel allocator as has been mentioned before. It can also be just the \verb=malloc= function itself, as the function type takes just one argument - the size of the memory required and returns a \verb=void *= pointer.
 
 Sometimes, the memory acquired should be filled with zeros - just as the \verb=calloc= function would do, however, it is called \verb=zero_allocator= in this run-time. Also, unlike the \verb=calloc= function, the \verb=zero_allocator= takes only one argument - the size of memory. It can be easily declared as \verb=calloc(1, size)=.
 
@@ -148,17 +148,17 @@ When the run-time is done with memory it has allocated, it will deallocate it us
 
 \paragraph{Execution}
 
-This part of the structure contains function pointers (in current version of the run-time only one) to functions dealing with the execution of the program itself - it is commonly said that there is no software without bugs - hence it is sometimes necessary to abort the program execution if the program gets into an inconsistent point, or a point where illegal arguments are passed to the environment (for example, setting the run-time setup structure to NULL), hence it contains an \verb=objc_abort= function, which aborts the run of the program. Unlike the regular \verb=abort= function, this one takes an additional argument - the reason why it is being aborted.
+This part of the structure contains function pointers (in the current version of the run-time only one) to functions dealing with the execution of the program itself - it is commonly said that there is no software without bugs - hence it is sometimes necessary to abort the program execution if the program gets into an inconsistent point, or a point where illegal arguments are passed to the run-time (for example, setting the run-time setup structure to \verb=NULL=). Hence it contains an \verb=objc_abort= function, which aborts the run of the program. Unlike the regular \verb=abort= function, this one takes an additional argument - the reason why it is being aborted.
 
 \paragraph{Synchronization}
 
-The synchronization structure consists of substructures, or in current state a single one - declaring functions related to read-write locks - it is possible that in the future additional synchronization-related functions, such as mutex, condition variables, etc.\ will be added.
+The synchronization structure consists of substructures, or in its current state a single one - declaring functions related to read-write locks - it is possible that in the future additional synchronization-related functions, such as mutex, condition variables, etc.\ will be added.
 
 \subparagraph{Read-Write Locks} The run-time currently uses only read-write locks to prevent concurrent writes to structures, which are mostly read-lock-free. The structure contains functions that create locks, deallocate them, read/write-lock them or unlock them. The locking and unlocking functions are compatible with \newline{}\verb=pthread_rwlock_*= functions.
 
 \paragraph{Logging}
 
-In a very few cases, the run-time logs some information, that is mostly useful to an Objective-C developer, to see what went wrong. For example, when creating a class with the same name as an existing class, a message is logged that the class with this name already exists, letting the user know that he or she should probably try checking if a class with this name exists before creating it. The logging function is compatible with \verb=printf= and by default is filled with a no-op function, so it does not need to be included necessarily, if no log messages from the run-time are wanted.
+In a very few cases, the run-time logs some information, that is mostly useful to an Objective-C developer, to see what went wrong. For example, when creating a class with the same name as an existing class, a message is logged that the class with this name already exists, letting the user know that he or she should probably rename his or her class. The logging function is compatible with \verb=printf= and by default is filled with a no-op function, so it does not need to be included necessarily, if no log messages from the run-time are wanted.
 
 \paragraph{Class Holder}
 
@@ -186,7 +186,7 @@ To enable fast iteration over the array, an enumerator is returned, which contai
 
 As has been noted several times before, almost any language with dynamic dispatch uses some sort of a cache so that it does not have to climb the whole class hierarchy to find a method implementation of a method that is only implemented on the root class.
 
-The caching mechanism is described in a greater detail in the Caching section below. 
+The caching mechanism has been described in a greater detail in the previous chapter and its implementation details are described in the Caching section below.
 
 To disable the caching mechanism altogether, it is sufficient to just replace the cache creator and fetch functions with functions that return \verb=NULL=, and the insert and destroy functions with a no-op function.
 
@@ -226,7 +226,7 @@ The \verb=isa= pointer is followed by a pointer to the super class, or \verb=Nil
 
 Next, class and instance methods are listed. Each of the \verb=objc_array= structures contains a C-style list of \verb=Method= pointers. In other words, each item of the array is actually a \verb=Method *= array. Thanks to this, it is easy to add new methods in bulk - simply append the \verb=Method *= array to the \verb=objc_array=. This is generally how other run-times handle the method lists.
 
-The ivars are directly listed in the \verb=objc_array= as ivar lists, unlike the method lists, are sealed after the class has been \emph{finished} (a step, where the run-time is informed that you do not intend to modify the class anymore and that it should be marked as ready for use - Apple calls this \emph{registering\ a\ class\ pair}), because adding an ivar is likely to change the size of the instances and most importantly of the class' subclasses. Adding methods on the fly, on the other hand, is a valid and used practice.
+The ivars are directly listed in the \verb=objc_array= as ivar lists, unlike the method lists, are sealed after the class has been \emph{finished} (a step, where the run-time is informed that the user does not intend to modify the class anymore and that it should be marked as ready for use - Apple calls this \emph{registering\ a\ class\ pair}), because adding an ivar is likely to change the size of the instances and most importantly of the class' subclasses. Adding methods after the class has been finished, on the other hand, is a valid and used practice.
 
 The class and instance caches will be explained in length in the Caching section that follows this section.
 
@@ -236,22 +236,22 @@ A bitfield \verb=flags= follows, which includes a number of flags about the clas
 
 \section{Dynamic Dispatch and Caching}
 
-The examples that are included in the run-time prototype show how to implement an inline cache, to be precise, the \verb=test/testing.h= header file declares a macro \verb=OBJC_GET_IMP=, which lets the user create an inline cache. Such a cache should be really generated by the compiler and is included for testing purposes only.
+The examples that are included with the run-time prototype show how to implement an inline cache, to be precise, the \verb=test/testing.h= header file declares a macro \verb=OBJC_GET_IMP=, which lets the user create an inline cache. Such a cache should be really generated by the compiler and is included for testing purposes only.
 
 When the inline cache is unavailable, or it misses, one of the following two methods should get called (a \verb=_super= alternative exists for \verb=super= calls):
 
 \begin{verbatim}
-extern Method objc_object_lookup_method(id obj, SEL selector);
-extern IMP objc_object_lookup_impl(id obj, SEL selector);
+Method objc_object_lookup_method(id obj, SEL selector);
+IMP objc_object_lookup_impl(id obj, SEL selector);
 \end{verbatim}
 
-The first function returns the \verb=Method= pointer, so it should be used in case the compiler can generate inline caches. If it cannot, it is unnecessary to retrieve the \verb=Method= pointer, use the function fetching directly the method implementation, instead.
+The first function returns the \verb=Method= pointer, so it should be used in case the compiler can generate inline caches. If it cannot, it is unnecessary to retrieve the \verb=Method= pointer, the function fetching directly the method implementation, should be used instead.
 
 In either case, the look-up function works like this:
 
 \begin{enumerate}
   \item{\bf{Look inside the cache}} The function detects whether \verb=obj= is an instance of a class, or the class itself. Depending on that, it looks inside the correct cache and if it results in a cache hit, the \verb=Method= is immediately returned. The cost of such call is \emph{dependent on the cache speed}.
-  \item{\bf{Ask extensions}} Each class extension may supply its own lookup function, in case the extension can, for example, generate methods, or adds them e.g.\ via categories. If any extension finds a method implementation, it is then returned. Were there two such extensions that would implement the method, the extension that gets registered first is used (the extension list is iterated until an extension returns something other than \verb=NULL=). If any extension implements the method, it gets cached, so that the next time this method gets called on this class, the lookup will stop at the cache lookup.
+  \item{\bf{Ask extensions}} Each class extension may supply its own lookup function, in case the extension can, for example, generate methods, or adds them e.g.\ via categories. If any extension finds a method implementation, it is then returned. Were there two such extensions that implement the method, the extension that gets registered first is used (the extension list is iterated until an extension returns something other than \verb=NULL=). If any extension implements the method, it gets cached, so that the next time this method gets called on this class, the lookup will stop at the cache lookup.
   \item{\bf{Method lookup}} If method implementation for this selector has not been found yet, it is necessary to climb the class tree, looking into each class' method lists. If an implementation is found, it gets cached.
   \item{\bf{Forwarding}} The run-time has reached a point where the method is not cached, is not implemented by any class extension, the class itself or one of its superclasses. The modular run-time introduces a simplified forwarding mechanism, which gives the object a chance to handle the unrecognized selector.
   \item{\bf{Abort}} If the method has not been found and the class does not implement the forwarding mechanism, or the forwarding mechanism rejects this selector, the program is aborted.
@@ -261,9 +261,9 @@ In either case, the look-up function works like this:
 
 The issues the run-time may run into which require the caches to be flushed have been described in the previous chapter.
 
-The modular run-time requires a function of type \verb=objc_cache_mark_to_dealloc_f= which should mark the cache structure as 'unnecessary' and that it should be deallocated at the first safe opportunity.
+The modular run-time requires a function of type \newline{}\verb=objc_cache_mark_to_dealloc_f= which should mark the cache structure as 'unnecessary' and that it should be deallocated at the first safe opportunity.
 
-The default implementation supplied with the modular run-time assumes that the cache is marked to be deallocated \emph{after} the cache pointer in the \verb=Class= structure had already been swapped with an empty cache pointer (or \verb=NULL=), and hence no new readers of the cache will appear.
+The default implementation supplied with the Modular Run-time assumes that the cache is marked to be deallocated \emph{after} the cache pointer in the \verb=Class= structure had already been swapped with an empty cache pointer (or \verb=NULL=), and hence no new readers of the cache shall appear.
 
 The cache keeps track of the readers, using a simple \verb=unsigned int= - if there are no readers, and marked to dealloc, the cache is removed at that moment. Otherwise, the last reader to leave the cache structure is responsible for deallocating the structure.
 
@@ -272,19 +272,19 @@ The cache keeps track of the readers, using a simple \verb=unsigned int= - if th
 
 A full binary compatibility with Apple's run-time (i.e.\ replacing the system run-time library with this modular library) is not an easy task and might even be impossible.
 
-If an attempt to replace such an essential library to the OS X were to be attempted, a few issues may come up:
+If an attempt to replace such an essential library to OS X were to be attempted, a few issues may come up:
 
 \begin{itemize}
   \item{\bf{Incompatible class structure}} Class structures are saved in the binary directly and get loaded via special functions. Such functions could be implemented, transforming the class structures. It depends on how other frameworks, such as the Foundation and Cocoa frameworks, depend on the exact class structure.
-  \item{\bf{Absence of a meta-class}} In the traditional run-times, a class is in fact a class pair, consisting of a regular class and a meta-class and hence all methods are in fact instance methods, even class methods, which are instance methods on the meta-class. What seems to be the problem? To distinguish between instance and class methods, the \verb=isa= pointer in this run-time points \emph{always} to the class. That means that the \verb=Class= is cycled into itself. This works when you try to fetch the class' meta-class in the traditional run-time - \verb=obj->isa->isa= would get you the meta-class and in this run-time, it still returns class pointer, hence theoretically the meta-class, assuming we consider the class and meta-class being the same \verb=Class= pointer. This gets more complicated when you continue the 'isa chain' - \verb=obj->isa->isa->isa= will point to the superclass' meta-class as can be seen on figure ~\ref{fig:class_metaclass_graph}. In this run-time, it would still point to the class. So code that will climb the class tree using the \verb=isa= pointers would get stuck in an infinite loop.
-  \item{\bf{Incompatible function calls}} The \verb=compatibility.h= and \verb=compatibility.c= files included with the run-time are dedicated to implementing functions with the same names as the ones from Apple or GCC run-time and transforming them to this run-time's function calls. A several examples are included, however, full compatibility is not implemented yet.
+  \item{\bf{Absence of a meta-class}} In the traditional run-times, a class is in fact a class pair, consisting of a regular class and a meta-class and hence all methods are in fact instance methods, even class methods, which are instance methods on the meta-class. What seems to be the problem? To distinguish between instance and class methods, the \verb=isa= pointer in the Modular Run-time points \emph{always} to the class itself. That means that the \verb=Class= is cycled into itself. This still works when the class' meta-class is fetched in the traditional run-time using \verb=obj->isa->isa=. This Modular Run-time still returns the same class pointer, hence theoretically the meta-class, assuming the class and meta-class are considered the same \verb=Class= pointer. This gets more complicated when the 'isa chain' continues - \verb=obj->isa->isa->isa= points to the superclass' meta-class in traditional run-times as can be seen on figure ~\ref{fig:class_metaclass_graph}. In the Modular Run-time run-time, it still points to the same class, however. So code that climbs the class tree using the \verb=isa= pointers gets stuck in an infinite loop.
+  \item{\bf{Incompatible function calls}} The \verb=compatibility.h= and \verb=compatibility.c= files included with the run-time are dedicated to implementing functions with the same names as the ones in Apple or GCC run-times and transforming them to the Modular Run-time's function calls. Several examples are included, however, full compatibility is not implemented as it is not an objective of this work.
 \end{itemize}
 
 \section{Extensibility of Classes}
 
 Whenever the run-time is about to do something that might be modified by an extension, each extension is consulted. Such actions include creating an object, looking up a method implementation (non-cached), etc.
 
-A class extension may get registered using the \verb=objc_class_add_extension()= function, however, it must be done before the run-time gets initialized using the \verb=objc_init= as has been described earlier in the section dedicated to the run-time setup.
+A class extension may get registered using the \verb=objc_class_add_extension= function, however, it must be done before the run-time gets initialized using the \verb=objc_init=.
 
 This function has a single argument: a pointer to a \verb=objc_class_extension= structure:
 
@@ -342,18 +342,18 @@ The preferred way to handle this is to declare a static variable of type \newlin
 \end{figure}
 
 
-Here is a quick overview of each field within the extensions structure other than the \verb=next_extension= field. Note that all of the function pointers may be \texttt{NULL} if no action required.
+Here is a quick overview of each field within the extensions structure other than the \verb=next_extension= field. Note that all of the function pointers may be \texttt{NULL} if no action is required.
 
 \begin{itemize}
-  \item{\bf{\tt{extra\_class\_space}}} This field marks how much extra space is required by the extension within the \texttt{Class} structure. If \texttt{0} is passed, no extra space will be allocated.
+  \item{\bf{\tt{extra\_class\_space}}} This field marks how much extra space is required by the extension within the \texttt{Class} structure. If \texttt{0} is passed, no extra space is allocated.
   \item{\bf{\tt{extra\_object\_space}}} Similarly to the previous field, this field contains number of extra bytes required to be allocated within an object. Again, \texttt{0} means no extra space required.
   \item{\bf{\tt{object\_allocator\_for\_class}}} In some cases, the user might want to use a different allocator for either all, or just some classes, or based on the size of the object to be allocated. For example, in the kernel space a slab allocator may be used.
   \item{\bf{\tt{object\_deallocator\_for\_object}}} The same way a different allocator may be used for a class, different deallocator is likely to be needed as well. Note, however, that if the allocator for this particular object has been supplied, a deallocator needs to be supplied as well! On the other hand, if the extension has not supplied an allocator for this object, it must not supply a deallocator either.
-  While the deallocator gets the size as an argument, be warned that the size passed is the size an object of class \verb=obj->isa=. Hence if \verb=obj->isa= has been modified since the allocation, the size argument \emph{may} be different. Of course, the extra object space argument may be used to note the real size there, or even to save a deallocator pointer in there. Anyway, the size argument should be considered only as a hint even though the \verb=isa= pointer is not likely to change in most cases.
+  While the deallocator gets the size as an argument, be warned that the size passed is the size of an object of class \verb=obj->isa=. Hence if \verb=obj->isa= has been modified since the allocation, the size argument \emph{may} be different. Of course, the extra object space argument may be used to store the real size directly on the object, or even to store a deallocator pointer in there. Anyway, the size argument should be considered only as a hint even though the \verb=isa= pointer is not likely to change in most cases.
   See figure~\ref{fig:class_ext_dealloc_example} for an example.
-  \item{\bf{\tt{class\_initializer}}} If any action is required whenever a class is registered with the run-time, this function should be supplied. It is possible to use this function both to initialize the extra space requested by the \texttt{extra\_class\_space} field, or to simply observe whenever a class gets registered with the run-time. Lazy allocation is preferred, as not all classes have to be used by the program running. No action \emph{should} be required to initialize the extra space as the space gets zero'ed by the run-time.
+  \item{\bf{\tt{class\_initializer}}} If any action is required whenever a class is registered with the run-time, this function should be supplied. It is possible to use this function both to initialize the extra space requested by the \texttt{extra\_class\_space} field, or to simply observe whenever a class gets registered with the run-time. Lazy allocation is preferred, as not all classes have to be used by the program running. No action \emph{should} be required to initialize the extra space as the space gets zero'ed by the run-time anyway.
   \item{\bf{\tt{object\_initializer}}} A sibling of the previous function field - in this case, whenever an object gets created, this function gets called, unless it is \texttt{NULL}. Again, objects get allocated by either the custom allocator supplied by a class extension, or by \verb=objc_zero_alloc= - a \verb=calloc= equivalent - an allocator that zeroes out the memory it allocates; so theoretically, there should be no need for this, unless it is needed to initialize the extra space with non-zero values. This field may also be used to observe object creation, as well, counting objects created by the program.
-  \item{\bf{\tt{object\_destructor}}} If the class extension allocates dynamically some extra memory that is associated with objects, this is the place to free it. For example, the sample class extension of associated objects which is included with this work may install a hash-table with associated objects onto each object. If it has, it needs to be deallocated when the object is deallocated as well.
+  \item{\bf{\tt{object\_destructor}}} If the class extension allocates dynamically some extra memory that is associated with objects, this is the place to free it. For example, the sample class extension of associated objects which is included with this work may install a hash-table with associated objects onto each object. If it has, it needs to deallocate it when the object is deallocated as well.
   There is no function that does a similar task for the space allocated on the class structure, as it is not expected for classes to be removed from the run-time.
   \item{\bf{\tt{instance\_lookup\_function}} and \bf{\tt{class\_lookup\_function}}} A class extension may extend the methods implemented by objects, or generate them on the fly as well. As has been described above, when the run-time does not find a cached method, it \emph{first} lets the extensions supply a method implementation - the ability to let class extensions override regular implementation, which lets categories to be implemented as a class extension.
   \item{\bf{\tt{class\_extra\_space\_offset}} and \bf{\tt{object\_extra\_space\_offset}}} These two fields get filled in by the run-time at the init time. When the run-time gets initialized, the class extensions get sealed (adding a class extension after this point aborts the program), iterated through and depending on how much extra space was requested by the previous extensions, these two fields get populated. It is important to realize that these offsets are offsets from the \emph{end} of the class structure or the object - hence the first class extension has offset \texttt{0}, while within the class structure, it is \texttt{cl->extra\_space + class\_extra\_space\_offset} - note that for a class structure, the extra space is allocated separately since it would be impossible to know the size of the class structure at compile time, hence the run-time would not be able to simply register class prototypes, but would need to copy them.
@@ -409,13 +409,7 @@ There are two static inline functions \texttt{objc\_class\_extensions\_beginning
   \label{fig:class_ext_mem_usage_img}
 \end{figure}
 
-While this mechanism allows to extend the classes with new functionality, for example properties, or ARC (the \verb=object_deallocator= can do all the automatic deallocations), it poses an issue at the compile time - how much extra space should be left? The compiler needs to know the size of the class structure (or its prototype to be precise) to generate.
-
-One option is to re-allocate all classes with the extra space and copy over all pointers of the class internal structures (it is enough to copy over pointers as the memory will be kept alive). Assuming 1000 classes in a larger application, each class having 74 bytes (on a 64-bit computer running OS X 10.8), plus those extra bytes, this gives over 64 kB of extra memory per application. While this is not that much nowadays, it would slow down the application launch and may present a problem when trying to use the run-time on some older or special systems, such as embedded systems.
-
-Other option is to dynamically allocate the extra space for each class, so the class structure stays of the same size, with the extra space being outside of the structure itself. This allows to add class functionality without the compiler support and without recompiling any previous classes (note that this applies only to classes - when allocating objects, we can compute the object size as it is not allowed to add class extensions after the run-time has been initialized).
-
-There are two examples bundled with the run-time: associated objects (see \verb=extras/ao-ext.c=) and categories (see \texttt{extras/categs.c}). Both examples are discussed below the subsection on Performance.
+There are two examples bundled with the run-time: associated objects (see \verb=extras/ao-ext.c=) and categories (see \texttt{extras/categs.c}). Both examples are discussed below the subsection on Performance (subsections \ref{associated_objects_example_1} and \ref{associated_objects_example_2}).
 
 \textbf{Note:} While changing the fields of the class extension that declare the number of extra bytes required is technically possible, after the first object has been allocated, it will not allocate more space. To speed up object allocation, the sum of extra bytes required is cached. Changing these fields will only result in the class extensions reading (or writing over) other extension's memory, and possibly to unallocated memory altogether.
 
@@ -423,40 +417,40 @@ There are two examples bundled with the run-time: associated objects (see \verb=
 Just like anything, even adding class extensions affects the performance somehow. If no extensions are installed in the run-time, the objects are created directly. When extensions get installed, the extension list needs to be iterated and for each extension, one extra function call is performed, if an object initializing function is installed. This iteration itself does not change the asymptotic complexity as the number of class extensions is a constant number, assumed to be a very small one. The only thing that can effect the performance is the object initializer function itself. A quick summary of performance overheads per each function follows.
 
 \begin{itemize}
-  \item{\bf{\tt{object\_allocator\_for\_class} and \tt{object\_deallocator\_for\_object}}} The overhead of supplying a custom object allocator and deallocator is at least one function call - the run-time needs to call each extension's (de)allocator lookup until it returns a non-NULL (de)allocator. Assuming that there is only one extension that supplies a special allocator depending on the instance size passed as the second argument of this function, the overhead is exactly one function call, plus the logic within that function.
+  \item{\bf{\tt{object\_allocator\_for\_class} and \tt{object\_deallocator\_for\_object}}} The overhead of supplying a custom object allocator and deallocator is at least one function call - the run-time needs to call each extension's (de)allocator lookup until a non-\verb=NULL= (de)allocator is returned. Assuming that there is only one extension that supplies a special allocator depending on the instance size passed as the second argument of this function, the overhead is exactly one function call, plus the logic within that function.
   \item{\bf{\tt{class\_initializer}}} Common frameworks, such as AppKit and Foundation, include roughly 1000 classes each (which can be verified by the aforementioned \verb=objc-dump= tool), 2000 classes altogether, give or take. Which means 2000 function calls to an initializer for each class extension - per run. As has been mentioned, all of the initialization should be lazy, if possible.
   \item{\bf{\tt{object\_initializer}}} Whenever an object is created, each class extension is given the opportunity to initialize its extra space. Again, all of the initialization should be lazy, if possible, as there may be many objects allocated that will not take advantage of that particular class extension.
   \item{\bf{\tt{object\_destructor}}} Calling an object destructor is again only calling a function for each class extension. Assuming that number of class extensions is a small and constant number, one can compare such calls to releasing instance variables within the \texttt{dealloc} method - each class extension implementing the destructor would represent one variable.
   \item{\bf{\tt{instance\_lookup\_function} and \tt{class\_lookup\_function}}} These two functions may look like they could present a major slow down as the lookup function should be as fast as possible. This would be true, if the caching mechanism were not in place. As has been described above, the run-time first looks into the cache. And only if the method is not cached, the class extensions are called to look for the implementation, which then gets cached for the next call. So it really is only once per class per method.
 \end{itemize}
 
-\subsection{Example 1: Associated Objects}
+\subsection{Example 1: Associated Objects}\label{associated_objects_example_1}
 
-Since OS X 10.6, Apple's run-time allows to simulate addition of variables to an object using associated objects\footnote{http://developer.apple.com/library/ios/#documentation/cocoa/conceptual/objectivec/ chapters/ocAssociativeReferences.html}. It allows to specify an object for a key (which is \verb=void*=). Simply said, each object has an assigned hash map, where it stores objects.
+Since OS X 10.6, Apple run-time allows to simulate addition of variables to an object using associated objects\cite{associated_objects}. It allows to specify an object for a key (which is \verb=void *=). Simply said, each object has an assigned hash map, where it stores objects.
 
-\subsection{Apple's implementation}
+\paragraph{Apple's implementation}
 
-Apple's implementation relies on the fact that associated objects are not widely used (at least for now) and are more or less used by the OS's frameworks and a few advanced developers. Hence Apple's approach is to create a single hash map, guarded by a spin lock even on a read (indeed a spin lock as can be seen in file \verb=objc-references.mm=, line 195). Not to mention that it's a subclass of a C++ class \verb=unordered_map=, which then contains for each object a hash map of the associated objects (a subclass of the C++ \verb=std::map=). 
+Apple's implementation relies on the fact that associated objects are not widely used (at least for now) and are more or less used by the OS's frameworks and a few advanced developers. Hence Apple's approach is to create a single hash map, guarded by a spin lock even on a read (indeed a spin lock as can be seen in file \verb=objc-references.mm=, line 195). Not to mention that it's a subclass of a C++ class \verb=unordered_map=, which then contains a hash map of the associated objects for each object (a subclass of the C++ \verb=std::map=). 
 
 The first time one wants to store an associated object, a new hash map is created for that object and the associated object is then stored in it. When the object is deallocated, the run-time looks into the map and removes all entries for that object.
 
 This solution is sufficient, unless the associated objects get to be used more commonly - having a million objects, each having some associated objects, means a million entries in the object hash map and a million hash maps stored in it. Not to mention that every access is guarded by a spin lock.
 
-\subsection{Modular run-time implementation}
+\paragraph{Modular run-time implementation}
 
-The solution that is included with this run-time as an 'extra' has been included mainly to demonstrate the class extension capabilities, not to implement the whole associated objects API - for example, the retention policy, which lets the user retain objects as they are set as associated is not implemented, however, adding such a capability is not anything difficult.
+The solution that is included with this run-time as an 'extra' has been included mainly to demonstrate the class extension capabilities, not to implement the whole associated objects API - for example, the retention policy, which lets the user retain objects as they are set as associated is not implemented, however, adding such a capability is nothing difficult.
 
 The approach that has been chosen is to lazily allocate a small hash map directly on each object and to deallocate it as the object is being deallocated.
 
 With the class extensions, it is fairly easy to achieve. The class itself does not need to be modified at all, hence the \verb=class_initializer= may be \verb=NULL= and \verb=extra_class_space= should be set to 0.
 
-The \verb=extra_object_space= can be set to \verb=sizeof(void*)= in case you want to allocate the hash-table structure dynamically, or something else, if you want to inline the structure.
+The \verb=extra_object_space= can be set to \verb=sizeof(void *)= in case the hash-table structure should get allocated dynamically, or something else, if it is desired to inline the structure.
 
-If you want to lazily create the hash-table, the \verb=object_initializer= can be \verb=NULL= as well and the \verb=object_deallocator= should simply deallocate the hash-table structure if it were ever created.
+If the dynamically allocated hash-table should be used, the \newline{}\verb=object_initializer= can be \verb=NULL= as well and the \verb=object_deallocator= should simply deallocate the hash-table structure if it were ever created.
 
-The \verb=instance_lookup_function= may be \verb=NULL= as well, unless you want to provide automatically some Objective-C interface, for example, methods \newline{}\verb=associatedObjectForKey:= and \verb=setAssociatedObject:forKey:= - even that is possible.
+The \verb=instance_lookup_function= may be \verb=NULL= as well, unless some Objective-C interface should be automatically provided, for example, methods \newline{}\verb=associatedObjectForKey:= and \verb=setAssociatedObject:forKey:= - even that is possible.
 
-Then you can create some getter and setter functions for associated objects. To access the hash-table from an \verb=id object=, you can use code similar to the example shown in figure ~\ref{fig:class_ext_ao}.
+Then some getter and setter functions for associated objects can be created. To access the hash-table from an \verb=id object=, code similar to the example shown in figure ~\ref{fig:class_ext_ao} can be used.
 
 \begin{figure}[H] 
 \begin{verbatim}
@@ -495,11 +489,11 @@ Then you can create some getter and setter functions for associated objects. To 
 \end{figure}
 
 
-Very similarly, properties could be implemented, with the addition of storing the declared properties in the class structure (i.e.\ \verb=extra_class_space= would be non-zero), however, in the traditional run-time, the properties themselves are just meta data with the actual backing store in ivars - it does not really make much sense to add a property without a link to an ivar, unless it's dynamic (i.e.\ resolved using method calls dynamically), simply because there is no where to store it. This is why you can actually add properties to a class that has already been registered with the run-time (is not in construction), because adding a property does not change the instance sizes.
+Very similarly, properties could be implemented, with the addition of storing the declared properties in the class structure (i.e.\ \verb=extra_class_space= would be non-zero), however, in the traditional run-time, the properties themselves are just meta data with the actual backing store in ivars - it does not really make much sense to add a property without a link to an ivar, unless it's dynamic (i.e.\ resolved using method calls dynamically), simply because there is nowhere to store it. This is why properties can be added to a class that has already been registered with the run-time (is not in construction), because adding a property does not change the instance sizes.
 
 This way the properties could actually be stored in a separate storage, making it less memory efficient, yet more flexible - it would allow adding variables to a class when it has already been finished/registered with the run-time, allowing a JavaScript-like behavior, adding variables on the fly.
 
-\subsection{Example 2: Categories}
+\subsection{Example 2: Categories}\label{associated_objects_example_2}
 
 Categories are a way of adding methods (both class and instance) to existing classes that may even be implemented in a completely different binary. It is a way of extending classes as well as overriding their behavior, since class categories have a priority when it comes to looking up a method implementation.
 
@@ -512,7 +506,7 @@ The whole logic behind the class categories, thanks to the simplicity of class e
   \item{\bf{Altering the look-up mechanism}} The class extensions allow adding look up functions that may override the default look-up mechanism. Adding two functions that look through the class' methods and returns one if can be found is all that is necessary.
 \end{itemize}
 
-An example of the categories is included with the run-time in \verb=extras/categs.c=.
+An example of the categories is included with the run-time in \verb=extras/=\newline{}\verb=categs.c=.
 
 \section{Class Prototypes}
 
@@ -560,7 +554,7 @@ The method prototype is quite self explanatory. The run-time only replaces the s
 
 The class prototype probably needs a little explanation. The \verb=isa= pointer must be \verb=NULL=. This is to detect if someone tried to pass a finished \verb=Class= as the prototype. The name of the superclass gets replaced by a pointer to the superclass, if such a class exists. If not, the prototype is ignored.
 
-Class methods and instance method prototypes get simply transformed into an array of \verb=Method= pointers, which gets added into an instance of \verb=objc_array=. Similarly, the \verb=ivars= field gets replaces by \verb=objc_array=, into which all ivars are added.
+Class method and instance method prototypes get simply transformed into an array of \verb=Method= pointers, which gets added into an instance of \verb=objc_array=. Similarly, the \verb=ivars= field gets replaces by \verb=objc_array=, into which all ivars are added.
 
 Instance size may be whatever number since it gets replaced during the ivar transformation, when the run-time computes the instance size depending on the superclass' instance size and ivars the class lists.
 
@@ -574,7 +568,7 @@ Both traditional run-times implement a basic object class - \verb=Object=, which
 
 In the latest versions, however, Apple has started moving the \verb=NSObject= class from the Foundation framework into the run-time library as the tight connection between the run-time and a root class (again, reminding that this is not the only root class, but the most commonly used) can bring some performance improvements.
 
-In particular, the \verb=retain= and \verb=release= methods are implemented in most cases only on the root class - \verb=NSObject=. This way, in Apple's run-time, each class marks whether it has implemented its own retain/release methods and if it hasn't, the run-time may directly invoke the retain/release implementation without even looking into the cache, or climbing up the class hierarchy, looking for a method that is certainly at the root of the tree. Most importantly, these two methods are one of the most frequently used methods - Apple supports a so-called vtable, a set of 16 \verb=IMP= functions that are used most and their implementation \emph{usually is not overridden} (this is an important condition!) - the default list of selectors can be viewed in figure ~\ref{fig:vtable_def_sels} - comments where such methods are usually implemented have been added.
+In particular, the \verb=retain= and \verb=release= methods are implemented in most cases only on the root class - \verb=NSObject=. This way, in Apple's run-time, each class marks whether it has implemented its own retain/release methods and if it hasn't, the run-time may directly invoke the retain/release implementation without even looking into the cache, or climbing up the class hierarchy, looking for a method that is certainly at the root of the tree. Most importantly, these two methods are one of the most frequently used methods - Apple supports a so-called vtable, a set of 16 \verb=IMP= functions that are used the most - the default list can be viewed in figure ~\ref{fig:vtable_def_sels} - comments where such methods are usually implemented have been added.
 
 \begin{figure}[H]
   \begin{verbatim}
@@ -602,7 +596,9 @@ In particular, the \verb=retain= and \verb=release= methods are implemented in m
   \label{fig:vtable_def_sels}
 \end{figure}
 
-As you can see, the reference counting related methods are indeed included and so are many methods on \verb=NSObject=.
+The idea behind is similar to what has been described in Chapter 1 - each class has a vtable and if any of the methods is implemented on that class, that slot gets filled. This means that calling any of the methods listed above is as fast as a C function call since the run-time only reaches to a particular slot in the vtable.
+
+The reference counting related methods are indeed included and so are many methods on \verb=NSObject=.
 
 \subsection{MRObject}
 
@@ -611,7 +607,7 @@ The run-time hence includes a basic object class called \verb=MRObject= (\verb=M
 \paragraph{Reference counting in traditional run-times} With reference counting, an interesting question pops up - where to store the reference count? How come \verb=NSObject= only has one ivar \verb=isa=? The answer is that the reference count for each object is stored in an external structure (even though in \verb=objc-internal.h= is a macro that would implement the retain/release methods using an ivar). This has two sides:
 \subparagraph{Upsides}
 \begin{itemize}
-  \item{\bf{Hidden from the user}} A regular user (developer) cannot access the reference count directly, which in general is a good thing, however, when someone wants to implement their own reference counting, they add a \verb=referenceCount= ivar to their class anyway and there is no good reason to temper with the variable anyway, since it would most likely cause the application to crash very soon anyway.
+  \item{\bf{Hidden from the user}} A regular user (developer) cannot access the reference count directly, which in general is a good thing, however, when someone wants to implement their own reference counting, he or she adds a \verb=referenceCount= ivar to his or her class anyway and there is no good reason to temper with the variable, since it would most likely cause the application to crash very soon.
   \item{\bf{Code reuse}} As the retain count is not a part of any particular class, all classes, even classes without inheriting from \verb=NSObject= may use this mechanism (there are functions exported from the Foundation framework which allow increasing and decreasing reference count for an object - any object).
   \item{\bf{Saving memory when using GC}} As garbage collection completely ignores the reference counting system, the reference counting hash map does not need to be created and as there is no ivar on the \verb=NSObject= that would contain the reference count, memory is saved. This advantage has, however, very low weight since GC is deprecated.
 \end{itemize}
@@ -623,7 +619,7 @@ The run-time hence includes a basic object class called \verb=MRObject= (\verb=M
 \subparagraph{Possible solutions}
 \begin{itemize}
   \item{\bf{Make the reference count an ivar}} Of course, this would solve both the spin lock and memory issues, since atomic swap and increment can be used to modify the reference count ivar. Unfortunately, if this were to be a solution for the \verb=NSObject= class in particular, it would bring up many issues with backward compatibility.
-  \item{\bf{A hidden reference count ivar}} This could be solved using a hidden ivar that would be ``in front" of the actual object. While the function \verb=class_createInstance= would allocate memory at address \verb=X=, it would return an address \verb=X + sizeof(int)= (note that it should be a signed integer type since an unsigned could underflow into high numbers, making it undetectable), or similar, and the reference count variable would be at address \verb=X=. See figure ~\ref{fig:ref_cnt_hidden_ivar} for a diagram. This could be an issue is with statically created objects, like constant strings, however, these objects usually have the retain and release methods overridden to do nothing, their reference count being the maximum integer of that size possible. Of course, it would require all objects to be created using the run-time function for creating instances.
+  \item{\bf{A hidden reference count ivar}} This could be solved using a hidden ivar that would be ``in front" of the actual object. While the function \verb=class_createInstance= would allocate memory at address \verb=X=, it would return an address \verb=X + sizeof(int)= (note that it should be a signed integer type since an unsigned could underflow into high numbers, making it undetectable), or similar, and the reference count variable would be at address \verb=X=. See figure ~\ref{fig:ref_cnt_hidden_ivar} for a diagram. This could be an issue with statically created objects, like constant strings, however, these objects usually have the retain and release methods overridden to do nothing, their reference count being the maximum integer of that size possible. Of course, it would require all objects to be created using the run-time function for creating instances.
 \end{itemize}
 
 \begin{figure}[H]
@@ -642,7 +638,7 @@ Strings are one of the most commonly used data types as they are the core for in
 
 Since in order for a piece of memory to validate as an Objective-C object, it must be a pointer to a structure whose first field is an \verb=isa= pointer, a C string literal does not pass for an object. Therefore, the \verb=@"String"= has been introduced. Such a string not only results in a constant C string, but also a static object declaration.
 
-The \verb=__MRConstString= inherits from \verb=MRObject= and adds a single variable - the C string. Simply implementing a class is not enough, however, since the question is how to create the static variables of the class. The \verb=__MRConstString= has altogether 3 variables - the isa pointer, the retain count and the C string itself.
+The \verb=__MRConstString= inherits from \verb=MRObject= and adds a single variable - the C string. Simply implementing a class is not enough, however, since the question is how to create the static variables of the class. The \verb=__MRConstString= instance has altogether 3 variables - the isa pointer, the retain count and the C string itself.
 
 The C string itself is quite easy - it's a pointer to a C string literal. The retain count can be set to 1, or really whatever, since the class overrides the retain and release methods to no-op.
 
@@ -678,7 +674,7 @@ The solution to this is to export a class prototype structure as can be seen on 
   \label{fig:mr_const_str_export}
 \end{figure}
 
-Since the prototype is exported, which is the same as the future class, since the prototype is only modified to become a real class, you can actually place \verb=&__MRConstString_class= in place of the isa pointer and everything works out. The run-time comes with a macro for creating such structures - see figure ~\ref{fig:mr_const_str_creation}.
+Since the prototype is exported, which is the same as the future class, since the prototype is only modified to become a real class, \verb=&__MRConstString_class= can actually be placed in place of the isa pointer and everything works out. The run-time comes with a macro for creating such structures - see figure ~\ref{fig:mr_const_str_creation}.
 
 \begin{figure}[H]
   \begin{verbatim}

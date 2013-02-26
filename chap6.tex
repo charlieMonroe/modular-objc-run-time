@@ -3,7 +3,7 @@
 When thinking about creating a run-time from scratch, one has to think mainly about two things:
 
 \begin{itemize}
-  \item{\bf{Speed}} The run-time is the core of every application that uses it. The speed of the applications using the run-time is greatly dependent on the speed of the run-time, the method dispatch in particular.
+  \item{\bf{Speed}} The run-time is the core of every application that uses it. Speed of the applications using the run-time is greatly dependent on the speed of the run-time, the method dispatch in particular.
   \item{\bf{Flexibility}} The run-time should be as flexible as possible. It should be easy to port the run-time to other platforms, and even to kernel space. One should be able to add custom features to the run-time without modifying the run-time's source code - just adding another source code file and possibly even registering it on the fly without the need to recompile the run-time.
 \end{itemize}
 
@@ -11,7 +11,7 @@ The main objective of this work is to create a prototype of a completely new run
 
 Also, no constructs that require any OS support (dynamic loader, standard OS libraries, etc.) will be used. This means, that constructs such as \verb=static __thread= (which creates a new copy of the variable declared for each thread created) or \newline{} \verb=__attribute__((constructor))= (which marks the function to be called by the dynamic loader right after the binary has been loaded) cannot be used either.
 
-In its way, the run-time will be a bare skeleton, which will be ready to be extended for a particular system. As has been mentioned before, the run-time has been designed to be as flexible as possible. This means that all possible dependencies had to be removed, as well as all assumptions about the underlying OS, or whether the run-time is running in user space, or kernel space.
+In its way, the run-time will be a bare skeleton, which will be ready to be extended for a particular system. This means that all possible dependencies had to be removed, as well as all assumptions about the underlying OS, or whether the run-time is running in user space, or kernel space.
 
 The run-time, however, needs a way to allocate memory, locks, and so on, which are system-specific tasks. The intention behind this run-time is to completely separate these dependencies, so that porting the run-time to another platform is as easy as providing a single file containing all the necessary resources.
 
@@ -19,7 +19,7 @@ This leads to a question how should the run-time allocate any memory, or use any
 
 First, all of the OS-specific calls need to be gathered in a single place within the run-time. There needs to be a centralized 'black box', which can be switched with a different 'black box' without the run-time even noticing.
 
-The run-time also needs some data structures for keeping track of e.g.\ registered classes. Such structures should be easy to be replaced as well, hence are the part of the 'black box', too.
+The run-time also needs some data structures for keeping track of e.g.\ registered classes. Such structures should be easily replaceable as well, hence are the part of the 'black box', too.
 
 There are two options when to supply the 'black box' to the run-time.
 
@@ -27,18 +27,18 @@ There are two options when to supply the 'black box' to the run-time.
 \item{\bf{At compile time}}
 The first one is very similar to what the other run-time implementations have done - create a header file that contains multiple static inline functions that implement all the OS-specific calls required by the run-time.
 
-This approach to the platform-independence problem has one advantage and one disadvantage. The obvious disadvantage is that you can perform compile-time changes only. Once the run-time has been compiled, there is no way to change, for example, the allocator without performing some wild hackery exchanging the \verb=malloc= function pointer using the dynamic loader API.
+This approach to the platform-independence problem has one advantage and one disadvantage. The obvious disadvantage is that only compile-time changes may be performed. Once the run-time has been compiled, there is no way to change the allocator, for example, without performing some wild 'hackery' such as exchanging the \verb=malloc= function pointer using the dynamic loader API.
 
-The advantage, on the other hand, is definitely speed. There is no extra cost associated with calling these system APIs as the wrapper functions get inlined.
+The advantage, on the other hand, is that there is no extra cost associated with calling these system APIs as the wrapper functions get inlined.
 
 \item{\bf{At run time}}
 Another approach is to create a setup structure that consists of function pointers, which are then called by the run-time. This has the opposite advantages and disadvantages as inlining functions.
 
 The advantage is that the run-time can be compiled without knowing the functions at all and then every program can decide which allocators to use, etc. Or if there is enough support from the dynamic loader, the dynamic loader can decide which functions to use to populate the run-time setup based on some binary flags.
 
-The disadvantage here, on the other hand, is speed. While the function itself has to be called anyway, it is possible that the function types used in the run-time do not match function types in your system. You then need to create a proxy function that converts the parameters.
+The disadvantage here, on the other hand, is speed. While the function itself has to be called anyway, it is possible that the function types used in the run-time do not match function types on the target system. A proxy function that converts the parameters needs to be created then.
 
-For example, if the read/write lock functions were made to be compatible with the POSIX \verb=pthread_rwlock_*= functions, which return an \verb=int= containing a possible error value, or zero if the call was successful and the OS you are porting the run-time to does not return anything, or returns a different value than zero for success, you need to create a proxy function that calls the system function and then returns some value accordingly. This, however, costs an extra function call.
+For example, if the read/write lock functions were made to be compatible with the POSIX \verb=pthread_rwlock_*= functions, which return an \verb=int= containing a possible error value, or zero if the call was successful and the OS you are porting the run-time to does not return anything, or returns a different value than zero for success, a proxy function that calls the system function and then returns some value accordingly needs to be created. This, however, costs an extra function call.
 \end{itemize}
 
 \section{Initialization of the Run-time}
@@ -47,15 +47,15 @@ As the run-time cannot use any compiler-specific extensions, the \verb=construct
 
 On systems that do support the constructor functions, this can be easily solved by compiling the run-time with an additional file which declares and implements a function with the \verb=constructor= attribute that supplies necessary function pointers to the run-time.
 
-What if the system does not support constructor functions? In a real-world scenario, it cannot be assumed that every program's \verb=main= function starts by feeding the run-time with necessary function pointers, or calling any initialization function.
+What if the system does not support constructor functions? In a real-world scenario, it cannot be assumed that every program's \verb=main= function starts by feeding the run-time with necessary function pointers, or calling any initialization function manually.
 
 If it is possible to tie the run-time with the OS more tightly, the answer is that the dynamic loader should initialize the run-time.
 
 Again, if this is not the case, few options emerge:
 
 \begin{itemize}
-  \item{\bf{Use a special \verb=main= function}} Instead of implementing the main function in the program itself, implement it inside the run-time and make it call an external \verb=objc_main= function, which would get to be implemented in the program. It is similar to start of a C program, where the \verb=start= function is called, which initializes some C global variables and then calls the \verb=main= function.
-  \item{\bf{Add hooks to class registration}} Second option is to add a check into the class creating/registering functions if the run-time has already been initialized (a global variable may be used for this) and if not, call the initializing function and continue. Class registration function seems like a good place to add such a hook as it does not make sense to call any other functions if no classes have been registered with the run-time. Also, such a check does cost something (an \verb=if= statement), so it is not suitable for any function that gets called more often.
+  \item{\bf{Using a special \verb=main= function}} Instead of the main function being implemented in the program itself, it could be implemented inside the run-time and it may call an external \verb=objc_main= function, which would get to be implemented in the program. It is similar to launching a C program, where the \verb=start= function is called, which initializes some C global variables and then calls the \verb=main= function.
+  \item{\bf{Add hooks to class registration}} Second option is to add a check into the class creating/registering functions if the run-time has already been initialized (a global variable may be used for this). If not, the initializing function gets called and the program execution continues. Class registration function seems like a good place to add such a hook as it does not make sense to call any other functions if no classes have been registered with the run-time. Also, such a check does cost something (an \verb=if= statement), so it is not suitable for any function that gets called more often.
 \end{itemize}
 
 \section{Modifying the Run-time at Run Time}
@@ -70,36 +70,32 @@ But even so, any \verb=@synchronized(obj)= code is translated to actually lock a
 
 \item{\bf{Example 2: Kernel usage}}
 
-To get the existing run-times working in a kernel of an operating system might be tricky, depending on how much the kernel is POSIX-compatible. But even so, the \verb=malloc= functions and others usually are just wrappers around kernel allocators, which slows down allocation of all structures within the run-time.
+To get the existing run-times working in a kernel of an operating system might be tricky, depending on how much the kernel is POSIX-compatible. But even so, the \verb=malloc= function and others are usually just wrappers around kernel allocators, which slows down allocation of all structures within the run-time.
 
 Using the modular run-time, it is be possible to change the allocator with a simple function-pointer assignment.
 
 \item{\bf{Example 3: Benchmarking}}
 
-The modularity that will be introduced by this work will allow anyone to explore changes in the speed of the run-time simply by changing internal data structures used to hold the class list, selector list and caching. This may help the future development of the run-time.
+The modularity that this work introduces, allows anyone to explore changes in the speed of the run-time simply by changing internal data structures used to hold the class list, selector list and caching. This may help the future development of the run-time.
 
 \end{itemize}
 
-Logically, there needs to be some sort of a line after which the run-time cannot be modified as it would lead to inconsistency - for example changing the deallocator after some objects have been already allocated may lead to memory leaks or crashes as the new deallocator will not recognize that particular memory.
+Logically, there needs to be some sort of a line after which the run-time's 'black box' cannot be modified as it would lead to inconsistency - for example, changing the deallocator after some objects have already been allocated may lead to memory leaks or crashes as the new deallocator will not recognize that particular memory address.
 
-Assuming that function pointers are used, you might want to disable all locks in your program as has been described in \textbf{Example 1} above. Even though most operating systems no-op all mutex-related function unless the program is running as multi-threaded. One may, however, be running a multi-threaded application with Objective-C code running in just one thread. Then it may be useful to no-op all the locking functions manually.
+Assuming that function pointers are used, one might want to disable all locks in the run-time as has been described in \textbf{Example 1} above. Even though most operating systems no-op all mutex-related function unless the program is running as multi-threaded. One may, however, be running a multi-threaded application with Objective-C code running in just one thread. Then it may be useful to no-op all the locking functions manually.
 
-Assuming the dynamic loader (or some other part of the OS) already supplied necessary function pointers to the run-time, as otherwise any change to the function pointers would get overwritten. Such a change must be also performed before the 'black box' gets sealed from changes.
+Assuming the dynamic loader (or some other part of the OS) already supplied necessary function pointers to the run-time, as otherwise any change to the function pointers would get overwritten later on. Such a change must also be performed before the 'black box' gets sealed from changes.
 
 Several options helping to catch such a moment emerge:
 
 \begin{itemize}
   \item{\bf{With compiler and dynamic loader support}} If enough support is possible from both, just like the \verb=constructor= attribute, other attributes, such as \verb=objc_constructor= and \verb=objc_modifier= could be used, where the constructor would get called first and the modifiers would follow.
-  \item{\bf{Without compiler and dynamic loader support}} As the previous option requires a lot of support from both the compiler and dynamic loader, it is unlikely to be used in less common operating systems, which this work is trying to target as well. For this reason, the run-time should support registering initializer functions that get called right before it finishes initialization and seals the 'black box'. Because the run-time has no way to allocate new memory at the moment of registering the initializer functions, the number of such initializer functions needs to be limited.
-  
-  This, again, poses a question when does the run-time get initialized. And the answer is simple. The run-time should place a check in a few key functions (such as selector and class registering) and if the run-time has not been initialized, it gets initialized. So what if one calls another function before the initialization? The program is likely to crash since it does not make much sense to call any other function without having registered at least one class.
-  
-  Note though that this is only to support systems with absolutely no support of anything described above, where the user himself or herself would otherwise need to initialize the run-time at the beginning of \verb=main= - which he or she still can, but it is redundant.
+  \item{\bf{Without compiler or dynamic loader support}} As the previous option requires a lot of support from both the compiler and dynamic loader, it is unlikely to be used in less common operating systems, which this work is trying to target as well. For this reason, the run-time should support registering initializer functions that get called right before it finishes initialization and seals the 'black box'. Because the run-time has no way to allocate new memory at the moment of registering the initializer functions, the number of such initializer functions needs to be limited, however.
 \end{itemize}
 
 \section{Class}
 
-At the core of every run-time lies a structure representing a class. Like the \'Etoil\'e run-time, the Modular Run-Time should not provide a class pair - a class and its meta-class, but only a single class object that contains class methods as well. While it abandons the Smalltalk similarities, it provides greater flexibility, allowing the Objective-C class structure to be used for other languages as well.
+At the core of every run-time lies a structure representing a class. Like the \'Etoil\'e run-time, the Modular Run-Time should not provide a class pair - a class and its meta-class, but only a single class object that contains class methods as well. While it abandons the Smalltalk similarities, it provides greater flexibility, allowing the Objective-C class structure to be used by other languages as well.
 
 So that even the class object can be considered an object, the first field must remain the \verb=isa= pointer, which should point to itself. The pointer cycle is hence introduced on every class, the class being its own instance.
 
@@ -109,9 +105,9 @@ The rest of the class structure is an implementation detail.
 
 \section{Dynamic Dispatch and Caching}
 
-The speed of the run-time really depends not that much on the speed of the lookup function itself (the function that climbs the class hierarchy looking for the method implementation in the method lists), which gets called only the first time a method with that particular selector, but depends mostly on the speed of the caching mechanism of the run-time.
+The speed of the run-time really depends not that much on the speed of the lookup function itself (the function that climbs the class hierarchy looking for the method implementation in the method lists), which gets called only the first time it gets invoked on that class, but depends mostly on the speed of the caching mechanism of the run-time.
 
-Unlike Apple's implementation, the Modular Run-time does not handle calling of the method implementation function itself, but just like the GCC run-time, or the \'Etoil\'e run-time, it should look up a \verb=Method= pointer, or an \verb=IMP= depending on your needs.
+Unlike Apple's implementation, the Modular Run-time should not handle calling the method implementation function itself, but just like the GCC run-time, or the \'Etoil\'e run-time, it should look up a \verb=Method= pointer, or an \verb=IMP=.
 
 If the user can assure inline caching, just like in the \'Etoil\'e run-time's proposal, then the \verb=Method= pointer should be fetched. The \verb=Method= structure includes a \verb=version= field, which, just like in the \'Etoil\'e run-time gets incremented each time the \verb=Method= structure gets modified.
 
@@ -121,12 +117,12 @@ If inline caching cannot be achieved, for example because the \verb=__thread= va
 
 \subsection{Flushing Caches}
 
-In its sense, the idea behind the caching is very simple and would be indeed very simple, if we would not have to think about the following scenario, where \verb=Class3= is a subclass of \verb=Class2=, which is a subclass of \verb=Class1= and \verb=-doSomething= is a method implemented \emph{only} on \verb=Class1=:
+In its sense, the idea behind the caching is very simple and would be indeed very simple, if it wasn't for the following scenario, where \verb=Class3= is a subclass of \verb=Class2=, which is a subclass of \verb=Class1= and \verb=-doSomething= is a method implemented \emph{only} on \verb=Class1=:
 
 \begin{enumerate}
   \item{\bf{\verb=Class2= and \verb=Class3= get instantiated}} An instance of both \verb=Class2= and \verb=Class3= gets created. Let us call those \verb=instance2= and \verb=instance3=.
   \item{\bf{Method \verb=doSomething= gets called on both \verb=instance2= and \verb=instance3=}} This results in caching the method implementation on both \verb=Class2= and \verb=Class3=, while the method itself is only implemented on their superclass \verb=Class1=.
-  \item{\bf{Method \verb=doSomething= gets added to \verb=Class2=}} Either using \newline{}\verb=objc_class_add_instance_method=, or by adding a class category, the \verb=doSomething= method gets added to \verb=Class2=. Now, however, if \verb=instance2= or \verb=instance3= were to be called the \verb=doSomething= method, the cache would still point to the method implementation of \verb=Class1=.
+  \item{\bf{Method \verb=doSomething= gets added to \verb=Class2=}} Either using run-time functions, or by adding a class category, the \verb=doSomething= method gets added to \verb=Class2=. Now, however, if \verb=instance2= or \verb=instance3= were to be called the \verb=doSomething= method, the cache would still point to the method implementation of \verb=Class1=.
 \end{enumerate}
 
 This presents a small hiccup on the easiness of the cache implementation as this scenario requires caches of \verb=Class2= and \verb=Class3= to be flushed. Note, though, that as the cache caches the whole \verb=Method= pointer, simply changing the method implementation pointer (the \verb=IMP=) does not require any cache flushing.
@@ -135,11 +131,11 @@ The question remains: how to flush the class cache. One might say that simply re
 
 While this could be overcome by locking the structure, it would require all readers to lock the read lock as well, which is, unfortunately, an unbearable cost as it would slow down the dynamic dispatch multiple times.
 
-The solution is to create a new cache structure, replace it in the \verb=Class= structure and keep the old cache structure alive as there still may be readers somewhere in the structure.
+The solution is to create a new cache structure, replace it in the \verb=Class= structure and keep the old cache structure alive as there still may be readers on other threads.
 
 The question is, how long should the old structure be kept alive? This is up to the cache structure implementation.
 
-Apple's implementation solves this by looking at each thread's \verb=PC=/\verb=IP=/\verb=RIP= register and comparing it with the ranges of address of all functions that may be reading from the cache. In particular, those methods are listed in a global variable called \verb=objc_entryPoints= declared in the same assembly source file as the \verb=objc_msgSend= functions. 
+Apple's implementation solves this by looking at each thread's \verb=PC=/\verb=IP=/\verb=RIP= register and comparing it with the ranges of addresses of all functions that may be reading from the cache. In particular, those functions are listed in a global variable called \verb=objc_entryPoints= declared in the same assembly source file as the \verb=objc_msgSend= functions. 
 
 As the Modular Run-time should allow the user to change the data structures used within the run-time, including the cache, it only needs a way of marking the cache as invalid and letting the cache to deal with this issue, e.g.\ by keeping track of readers and writers using a simple integer.
 
@@ -149,13 +145,13 @@ The dynamic nature of the language allows to send messages (call methods) that a
 
 \subsection{Apple Run-Time}
 
-Apple's run-time allows installing a forwarding handler using a private run-time function. If no such function is installed, it calls \verb=forward::= method on the object, where the first argument is the selector and the second argument are the arguments on the stack. The idea behind this was to simply resend the arguments to \verb=objc_msgSendv=, which accepted, as an argument the method arguments, however, this function is deprecated and most importantly there were never implemented variants of this function that would return structures, or floating point numbers.
+Apple's run-time allows installing a forwarding handler using a private run-time function. If no such function is installed, it calls \verb=forward::= method on the object, where the first argument is the selector and the second argument is a pointer to the arguments on the stack. The idea behind this was to simply resend the arguments to \verb=objc_msgSendv=, which accepted, as an argument the method arguments, however, this function is deprecated and most importantly there were never implemented variants of this function that would return structures, or floating point numbers.
 
-Nevertheless, the Foundation framework installs a forwarding handler (which really means that the previously described mechanism is unavailable), anyway, which calls a method called \verb=forwardInvocation:=, the argument being an object of class \verb=NSInvocation=, a class that serves as a wrapper around method invocations, holding parameters and their types.
+Nevertheless, the Foundation framework installs a forwarding handler, anyway, which really means that the previously described mechanism is unavailable. The handler calls a method called \verb=forwardInvocation:=, the argument being an instance of class \verb=NSInvocation=, a class that serves as a wrapper around method invocations, holding parameters and their types.
 
-This, however, as Apple's selectors are not typed, requires the user to implement another method - \verb=methodSignatureForSelector:= which should return an instance of a class \verb=NSMethodSignature=, which should carry the types required by the method implementation.
+This, however, as Apple's selectors are not typed, requires the user to implement another method - \verb=methodSignatureForSelector:= which should return an instance of class \verb=NSMethodSignature=, which should carry the types required by the method implementation.
 
-What this really means is that creating a proxy object costs two object creations per call, not to mention how many methods get called in the object creation process. In a simple measurement, where is a proxy class that simply passes the call to an object that is a variable of the proxy class, the proxy calls are roughly 100 times slower than a direct call.
+What this really means is that making a proxy call costs two object creations, not to mention how many methods get called in the object creation process. In a simple measurement, where a proxy class that simply passes the call to an object that is a variable of the proxy class, the proxy calls are roughly 100 times slower than direct calls.
 
 The biggest shortcoming of this, however, is the extra memory usage, mostly for tight loops around a method call, e.g.
 
@@ -165,7 +161,7 @@ The biggest shortcoming of this, however, is the extra memory usage, mostly for 
   }
 \end{verbatim}
 
-For each method call, two objects get created - the \verb=NSInvocation= \newline{}and \verb=NSMethodSignature= object - in case of this loop, on a 64-bit computer running OS X 10.8, at the end of this loop, the test application has memory usage of over 4.5GB!
+For each method call, two objects get created - the \verb=NSInvocation= \newline{}and \verb=NSMethodSignature= objects - in case of this loop, on a 64-bit computer running OS X 10.8, at the end of this loop, the test application has memory usage of over 4.5GB!
 
 This is caused by all the created objects being autoreleased - i.e.\ registered with the \verb=NSAutoreleasePool= instance, to be released later on - which happens at the end of a run loop cycle in applications that install a run loop, or when the pool is drained manually. This can be overcome by wrapping the proxy method call in a \verb=@autoreleasepool= construct, which is generally just creating a new autorelease pool and draining it at the end.
 
@@ -187,13 +183,13 @@ The run-time looks up another method - \verb=forwardedMethodForSelector:= which 
 
 If the class of the object does implement the forwarding method, and the returned value is valid, it is returned to the original caller.
 
-If an invalid value is returned (i.e.\ is \verb=NULL=), the object is given another chance, to simple no-op the function call. This can be done using the \verb=dropsUnrecognizedMessage:= method, which returns \verb=BOOL= whether to drop the message, or not. If the class does not implement this method, \verb=NO= is assumed automatically and the program gets aborted.
+If an invalid value is returned (i.e.\ is \verb=NULL=), the object is given another chance, to simply no-op the function call. This can be done using the \newline{}\verb=dropsUnrecognizedMessage:= method, which returns \verb=BOOL= whether to drop the message, or not. If the class does not implement this method, \verb=NO= is assumed automatically and the program gets aborted.
 
 When the object decides to drop the message, the same method gets returned as if the receiver were \verb=nil= - a no-op function. This way, the run-time does not need to handle the different return types of the function, like the GCC run-time does. The ``nil function" is common to methods of all signatures as the hidden argument gets lost, anyway.
 
-The run-time comes with a base class \verb=MRObject=, which implements both methods, the first one always returns \verb=NULL= and warns the user, the second one returning \verb=NO= forcing the program to crash in case the object does not recognize a selector.
+The Modular Run-time comes with a base class \verb=MRObject=, which implements both methods, the first one always returns \verb=NULL= and warns the user, the second one returning \verb=NO= forcing the program to crash in case the object does not recognize a selector.
 
-Figure ~\ref{fig:forwarding_proxy_class} shows how a proxy class could be implemented. Using this mechanism, proxy calls are only 5 times slower than direct calls when measured (see the Benchmarks chapter).
+Figure ~\ref{fig:forwarding_proxy_class} shows how a proxy class could be implemented. Using this mechanism, proxy calls are only 5 times slower than direct calls when measured (see the Performance Evaluation chapter).
 
 \begin{figure}[H] 
   \begin{verbatim}
@@ -245,45 +241,51 @@ Figure ~\ref{fig:forwarding_proxy_class} shows how a proxy class could be implem
 
 \section{Class Extensions}
 
-Besides the ability to compile and use the run-time on virtually any platform, the goal of this work is to create a run-time that is flexible in a sense that adding features to it is as easy as registering a single source code file with the run-time.
+Besides the ability to compile and use the run-time on virtually any platform, the goal of this work is to create a run-time that is flexible in a sense of adding features to it is as easily as registering a single source code file with the run-time.
 
-In order to achieve the flexibility and modularity desired, an easy way to extend class and object capabilities need to be introduced. The following examples shed light on what kinds of additional functionality may the user want to add to the run-time:
+In order to achieve the flexibility and modularity desired, an easy way to extend class and object capabilities needs to be introduced. The following examples shed light on what kinds of additional functionality may the user want to add to the run-time:
 
 \begin{itemize}
-  \item{Categories} The Modular Run-time itself does not include support for class categories, keeping the run-time as light-weight as possible.
-  \item{Associated Objects} Associated objects are a feature of Apple's run-time that allows to store objects associated with other objects.
-  \item{Different Allocators} Perhaps, in the kernel space, the user may want to use a different slab allocator for each class.
+  \item{\bf{Categories}} The Modular Run-time itself does not include support for class categories, keeping the run-time as light-weight as possible.
+  \item{\bf{Associated Objects}} Associated objects are a feature of Apple's run-time that allows to store objects associated with other objects.
+  \item{\bf{Different Allocators}} Perhaps, in the kernel space, the user may want to use a different slab allocator for each class.
 \end{itemize}
 
 It is obvious that the extensions must be able to modify the method look-up - the categories implement new methods. Also, the categories may want to store some additional information on the class structure. Associated objects probably would install a hash map on each object (lazily created). The extensions hence need to be able to allocate additional space on every allocated object. And the allocators and deallocators must be selectable as well.
 
 While the other run-times allow the user to specify extra space when allocating both a class and an object, it is very limiting. If it is desired to add some extra space to all objects allocated within the system, the \verb=+alloc= method of \verb=NSObject= needs to be replaced. But even so, this method exchange does not affect all classes in the run-time as not all objects are subclasses of \verb=NSObject= (e.g.\ the \verb=NSProxy= class).
 
-This is why the Modular Run-time introduces class extensions which allow users to extend the run-time capabilities dynamically. The class extensions is a concept similar to delegates that is widely used in the Cocoa frameworks.
+This is why the Modular Run-time introduces class extensions which allow users to extend the run-time capabilities dynamically. A class extension is a concept similar to delegates that is widely used in the Cocoa frameworks.
 
 Each class extension should be asked whether it implements a method with that selector, how much additional space it requires on the class structure, each object. With each object creation, the class extensions should be consulted on both the extra space required and the allocator to be used. On object destruction, the deallocator should be looked for among the extensions first.
 
 The question is if this affects the performance of the run-time. Considering that each method look-up gets cached after the first look-up, the look-up modification affects only the first look-up.
 
-Object allocation and deallocation is a common task as well, but the allocation itself, which may ask the kernel for another memory (using a syscall), or the deallocation, which may be returning the memory to the kernel, overweigh a simple function call to a class extension. Moreover, the additional memory required by class extensions for each object may be cached.
+Object allocation and deallocation is a common task as well, but the allocation itself, which may ask the kernel for another memory (using a syscall), or the deallocation, which may be returning the memory to the kernel, overweigh a simple function call to a class extension. Moreover, the additional memory required by class extensions for each object may get cached.
 
 Of course, this deeply depends on the logic the extensions themselves implement and how many extensions are installed.
+
+While this mechanism allows to extend the classes with new functionality, for example properties, or ARC, it poses an issue at the compile time - how much extra space should be left? The compiler needs to know the size of the class structure (or its prototype to be precise) to generate.
+
+One option is to re-allocate all classes with the extra space and copy over all pointers of the class internal structures (it is enough to copy over pointers as the memory will be kept alive). Assuming 1000 classes in a larger application, each class having 74 bytes (on a 64-bit computer running OS X 10.8), plus those extra bytes, this gives over 64 kB of extra memory per application. While this is not that much nowadays, it would slow down the application launch and may present a problem when trying to use the run-time on some older or special systems, such as embedded systems.
+
+Other option is to dynamically allocate the extra space for each class, so the class structure stays of the same size, with the extra space being outside of the structure itself. This allows to add class functionality without the compiler support and without recompiling any previous classes (note that this applies only to classes - when allocating objects, the object size can be easily computed as it is not allowed to add class extensions after the run-time has been initialized).
  
 \section{Creating Prototypes and Registering Them}
 
-As has been mentioned in previous chapters, it is inefficient for the compiler to generate code that would create classes, one by one programmatically, adding methods, ivars, etc. The compiler usually creates some static structures - let us call them class prototypes. Apple and GCC run-times differ in the way they load the prototypes from the binary - GCC run-time only provides functions which transform the prototypes to actual classes and install them. The code generated by the compiler is responsible for calling these functions on launch.
+As has been mentioned in previous chapters, it is inefficient for the compiler to generate code that would create classes one by one, programmatically, adding methods, ivars, etc. The compiler usually creates some static structures - let us call them class prototypes. Apple and GCC run-times differ in the way they load the prototypes from the binary - GCC run-time only provides functions which transform the prototypes to actual classes and install them.
 
 Apple run-time on the other hand gets a pointer to structures representing the binary image of the loaded application, or bundle, and is responsible for finding and loading the class structures from there.
 
 To eliminate all possible dependencies, the Modular Run-time takes a similar approach to the GCC run-time.
 
-\subsection{Issues with generating static structures}
+\subsection{Issues With Generating Static Structures}
 
 While the idea of creating class structures and registering them with the run-time is quite simple, several challenges arise:
 
 \begin{itemize}
-  \item{\bf{Unknown class pointers}} There is no way to actually connect the class structure to its superclass as it could create version incompatibility issues. Therefore, a superclass name must be used.
-  \item{\bf{Unknown \verb=objc_array= structure}} The downside of making the run-time modular is that the structure of used data structures is not known at compile time. Therefore a list of method prototypes must be in place which must be wrapped in the data structure used when registering the prototypes.
+  \item{\bf{Unknown class pointers}} There is no way to actually connect the class structure to its superclass at compile time as it could create version incompatibility issues. Therefore, a superclass name must be used.
+  \item{\bf{Unknown \verb=objc_array= structure}} The downside of making the run-time modular is that the structure of used data structures is not known at compile time. Therefore a list of method prototypes must be in place which must be wrapped in the data structure when registering the prototypes.
   \item{\bf{Selectors}} For the run-time to work correctly and efficiently, there must not be two selectors of the same name within the run-time. This, however, means that all method structures cannot be compiled into the final form. All selectors must be just method names and they get registered when the class gets registered with the run-time.
 \end{itemize}
 
