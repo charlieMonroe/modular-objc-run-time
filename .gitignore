@@ -18,7 +18,6 @@ profile
 .DS_Store
 
 *.aux
-*.pdf
 *.blg
 *.log
 *.bbl
